@@ -10,9 +10,9 @@ PointType = tuple[int, int] | pg.Vector2 | Point
 
 class MobID(IntEnum):
     PLAYER = 1
-    ZOMBIE = 2
-    SLIME = 3
-    SKELETON = 4
+    GREEN_ZOMBIE = 2
+    GREEN_SLIME = 3
+    GREEN_SKELETON = 4
     AIR_WIZARD = 5
 
 
@@ -40,6 +40,9 @@ class Colors(Enum):
     YELLOW = (255, 255, 0)
     BLUE = (0, 0, 255)
     STONE = (170, 170, 170)
+    WHITE = (255, 255, 255)
+    RED = (255, 0, 0)
+    MOB_GREEN = (64, 200, 64)
 
 
 tile_graphics = {
@@ -49,6 +52,14 @@ tile_graphics = {
     TileID.STONE: ((1, 17), Colors.STONE.value),
     TileID.TREE: ((4, 2), Colors.GREEN.value),
     TileID.CACTUS: ((6, 1), Colors.GREEN.value),
+}
+
+mob_graphics = {
+    MobID.PLAYER: ((25, 0), Colors.WHITE.value),
+    MobID.GREEN_ZOMBIE: ((24, 9), Colors.MOB_GREEN.value),
+    MobID.GREEN_SLIME: ((27, 8), Colors.MOB_GREEN.value),
+    MobID.GREEN_SKELETON: ((29, 6), Colors.MOB_GREEN.value),
+    MobID.AIR_WIZARD: ((24, 1), Colors.RED.value),
 }
 
 tile_tags = defaultdict(tuple)
