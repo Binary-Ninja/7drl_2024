@@ -1,9 +1,22 @@
 from enum import Enum, IntEnum, StrEnum, auto
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 import pygame as pg
 
-PointType = tuple[int, int] | pg.Vector2
+Point = namedtuple("Point", ["x", "y"])
+
+PointType = tuple[int, int] | pg.Vector2 | Point
+
+
+class MobID(IntEnum):
+    PLAYER = 1
+    ZOMBIE = 2
+    SLIME = 3
+    SKELETON = 4
+    AIR_WIZARD = 5
+
+
+MobData = namedtuple("MobData", ("id", "health"))
 
 
 class TileID(IntEnum):
