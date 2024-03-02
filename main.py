@@ -21,6 +21,9 @@ class GameMode(Enum):
     CRAFT = auto()
 
 
+NO_ITEM = "no item"
+
+
 def main():
     pg.init()
 
@@ -36,10 +39,13 @@ def main():
     stam_full_img = tile_loader.get_tile(Graphic.STAM_FULL, Color.YELLOW)
     stam_empty_img = tile_loader.get_tile(Graphic.STAM_EMPTY, Color.DARK_YELLOW)
     cursor_img = tile_loader.get_tile(Graphic.CURSOR, Color.WHITE)
+    cursor_img2 = tile_loader.get_tile(Graphic.CURSOR2, Color.WHITE)
 
     cursor_flash_timer = pg.time.get_ticks()
     CURSOR_FLASH_FREQ = 500
     cursor_show = True
+    cursor_index = 0  # what inventory item it is on
+    inventory_scroll = 0  # how much to scroll the inventory view
 
     world_seed = random.getrandbits(64)
     world_seed = 1234
@@ -54,9 +60,10 @@ def main():
     player_pos = Point(game_world.size[0] // 2, game_world.size[1] // 2)
     set_array(player_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
 
-    current_item = "no item"
+    current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.PICKUP), Item(ItemID.WORKBENCH),
                              Item(ItemID.DIRT, 23), Item(ItemID.SAND, 2),
+                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
                              Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
                              Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
                              Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
@@ -89,7 +96,7 @@ def main():
         spawn_mob((_ * 2, 4), MobID.GREEN_SKELETON)
         spawn_mob((_ * 2, 6), MobID.AIR_WIZARD)
 
-    def write_text(pos: PointType, text: str, color):
+    def write_text(pos: PointType, text: str, color: tuple[int, int, int]):
         for index, char in enumerate(text):
             char_tile = tile_loader.get_tile(str_2_tile[char], color)
             screen.blit(char_tile, ((pos[0] + index) * tile_size[0],
@@ -131,40 +138,79 @@ def main():
                     sys.exit()
                 elif event.key == pg.K_UP:
                     cursor_show = True
-                    if player_dir == (0, -1):
-                        player_pos = move_player((0, -1))
+                    if game_mode is GameMode.MOVE:
+                        if player_dir == (0, -1):
+                            player_pos = move_player((0, -1))
+                        else:
+                            player_dir = Point(0, -1)
+                    elif game_mode is GameMode.INVENTORY:
+                        cursor_index -= 1
+                        cursor_index %= len(inventory)
                     else:
-                        player_dir = Point(0, -1)
+                        pass  # crafting mode
                 elif event.key == pg.K_DOWN:
                     cursor_show = True
-                    if player_dir == (0, 1):
-                        player_pos = move_player((0, 1))
+                    if game_mode is GameMode.MOVE:
+                        if player_dir == (0, 1):
+                            player_pos = move_player((0, 1))
+                        else:
+                            player_dir = Point(0, 1)
+                    elif game_mode is GameMode.INVENTORY:
+                        cursor_index += 1
+                        cursor_index %= len(inventory)
                     else:
-                        player_dir = Point(0, 1)
+                        pass  # crafting mode
                 elif event.key == pg.K_LEFT:
                     cursor_show = True
-                    if player_dir == (-1, 0):
-                        player_pos = move_player((-1, 0))
+                    if game_mode is GameMode.MOVE:
+                        if player_dir == (-1, 0):
+                            player_pos = move_player((-1, 0))
+                        else:
+                            player_dir = Point(-1, 0)
+                    elif game_mode is GameMode.INVENTORY:
+                        cursor_index -= 1
+                        cursor_index %= len(inventory)
                     else:
-                        player_dir = Point(-1, 0)
+                        pass  # crafting mode
                 elif event.key == pg.K_RIGHT:
                     cursor_show = True
-                    if player_dir == (1, 0):
-                        player_pos = move_player((1, 0))
+                    if game_mode is GameMode.MOVE:
+                        if player_dir == (1, 0):
+                            player_pos = move_player((1, 0))
+                        else:
+                            player_dir = Point(1, 0)
+                    elif game_mode is GameMode.INVENTORY:
+                        cursor_index += 1
+                        cursor_index %= len(inventory)
                     else:
-                        player_dir = Point(1, 0)
+                        pass  # crafting mode
                 elif event.key == pg.K_c:
-                    pass
+                    if game_mode is GameMode.MOVE:
+                        pass  # TODO: use current item
+                    elif game_mode is GameMode.INVENTORY:
+                        item = inventory.pop(cursor_index)
+                        if current_item != NO_ITEM:
+                            inventory.insert(0, current_item)
+                        current_item = item
+                        cursor_index = 0
+                        game_mode = GameMode.MOVE
+                    else:
+                        pass  # TODO: craft
                 elif event.key == pg.K_x:
                     if game_mode is GameMode.INVENTORY or game_mode is GameMode.CRAFT:
                         # Cancel crafting or inventory.
+                        cursor_index = 0
                         game_mode = GameMode.MOVE
                     else:
                         # We must be in move mode.
+                        # No crafting yet, so just switch to inventory.
                         game_mode = GameMode.INVENTORY
                     print(game_mode)
                 elif event.key == pg.K_z:
-                    pass
+                    if game_mode is GameMode.MOVE:
+                        pass  # TODO: wait mechanic
+                    else:
+                        cursor_index = 0  # reset cursor
 
         # Update.
         clock.tick()
@@ -194,10 +240,18 @@ def main():
                 dy += 1
             dx += 1
 
-        # Draw facing cursor.
+        # Draw facing cursor or menu cursor.
+        inventory_scroll = max(0, cursor_index - 15)
         if cursor_show:
-            screen.blit(cursor_img, ((17 + player_dir.x) * tile_size.x,
-                                     (17 + player_dir.y) * tile_size.y))
+            if game_mode is GameMode.MOVE:
+                screen.blit(cursor_img, ((17 + player_dir.x) * tile_size.x,
+                                         (17 + player_dir.y) * tile_size.y))
+            elif game_mode is GameMode.INVENTORY:
+                screen.blit(cursor_img2,
+                            (35 * tile_size.x,
+                             (cursor_index - inventory_scroll + 7) * tile_size.y))
+            else:
+                pass  # crafting mode
 
         # Draw UI.
         # Draw HP & Stamina.
@@ -212,20 +266,27 @@ def main():
 
         # Draw current item and inventory.
         write_text((35, 3), "current item", Color.WHITE)
+        if current_item != NO_ITEM:
+            tile = tile_loader.get_tile(*current_item.graphic)
+            screen.blit(tile, (36 * tile_size.x, 4 * tile_size.y))
         write_text((38, 4), str(current_item), Color.LIGHT_GRAY)
 
         write_text((35, 6), f"inventory {len(inventory)}", Color.WHITE)
-        for index, item in enumerate(inventory):
-            if index > 15:
-                break
+        for index in range(16):
+            real_index = index + inventory_scroll
+            item = inventory[real_index]
+            if game_mode is GameMode.INVENTORY:
+                color = Color.WHITE if real_index == cursor_index else Color.LIGHT_GRAY
+            else:
+                color = Color.LIGHT_GRAY
             tile = tile_loader.get_tile(*item.graphic)
             screen.blit(tile, (36 * tile_size.x, (7 + index) * tile_size.y))
-            write_text((38, 7 + index), str(item), Color.LIGHT_GRAY)
+            write_text((38, 7 + index), str(item), color)
 
         # Draw message logs.
         write_text((37, 24), "message log", Color.WHITE)
         for i, message in enumerate(message_logs):
-            color = Color.LIGHT_GRAY if i > 0 else Color.WHITE
+            color = Color.LIGHT_GRAY if i > 1 else Color.WHITE
             write_text((35, 34 - i), message, color)
 
         # Display FPS.

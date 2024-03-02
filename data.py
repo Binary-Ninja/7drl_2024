@@ -39,6 +39,7 @@ class Graphic:
     STAM_EMPTY = (40, 12)
 
     CURSOR = (36, 12)
+    CURSOR2 = (29, 21)
     EMPTY = (0, 0)
 
     WORKBENCH = (14, 9)
