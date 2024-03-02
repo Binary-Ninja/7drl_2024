@@ -23,6 +23,17 @@ class MobTag(Enum):
 recipies = {
     MobID.WORKBENCH: (
         ((ItemID.WORKBENCH, 1), (ItemID.WOOD, 10)),
+        ((ItemID.DIRT, 12), (ItemID.STONE, 6), (ItemID.WOOD, 6)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
+        ((ItemID.STONE, 1), (ItemID.DIRT, 5)),
     ),
 }
 

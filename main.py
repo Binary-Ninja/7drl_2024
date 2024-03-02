@@ -84,7 +84,9 @@ def main():
     message_logs.appendleft("or use stairs")
 
     game_mode = GameMode.MOVE
+
     current_crafter = None  # the current crafting station in use
+    crafting_list = None  # the list of recipies
 
     def spawn_mob(pos: PointType, mob_id: MobID):
         set_array(pos, game_world.overworld_layer.mob_array, Mob(mob_id))
@@ -168,7 +170,8 @@ def main():
                         cursor_index -= 1
                         cursor_index %= len(inventory)
                     else:
-                        pass  # crafting mode
+                        cursor_index -= 1
+                        cursor_index %= len(crafting_list)
                 elif event.key == pg.K_DOWN:
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
@@ -180,7 +183,8 @@ def main():
                         cursor_index += 1
                         cursor_index %= len(inventory)
                     else:
-                        pass  # crafting mode
+                        cursor_index += 1
+                        cursor_index %= len(crafting_list)
                 elif event.key == pg.K_LEFT:
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
@@ -192,7 +196,8 @@ def main():
                         cursor_index -= 1
                         cursor_index %= len(inventory)
                     else:
-                        pass  # crafting mode
+                        cursor_index -= 1
+                        cursor_index %= len(crafting_list)
                 elif event.key == pg.K_RIGHT:
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
@@ -204,7 +209,8 @@ def main():
                         cursor_index += 1
                         cursor_index %= len(inventory)
                     else:
-                        pass  # crafting mode
+                        cursor_index += 1
+                        cursor_index %= len(crafting_list)
                 elif event.key == pg.K_c:
                     if game_mode is GameMode.MOVE:
                         pass  # TODO: use current item
@@ -221,6 +227,7 @@ def main():
                     if game_mode is GameMode.INVENTORY or game_mode is GameMode.CRAFT:
                         # Cancel crafting or inventory.
                         current_crafter = None
+                        crafting_list = None
                         cursor_index = 0
                         game_mode = GameMode.MOVE
                     else:
@@ -232,10 +239,12 @@ def main():
                         if target_mob and target_mob.has_tag(MobTag.CRAFTING):
                             game_mode = GameMode.CRAFT
                             current_crafter = target_mob
+                            crafting_list = current_crafter.recipies
                         else:
                             game_mode = GameMode.INVENTORY
                     print(game_mode)
                     print(current_crafter)
+                    print(crafting_list)
                 elif event.key == pg.K_z:
                     if game_mode is GameMode.MOVE:
                         pass  # TODO: wait mechanic
@@ -272,6 +281,7 @@ def main():
 
         # Draw facing cursor or menu cursor.
         inventory_scroll = max(0, cursor_index - 15)
+        crafting_scroll = max(0, cursor_index - 9)
         if cursor_show:
             if game_mode is GameMode.MOVE:
                 screen.blit(cursor_img, ((17 + player_dir.x) * tile_size.x,
@@ -280,8 +290,10 @@ def main():
                 screen.blit(cursor_img2,
                             (35 * tile_size.x,
                              (cursor_index - inventory_scroll + 7) * tile_size.y))
-            else:
-                pass  # crafting mode
+            else:  # crafting mode
+                screen.blit(cursor_img2,
+                            (35 * tile_size.x,
+                             (cursor_index - crafting_scroll + 13) * tile_size.y))
 
         # Draw UI.
         # Draw HP & Stamina.
@@ -295,23 +307,48 @@ def main():
             screen.blit(tile, ((40 + i) * tile_size.x, tile_size.y))
 
         # Draw current item and inventory.
-        write_text((35, 3), "current item", Color.WHITE)
-        if current_item != NO_ITEM:
-            tile = tile_loader.get_tile(*current_item.graphic)
-            screen.blit(tile, (36 * tile_size.x, 4 * tile_size.y))
-        write_text((38, 4), str(current_item), Color.LIGHT_GRAY)
+        if game_mode is not GameMode.CRAFT:
+            write_text((35, 3), "current item", Color.WHITE)
+            if current_item != NO_ITEM:
+                tile = tile_loader.get_tile(*current_item.graphic)
+                screen.blit(tile, (36 * tile_size.x, 4 * tile_size.y))
+            write_text((38, 4), str(current_item), Color.LIGHT_GRAY)
+        else:
+            write_text((35, 3), "current recipie", Color.WHITE)
+            ingredients = crafting_list[cursor_index]
+            for index, ingredient in enumerate(ingredients):
+                if index == 0:
+                    continue  # this is the result of the recipie
+                item = Item(*ingredient)
+                tile = tile_loader.get_tile(*item.graphic)
+                screen.blit(tile, (36 * tile_size.x, (3 + index) * tile_size.y))
+                write_text((38, 3 + index), str(item), Color.LIGHT_GRAY)
 
-        write_text((35, 6), f"inventory {len(inventory)}", Color.WHITE)
-        for index in range(16):
-            real_index = index + inventory_scroll
-            item = inventory[real_index]
-            if game_mode is GameMode.INVENTORY:
+        if game_mode is not GameMode.CRAFT:
+            write_text((35, 6), f"inventory {len(inventory)}", Color.WHITE)
+            for index in range(16):
+                real_index = index + inventory_scroll
+                if real_index >= len(inventory):
+                    break
+                item = inventory[real_index]
+                if game_mode is GameMode.INVENTORY:
+                    color = Color.WHITE if real_index == cursor_index else Color.LIGHT_GRAY
+                else:
+                    color = Color.LIGHT_GRAY
+                tile = tile_loader.get_tile(*item.graphic)
+                screen.blit(tile, (36 * tile_size.x, (7 + index) * tile_size.y))
+                write_text((38, 7 + index), str(item), color)
+        else:
+            write_text((35, 12), f"{current_crafter.name}", Color.WHITE)
+            for index in range(10):
+                real_index = index + crafting_scroll
+                if real_index >= len(crafting_list):
+                    break
+                result = Item(*crafting_list[real_index][0])
                 color = Color.WHITE if real_index == cursor_index else Color.LIGHT_GRAY
-            else:
-                color = Color.LIGHT_GRAY
-            tile = tile_loader.get_tile(*item.graphic)
-            screen.blit(tile, (36 * tile_size.x, (7 + index) * tile_size.y))
-            write_text((38, 7 + index), str(item), color)
+                tile = tile_loader.get_tile(*result.graphic)
+                screen.blit(tile, (36 * tile_size.x, (13 + index) * tile_size.y))
+                write_text((38, 13 + index), str(result), color)
 
         # Draw message logs.
         write_text((37, 24), "message log", Color.WHITE)
