@@ -3,7 +3,8 @@ from collections import namedtuple
 
 import opensimplex
 
-from data import TileID, PointType
+from tiles import Tile, TileID
+from data import PointType
 
 
 Layer = namedtuple("Layer", ("tile_array", "mob_array"))
@@ -47,13 +48,13 @@ class World:
 
     def generate_overworld_layer(self):
         tile_array = generate_overworld(self.size, self.seed)
-        mob_array = make_2d_array(self.size, 0)
+        mob_array = make_2d_array(self.size, None)
         self.overworld_layer = Layer(tile_array, mob_array)
 
 
 # World Gen functions below
 def generate_overworld(size: tuple[int, int], world_seed: int) -> list[list]:
-    world_map = make_2d_array(size, TileID.GRASS)
+    world_map = make_2d_array(size, Tile(TileID.GRASS))
     opensimplex.seed(world_seed)
     rng = random.Random(world_seed)
     altitude_scale = 0.08
@@ -63,22 +64,22 @@ def generate_overworld(size: tuple[int, int], world_seed: int) -> list[list]:
         for y in range(size[1]):
             value = opensimplex.noise2(x * altitude_scale, y * altitude_scale)
             if value < -0.2:
-                world_map[x][y] = TileID.WATER
+                world_map[x][y] = Tile(TileID.WATER)
             elif value < 0:
-                world_map[x][y] = TileID.SAND
+                world_map[x][y] = Tile(TileID.SAND)
             elif value < 0.5:
                 humidity = opensimplex.noise2((x + humidity_offset[0]) * humidity_scale,
                                               (y + humidity_offset[1]) * humidity_scale)
                 if humidity < -0.4:
                     if rng.random() > 0.95:
-                        world_map[x][y] = TileID.CACTUS
+                        world_map[x][y] = Tile(TileID.CACTUS)
                     else:
-                        world_map[x][y] = TileID.SAND
+                        world_map[x][y] = Tile(TileID.SAND)
                 elif humidity < 0:
                     pass  # already grass
                 elif humidity < 1:
                     if rng.random() + humidity > 1:
-                        world_map[x][y] = TileID.TREE
+                        world_map[x][y] = Tile(TileID.TREE)
             elif value < 0.9:
-                world_map[x][y] = TileID.STONE
+                world_map[x][y] = Tile(TileID.STONE)
     return world_map
