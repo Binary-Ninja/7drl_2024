@@ -12,7 +12,7 @@ from world import World, set_array, get_array
 from data import Point, str_2_tile, PointType, Graphic, Color
 from items import Item, ItemID
 from tiles import TileTag
-from mobs import Mob, MobID
+from mobs import Mob, MobID, MobTag
 
 
 class GameMode(Enum):
@@ -45,7 +45,6 @@ def main():
     CURSOR_FLASH_FREQ = 500
     cursor_show = True
     cursor_index = 0  # what inventory item it is on
-    inventory_scroll = 0  # how much to scroll the inventory view
 
     world_seed = random.getrandbits(64)
     world_seed = 1234
@@ -85,11 +84,13 @@ def main():
     message_logs.appendleft("or use stairs")
 
     game_mode = GameMode.MOVE
+    current_crafter = None  # the current crafting station in use
 
     def spawn_mob(pos: PointType, mob_id: MobID):
         set_array(pos, game_world.overworld_layer.mob_array, Mob(mob_id))
 
     # add some test mobs
+    spawn_mob((48, 48), MobID.WORKBENCH)
     for _ in range(10):
         spawn_mob((_ * 2, 0), MobID.GREEN_ZOMBIE)
         spawn_mob((_ * 2, 2), MobID.GREEN_SLIME)
@@ -111,8 +112,28 @@ def main():
         try_pos = Point(player_pos.x + direction[0], player_pos.y + direction[1])
         move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
         if move_mob:
-            message_logs.appendleft("you bump into")
-            message_logs.appendleft(f"the {move_mob.name}")
+            if move_mob.has_tag(MobTag.PUSHABLE):
+                try_space = Point(try_pos.x + direction[0], try_pos.y + direction[1])
+                # check for mob collisions, then tile collisions
+                try_mob = get_array(try_space, game_world.overworld_layer.mob_array)
+                # there is no mob or we are out of bounds
+                if not try_mob:
+                    try_tile = get_array(try_space, game_world.overworld_layer.tile_array)
+                    # If it isn't the void and doesn't block movement.
+                    if try_tile is not None and not try_tile.has_tag(TileTag.BLOCK_MOVE):
+                        set_array(try_space, game_world.overworld_layer.mob_array, move_mob)
+                        set_array(try_pos, game_world.overworld_layer.mob_array, None)
+                        message_logs.appendleft("you push the")
+                        message_logs.appendleft(f"{move_mob.name}")
+                    else:
+                        message_logs.appendleft("you bump into")
+                        message_logs.appendleft(f"the {move_mob.name}")
+                else:
+                    message_logs.appendleft("you bump into")
+                    message_logs.appendleft(f"the {move_mob.name}")
+            else:
+                message_logs.appendleft("you bump into")
+                message_logs.appendleft(f"the {move_mob.name}")
             return player_pos
         move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
         if move_tile is None or move_tile.has_tag(TileTag.BLOCK_MOVE):
@@ -199,13 +220,22 @@ def main():
                 elif event.key == pg.K_x:
                     if game_mode is GameMode.INVENTORY or game_mode is GameMode.CRAFT:
                         # Cancel crafting or inventory.
+                        current_crafter = None
                         cursor_index = 0
                         game_mode = GameMode.MOVE
                     else:
                         # We must be in move mode.
-                        # No crafting yet, so just switch to inventory.
-                        game_mode = GameMode.INVENTORY
+                        target_pos = Point(player_pos.x + player_dir.x,
+                                           player_pos.y + player_dir.y)
+                        target_mob = get_array(target_pos,
+                                               game_world.overworld_layer.mob_array)
+                        if target_mob and target_mob.has_tag(MobTag.CRAFTING):
+                            game_mode = GameMode.CRAFT
+                            current_crafter = target_mob
+                        else:
+                            game_mode = GameMode.INVENTORY
                     print(game_mode)
+                    print(current_crafter)
                 elif event.key == pg.K_z:
                     if game_mode is GameMode.MOVE:
                         pass  # TODO: wait mechanic
