@@ -19,6 +19,15 @@ class MobID(IntEnum):
 MobData = namedtuple("MobData", ("id", "health"))
 
 
+class ItemID(IntEnum):
+    WORKBENCH = 1
+    DIRT = 2
+    STONE = 3
+    SAND = 4
+    WOOD = 5
+    PICKUP = 6
+
+
 class TileID(IntEnum):
     # Not using auto makes it easier to keep track of consistent values.
     # Not using zero makes all TileIDs truthy.
@@ -35,6 +44,10 @@ class TileTag(StrEnum):
     BLOCK_MOVE = auto()
 
 
+class ItemTag(StrEnum):
+    STACKABLE = auto()
+
+
 class Colors(Enum):
     GREEN = (0, 255, 0)
     YELLOW = (255, 255, 0)
@@ -42,9 +55,11 @@ class Colors(Enum):
     BLUE = (0, 0, 255)
     STONE = (170, 170, 170)
     WHITE = (255, 255, 255)
+    LIGHT_GRAY = (170, 170, 170)
     RED = (255, 0, 0)
     DARK_RED = (128, 0, 0)
     MOB_GREEN = (64, 200, 64)
+    BROWN = (170, 85, 0)
 
 
 class Tile(Enum):
@@ -60,6 +75,13 @@ class Tile(Enum):
     STAM_EMPTY = (40, 12)
 
     CURSOR = (36, 12)
+
+    WORKBENCH = (14, 9)
+    DIRT = (6, 0)
+    SAND = (2, 0)
+    STONE_ITEM = (5, 2)
+    WOOD = (18, 6)
+    PICKUP = (41, 0)
 
 
 str_2_tile = {
@@ -103,6 +125,24 @@ str_2_tile = {
 
 }
 
+item_graphics = {
+    ItemID.WORKBENCH: (Tile.WORKBENCH.value, Colors.BROWN.value),
+    ItemID.DIRT: (Tile.DIRT.value, Colors.BROWN.value),
+    ItemID.STONE: (Tile.STONE_ITEM.value, Colors.STONE.value),
+    ItemID.SAND: (Tile.SAND.value, Colors.YELLOW.value),
+    ItemID.WOOD: (Tile.WOOD.value, Colors.BROWN.value),
+    ItemID.PICKUP: (Tile.PICKUP.value, Colors.BROWN.value),
+}
+
+item_names = {
+    ItemID.WORKBENCH: "workbench",
+    ItemID.DIRT: "dirt",
+    ItemID.STONE: "stone",
+    ItemID.SAND: "sand",
+    ItemID.WOOD: "wood",
+    ItemID.PICKUP: "pickup",
+}
+
 tile_graphics = {
     TileID.GRASS: ((5, 0), Colors.GREEN.value),
     TileID.SAND: ((2, 0), Colors.YELLOW.value),
@@ -119,6 +159,14 @@ mob_graphics = {
     MobID.GREEN_SKELETON: (Tile.SKELETON.value, Colors.MOB_GREEN.value),
     MobID.AIR_WIZARD: (Tile.AIR_WIZARD.value, Colors.RED.value),
 }
+
+item_tags = defaultdict(tuple)
+item_tags.update({
+    ItemID.DIRT: (ItemTag.STACKABLE,),
+    ItemID.STONE: (ItemTag.STACKABLE,),
+    ItemID.SAND: (ItemTag.STACKABLE,),
+    ItemID.WOOD: (ItemTag.STACKABLE,),
+})
 
 tile_tags = defaultdict(tuple)
 tile_tags.update({

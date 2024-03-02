@@ -2,13 +2,15 @@
 import sys
 from pathlib import Path
 import random
+from collections import deque
 
 import pygame as pg
 
 from tileloader import TileLoader
 from world import World, set_array, get_array
+from items import Item
 from data import (MobID, Point, MobData, tile_graphics, str_2_tile, Colors, Tile,
-                  PointType, TileTag, tile_tags, mob_graphics)
+                  PointType, TileTag, tile_tags, mob_graphics, ItemID)
 
 
 def main():
@@ -43,6 +45,29 @@ def main():
     player_dir = Point(0, -1)
     player_pos = Point(game_world.size[0] // 2, game_world.size[1] // 2)
     set_array(player_pos, game_world.overworld_layer.mob_array, MobData(MobID.PLAYER, 10))
+
+    current_item = "no item"
+    inventory: list[Item] = [Item(ItemID.PICKUP), Item(ItemID.WORKBENCH),
+                             Item(ItemID.DIRT, 23), Item(ItemID.SAND, 2),
+                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
+                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
+                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
+                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
+                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
+                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
+                             ]
+
+    message_logs: deque[str] = deque(maxlen=10)
+    message_logs.appendleft("arrow keys to")
+    message_logs.appendleft("move")
+    message_logs.appendleft(" ")
+    message_logs.appendleft("c key to use")
+    message_logs.appendleft("item or select")
+    message_logs.appendleft(" ")
+    message_logs.appendleft("x key to open")
+    message_logs.appendleft("inventory or")
+    message_logs.appendleft("interact")
+    message_logs.appendleft("z key to wait")
 
     def spawn_mob(pos: PointType, mob_id: MobID):
         set_array(pos, game_world.overworld_layer.mob_array, MobData(mob_id, 10))
@@ -147,14 +172,34 @@ def main():
                                      (17 + player_dir.y) * tile_size.y))
 
         # Draw UI.
+        # Draw HP & Stamina.
         write_text((35, 0), "life", Colors.WHITE.value)
         for i in range(10):
             tile = heart_empty_img if i >= player_health else heart_full_img
-            screen.blit(tile, ((40 + i) * tile_size[0], 0))
+            screen.blit(tile, ((40 + i) * tile_size.x, 0))
         write_text((35, 1), "stam", Colors.WHITE.value)
         for i in range(10):
             tile = stam_empty_img if i >= player_stamina else stam_full_img
-            screen.blit(tile, ((40 + i) * tile_size[0], tile_size[1]))
+            screen.blit(tile, ((40 + i) * tile_size.x, tile_size.y))
+
+        # Draw current item and inventory.
+        write_text((35, 3), "current item", Colors.WHITE.value)
+        write_text((38, 4), str(current_item), Colors.LIGHT_GRAY.value)
+
+        write_text((35, 6), "inventory", Colors.WHITE.value)
+        for index, item in enumerate(inventory):
+            if index > 15:
+                break
+            tile = tile_loader.get_tile(*item.graphic)
+            screen.blit(tile, (36 * tile_size.x, (7 + index) * tile_size.y))
+            text = f"{str(item.count) + " " if item.count > 1 else ""}" + str(item)
+            write_text((38, 7 + index), text, Colors.LIGHT_GRAY.value)
+
+        # Draw message logs.
+        write_text((37, 24), "message log", Colors.WHITE.value)
+        for i, message in enumerate(message_logs):
+            color = Colors.LIGHT_GRAY.value if i > 0 else Colors.WHITE.value
+            write_text((35, 34 - i), message, color)
 
         # Display FPS.
         fps_surf = font.render(str(clock.get_fps()), True, (255, 255, 255))
