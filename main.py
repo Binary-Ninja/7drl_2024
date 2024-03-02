@@ -4,13 +4,14 @@ from pathlib import Path
 import random
 from collections import deque
 from enum import Enum, auto
+from typing import Sequence
 
 import pygame as pg
 
 from tileloader import TileLoader
 from world import World, set_array, get_array
 from data import Point, str_2_tile, PointType, Graphic, Color
-from items import Item, ItemID
+from items import Item, ItemID, ItemTag
 from tiles import TileTag
 from mobs import Mob, MobID, MobTag
 
@@ -87,6 +88,38 @@ def main():
 
     current_crafter = None  # the current crafting station in use
     crafting_list = None  # the list of recipies
+
+    def add_to_inventory(item: Item, invent: list[Item]) -> None:
+        if item.has_tag(ItemTag.STACKABLE):
+            for invent_item in invent:
+                if invent_item.id is item.id:
+                    invent_item.count += item.count
+                    break
+            else:
+                invent.insert(0, item)
+        else:
+            invent.insert(0, item)
+
+    def remove_from_inventory(item: tuple[ItemID, int], invent: list[Item]) -> Item | None:
+        for index, invent_item in enumerate(invent):
+            if invent_item.id is item[0]:
+                if invent_item.has_tag(ItemTag.STACKABLE):
+                    return invent.pop(index)
+                else:
+                    invent_item.count -= item[1]
+                    if invent_item.count <= 0:
+                        return invent.pop(index)
+                    return
+
+    def craftable(needed: Sequence[tuple[ItemID, int]],
+                  have: list[Item]) -> bool:
+        for item_id, count in needed:
+            for item in have:
+                if item.id is item_id and item.count >= count:
+                    break
+            else:
+                return False
+        return True
 
     def spawn_mob(pos: PointType, mob_id: MobID):
         set_array(pos, game_world.overworld_layer.mob_array, Mob(mob_id))
@@ -217,12 +250,23 @@ def main():
                     elif game_mode is GameMode.INVENTORY:
                         item = inventory.pop(cursor_index)
                         if current_item != NO_ITEM:
-                            inventory.insert(0, current_item)
+                            add_to_inventory(current_item, inventory)
                         current_item = item
+                        # back to move mode
                         cursor_index = 0
                         game_mode = GameMode.MOVE
                     else:
-                        pass  # TODO: craft
+                        ingredients = crafting_list[cursor_index][1:]
+                        if craftable(ingredients, inventory):
+                            # remove ingredients
+                            for needed_item in ingredients:
+                                remove_from_inventory(needed_item, inventory)
+                            # add the result item
+                            item = Item(*crafting_list[cursor_index][0])
+                            add_to_inventory(item, inventory)
+                            # alert the player that it worked
+                            message_logs.appendleft("you crafted")
+                            message_logs.appendleft(f"{item}")
                 elif event.key == pg.K_x:
                     if game_mode is GameMode.INVENTORY or game_mode is GameMode.CRAFT:
                         # Cancel crafting or inventory.
@@ -242,9 +286,6 @@ def main():
                             crafting_list = current_crafter.recipies
                         else:
                             game_mode = GameMode.INVENTORY
-                    print(game_mode)
-                    print(current_crafter)
-                    print(crafting_list)
                 elif event.key == pg.K_z:
                     if game_mode is GameMode.MOVE:
                         pass  # TODO: wait mechanic
@@ -339,13 +380,15 @@ def main():
                 screen.blit(tile, (36 * tile_size.x, (7 + index) * tile_size.y))
                 write_text((38, 7 + index), str(item), color)
         else:
-            write_text((35, 12), f"{current_crafter.name}", Color.WHITE)
+            write_text((35, 12), f"{current_crafter.name} {len(crafting_list)}",
+                       Color.WHITE)
             for index in range(10):
                 real_index = index + crafting_scroll
                 if real_index >= len(crafting_list):
                     break
                 result = Item(*crafting_list[real_index][0])
-                color = Color.WHITE if real_index == cursor_index else Color.LIGHT_GRAY
+                color = Color.WHITE if craftable(crafting_list[real_index][1:],
+                                                 inventory) else Color.LIGHT_GRAY
                 tile = tile_loader.get_tile(*result.graphic)
                 screen.blit(tile, (36 * tile_size.x, (13 + index) * tile_size.y))
                 write_text((38, 13 + index), str(result), color)
