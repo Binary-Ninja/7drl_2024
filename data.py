@@ -125,15 +125,6 @@ str_2_tile = {
 
 }
 
-item_graphics = {
-    ItemID.WORKBENCH: (Tile.WORKBENCH.value, Colors.BROWN.value),
-    ItemID.DIRT: (Tile.DIRT.value, Colors.BROWN.value),
-    ItemID.STONE: (Tile.STONE_ITEM.value, Colors.STONE.value),
-    ItemID.SAND: (Tile.SAND.value, Colors.YELLOW.value),
-    ItemID.WOOD: (Tile.WOOD.value, Colors.BROWN.value),
-    ItemID.PICKUP: (Tile.PICKUP.value, Colors.BROWN.value),
-}
-
 item_names = {
     ItemID.WORKBENCH: "workbench",
     ItemID.DIRT: "dirt",
@@ -141,6 +132,32 @@ item_names = {
     ItemID.SAND: "sand",
     ItemID.WOOD: "wood",
     ItemID.PICKUP: "pickup",
+}
+
+mob_names = {
+    MobID.PLAYER: "player",
+    MobID.GREEN_ZOMBIE: "zombie",
+    MobID.GREEN_SLIME: "slime",
+    MobID.GREEN_SKELETON: "skeleton",
+    MobID.AIR_WIZARD: "air wizard",
+}
+
+tile_names = {
+    TileID.GRASS: "grass",
+    TileID.SAND: "sand",
+    TileID.WATER: "water",
+    TileID.STONE: "stone",
+    TileID.TREE: "tree",
+    TileID.CACTUS: "cactus",
+}
+
+item_graphics = {
+    ItemID.WORKBENCH: (Tile.WORKBENCH.value, Colors.BROWN.value),
+    ItemID.DIRT: (Tile.DIRT.value, Colors.BROWN.value),
+    ItemID.STONE: (Tile.STONE_ITEM.value, Colors.STONE.value),
+    ItemID.SAND: (Tile.SAND.value, Colors.YELLOW.value),
+    ItemID.WOOD: (Tile.WOOD.value, Colors.BROWN.value),
+    ItemID.PICKUP: (Tile.PICKUP.value, Colors.BROWN.value),
 }
 
 tile_graphics = {

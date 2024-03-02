@@ -3,14 +3,21 @@ import sys
 from pathlib import Path
 import random
 from collections import deque
+from enum import Enum, auto
 
 import pygame as pg
 
 from tileloader import TileLoader
 from world import World, set_array, get_array
 from items import Item
-from data import (MobID, Point, MobData, tile_graphics, str_2_tile, Colors, Tile,
-                  PointType, TileTag, tile_tags, mob_graphics, ItemID)
+from data import (MobID, Point, MobData, tile_graphics, str_2_tile, Colors, Tile, mob_names,
+                  PointType, TileTag, tile_tags, mob_graphics, ItemID, tile_names)
+
+
+class GameMode(Enum):
+    MOVE = auto()
+    INVENTORY = auto()
+    CRAFT = auto()
 
 
 def main():
@@ -69,6 +76,8 @@ def main():
     message_logs.appendleft("interact")
     message_logs.appendleft("z key to wait")
 
+    game_mode = GameMode.MOVE
+
     def spawn_mob(pos: PointType, mob_id: MobID):
         set_array(pos, game_world.overworld_layer.mob_array, MobData(mob_id, 10))
 
@@ -96,9 +105,13 @@ def main():
         try_pos = Point(player_pos.x + direction[0], player_pos.y + direction[1])
         move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
         if move_mob:
+            message_logs.appendleft("you bump into")
+            message_logs.appendleft(f"the {mob_names[move_mob.id]}")
             return player_pos
         move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
         if move_tile is None or TileTag.BLOCK_MOVE in tile_tags[move_tile]:
+            message_logs.appendleft("you bump into")
+            message_logs.appendleft(f"the {tile_names[move_tile]}")
             return player_pos
         set_array(player_pos, game_world.overworld_layer.mob_array, 0)
         set_array(try_pos, game_world.overworld_layer.mob_array, MobData(MobID.PLAYER, 10))
@@ -138,6 +151,18 @@ def main():
                         player_pos = move_player((1, 0))
                     else:
                         player_dir = Point(1, 0)
+                elif event.key == pg.K_c:
+                    pass
+                elif event.key == pg.K_x:
+                    if game_mode is GameMode.INVENTORY or game_mode is GameMode.CRAFT:
+                        # Cancel crafting or inventory.
+                        game_mode = GameMode.MOVE
+                    else:
+                        # We must be in move mode.
+                        game_mode = GameMode.INVENTORY
+                    print(game_mode)
+                elif event.key == pg.K_z:
+                    pass
 
         # Update.
         clock.tick()
@@ -186,7 +211,7 @@ def main():
         write_text((35, 3), "current item", Colors.WHITE.value)
         write_text((38, 4), str(current_item), Colors.LIGHT_GRAY.value)
 
-        write_text((35, 6), "inventory", Colors.WHITE.value)
+        write_text((35, 6), f"inventory {len(inventory)}", Colors.WHITE.value)
         for index, item in enumerate(inventory):
             if index > 15:
                 break
