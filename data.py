@@ -49,6 +49,7 @@ class Graphic:
     STONE_ITEM = (5, 2)
     WOOD = (18, 6)
     PICKUP = (41, 0)
+    EMPTY_HANDS = (41, 1)
     APPLE = (33, 18)
     SEEDS = (14, 6)
     PICKAXE = (43, 5)
@@ -124,6 +125,7 @@ class ItemID(Enum):
     WHEAT_SEEDS = 8
     WOOD_PICK = 9
     WOOD_SWORD = 10
+    EMPTY_HANDS = 11
 
 
 class ItemTag(Enum):

@@ -1,2 +1,4 @@
  - add loot table functionality for drops
  - improve break tile functionality to drain stamina
+ - add the rest of the basic items possible with existing stuff
+ - remove redundant empty hands fail messages
