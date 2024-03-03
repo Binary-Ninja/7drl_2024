@@ -26,6 +26,7 @@ recipies = {
     MobID.OVEN: (
         ((ItemID.BREAD, 1), (ItemID.WHEAT, 5)),
         ((ItemID.APPLE_PIE, 1), (ItemID.WHEAT, 5), (ItemID.APPLE, 5)),
+        ((ItemID.GOLD_APPLE, 1), (ItemID.APPLE, 1), (ItemID.GOLD_BAR, 15)),
     ),
     MobID.FURNACE: (
         ((ItemID.GLASS, 1), (ItemID.SAND, 4), (ItemID.COAL, 1)),
@@ -73,6 +74,7 @@ class Mob:
         self.health = self.mob_data.max_health
         self.tags = self.mob_data.tags
         self.recipies = self.mob_data.recipies
+        self.light = self.mob_data.light
 
     def has_tag(self, tag: MobTag) -> bool:
         return tag in self.tags

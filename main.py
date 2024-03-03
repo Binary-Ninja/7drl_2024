@@ -203,13 +203,13 @@ def main():
             message_logs.appendleft(f"the {move_tile.name}")
             if move_tile.has_tag(TileTag.DAMAGE):
                 message_logs.appendleft("it hurts you")
-                message_logs.appendleft(f"for -{damage}hp")
+                message_logs.appendleft(f"for -{damage}H")
                 player_health -= damage
                 player_health = max(0, player_health)
             return player_pos
         if move_tile.has_tag(TileTag.DAMAGE):
             message_logs.appendleft(f"the {move_tile.name}")
-            message_logs.appendleft(f"hurts you -{damage}hp")
+            message_logs.appendleft(f"hurts you -{damage}H")
             player_health -= damage
             player_health = max(0, player_health)
         set_array(player_pos, game_world.overworld_layer.mob_array, None)
@@ -341,7 +341,7 @@ def main():
                                     current_item.count -= 1
                                     message_logs.appendleft("you eat the")
                                     message_logs.appendleft(f"{current_item.name} "
-                                                            f"+{player_health - prev_ph}hp")
+                                                            f"+{player_health - prev_ph}H")
                                     if current_item.count <= 0:
                                         current_item = NO_ITEM
                                         inventory.remove(NO_ITEM)
@@ -360,7 +360,7 @@ def main():
                                 current_item.count -= 1
                                 message_logs.appendleft("you eat the")
                                 message_logs.appendleft(f"{current_item.name} "
-                                                        f"+{player_stamina - prev_ps} stam")
+                                                        f"+{player_stamina - prev_ps}S")
                                 if current_item.count <= 0:
                                     current_item = NO_ITEM
                                     inventory.remove(NO_ITEM)
@@ -407,7 +407,7 @@ def main():
                                             if target_tile.health > 0:
                                                 message_logs.appendleft("you strike the")
                                                 message_logs.appendleft(f"{target_tile.name} "
-                                                                        f"-{damage}hp")
+                                                                        f"-{damage}H")
                                             else:
                                                 tile = tile_replace[target_tile.id]
                                                 loot = resolve_loot(
@@ -438,7 +438,7 @@ def main():
                                         target_mob.health -= damage
                                         message_logs.appendleft("you strike the")
                                         message_logs.appendleft(f"{target_mob.name}"
-                                                                f"-{damage}hp")
+                                                                f"-{damage}H")
                                         if target_mob.health <= 0:
                                             set_array(target_pos,
                                                       game_world.overworld_layer.mob_array,
@@ -587,13 +587,14 @@ def main():
         else:
             write_text((35, 3), "current recipie", Color.WHITE)
             ingredients = crafting_list[cursor_index]
+            color = Color.WHITE if craftable(ingredients[1:], inventory) else Color.LIGHT_GRAY
             for index, ingredient in enumerate(ingredients):
                 if index == 0:
                     continue  # this is the result of the recipie
                 item = Item(*ingredient)
                 tile = tile_loader.get_tile(*item.graphic)
                 screen.blit(tile, (36 * tile_size.x, (3 + index) * tile_size.y))
-                write_text((38, 3 + index), str(item), Color.LIGHT_GRAY)
+                write_text((38, 3 + index), str(item), color)
 
         if game_mode is not GameMode.CRAFT:
             write_text((35, 6), f"inventory {len(inventory)}", Color.WHITE)

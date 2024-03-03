@@ -43,6 +43,8 @@ class Graphic:
     PALM_TREE = (7, 2)
     ORE = (1, 2)
     DESERT_BONES = (0, 15)
+    SMALL_TREE = (2, 1)
+    SMALL_CACTUS = (7, 1)
 
     WINDOW = (1, 4)
     PLANKS = (13, 16)
@@ -78,6 +80,8 @@ class Graphic:
     PICKUP = (41, 0)
     EMPTY_HANDS = (41, 1)
     APPLE = (33, 18)
+    PEAR = (34, 18)
+    BOTTLE = (33, 19)
     SEEDS = (14, 6)
     PICKAXE = (43, 5)
     SWORD = (32, 8)
@@ -135,6 +139,8 @@ str_2_tile = {
     " ": (0, 0),
     "+": (36, 20),
     "-": (37, 20),
+    "H": (42, 10),
+    "S": (42, 12),
 
 }
 
@@ -196,6 +202,12 @@ class ItemID(Enum):
     WOOD_WALL = 35
     STONE_WALL = 36
     WOOD_DOOR = 37
+    GOLD_APPLE = 38
+    POKE_PEAR = 39
+    COCKTAIL = 40
+    TREE_SAPLING = 41
+    PALM_TREE_SAPLING = 42
+    CACTUS_SAPLING = 43
 
 
 class ItemTag(Enum):
@@ -233,6 +245,10 @@ class TileID(Enum):
     WOOD_WALL = 21
     OPEN_WOOD_DOOR = 22
     CLOSED_WOOD_DOOR = 23
+    WHEAT_SEEDS = 24
+    TREE_SAPLING = 25
+    PALM_TREE_SAPLING = 26
+    CACTUS_SAPLING = 27
 
 
 class TileTag(Enum):
@@ -243,3 +259,5 @@ class TileTag(Enum):
     UP_STAIRS = auto()
     LIQUID = auto()
     LIGHT = auto()
+    GROW = auto()
+    CRUSH = auto()

@@ -58,13 +58,13 @@ item_data = {
             "heal": 1,
                                "stamina_cost": 1,
                            }),
-    ItemID.WHEAT_SEEDS: ItemData("seeds", (Graphic.SEEDS, Color.GREEN),
+    ItemID.WHEAT_SEEDS: ItemData("wheat seeds", (Graphic.SEEDS, Color.GREEN),
                                  (ItemTag.STACKABLE, ItemTag.PLACE_TILE),{
-            "place": TileID.WHEAT, "base": (TileID.FARMLAND,),
+            "place": TileID.WHEAT_SEEDS, "base": (TileID.FARMLAND,),
                                  }),
     ItemID.WOOD_PICK: ItemData("wood pick", (Graphic.PICKAXE, Color.BROWN),
                                (ItemTag.BREAK_TILE,), {
-            "breakable": (TileID.STONE, TileID.STONE_WALL), "tile_damage": 2,
+            "breakable": (TileID.STONE, TileID.STONE_WALL, TileID.WINDOW), "tile_damage": 2,
                                    "stamina_cost": 5,
                                }),
     ItemID.WOOD_SWORD: ItemData("wood sword", (Graphic.SWORD, Color.BROWN),
@@ -156,6 +156,38 @@ item_data = {
                                (ItemTag.SPAWN_MOB, ItemTag.STACKABLE), {
                                    "mobid": MobID.TORCH,
                                }),
+    ItemID.GOLD_APPLE: ItemData("gold apple", (Graphic.APPLE, Color.GOLD),
+                           (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
+                               "heal": 5,
+                               "stamina_cost": 0,
+            "stamina": 5,
+                           }),
+    ItemID.POKE_PEAR: ItemData("pokepear", (Graphic.PEAR, Color.YELLOW),
+                           (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
+                               "heal": 2,
+                               "stamina_cost": 0,
+            "stamina": 2,
+                           }),
+    ItemID.COCKTAIL: ItemData("cocktail", (Graphic.BOTTLE, Color.ORANGE),
+                               (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
+                                   "heal": 1,
+                                   "stamina_cost": 0,
+                                   "stamina": 4,
+                               }),
+    ItemID.TREE_SAPLING: ItemData("sapling", (Graphic.SMALL_TREE, Color.GREEN),
+                                 (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                                     "place": TileID.TREE_SAPLING, "base": (TileID.GRASS,),
+                                 }),
+    ItemID.PALM_TREE_SAPLING: ItemData("sapling", (Graphic.SMALL_TREE,
+                                                        Color.LIGHT_GREEN),
+                                 (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                                     "place": TileID.PALM_TREE_SAPLING,
+                                           "base": (TileID.SAND,),
+                                 }),
+    ItemID.CACTUS_SAPLING: ItemData("cactus", (Graphic.SMALL_CACTUS, Color.GREEN),
+                                 (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                                     "place": TileID.CACTUS_SAPLING, "base": (TileID.SAND,),
+                                 }),
 }
 
 

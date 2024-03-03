@@ -1,6 +1,6 @@
 from collections import namedtuple, defaultdict
 
-from data import Color, Graphic, TileID, TileTag, ItemID
+from data import Color, Graphic, TileID, TileTag
 
 
 tile_replace: dict[TileID, TileID] = {
@@ -21,16 +21,27 @@ tile_replace: dict[TileID, TileID] = {
     TileID.STONE_WALL: TileID.DIRT,
     TileID.OPEN_WOOD_DOOR: TileID.DIRT,
     TileID.CLOSED_WOOD_DOOR: TileID.DIRT,
+    TileID.TREE_SAPLING: TileID.GRASS,
+    TileID.PALM_TREE_SAPLING: TileID.SAND,
+    TileID.CACTUS_SAPLING: TileID.SAND,
 }
 
 tile_damage = defaultdict(lambda: 0)
 tile_damage.update({
     TileID.CACTUS: 1,
+    TileID.CACTUS_SAPLING: 1,
     TileID.LAVA: 5,
     TileID.IRON_ORE: 3,
     TileID.GOLD_ORE: 3,
     TileID.GEM_ORE: 3,
 })
+
+tile_grow = {
+    TileID.WHEAT_SEEDS: (TileID.WHEAT, 0.05),
+    TileID.TREE_SAPLING: (TileID.TREE, 0.1),
+    TileID.PALM_TREE_SAPLING: (TileID.PALM_TREE, 0.1),
+    TileID.CACTUS_SAPLING: (TileID.CACTUS, 0.05),
+}
 
 
 TileData = namedtuple("TileData",
@@ -62,7 +73,8 @@ tile_data = {
     TileID.FARMLAND: TileData("farmland", (Graphic.FARMLAND, Color.BROWN),),
     TileID.LAVA: TileData("lava", (Graphic.LIQUID, Color.ORANGE), 10,
                           (TileTag.DAMAGE, TileTag.LIQUID),),
-    TileID.WHEAT: TileData("wheat", (Graphic.WHEAT, Color.YELLOW), ),
+    TileID.WHEAT: TileData("wheat", (Graphic.WHEAT, Color.YELLOW), 10,
+                           (TileTag.BLOCK_SIGHT), ),
     TileID.DOWN_STAIRS: TileData("stairs", (Graphic.DOWN_STAIRS, Color.LIGHT_GRAY),
                                  (TileTag.DOWN_STAIRS,)),
     TileID.UP_STAIRS: TileData("stairs", (Graphic.UP_STAIRS, Color.LIGHT_GRAY),
@@ -75,6 +87,15 @@ tile_data = {
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
     TileID.GEM_ORE: TileData("gem ore", (Graphic.ORE, Color.GEM), 20,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
+    TileID.WHEAT_SEEDS: TileData("wheat seeds", (Graphic.SEEDS, Color.GREEN), 10,
+                             (TileTag.GROW, TileTag.CRUSH)),
+    TileID.TREE_SAPLING: TileData("sapling", (Graphic.SMALL_TREE, Color.GREEN), 5,
+                                 (TileTag.GROW,)),
+    TileID.PALM_TREE_SAPLING: TileData("sapling", (Graphic.SMALL_TREE,
+                                                        Color.LIGHT_GREEN), 5,
+                                 (TileTag.GROW,)),
+    TileID.CACTUS_SAPLING: TileData("cactus", (Graphic.SMALL_CACTUS, Color.GREEN), 5,
+                                 (TileTag.GROW,)),
 }
 
 
