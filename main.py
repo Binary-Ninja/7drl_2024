@@ -14,7 +14,7 @@ from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
 from items import Item, item_to_mob
 from mobs import Mob
-from tiles import Tile, tile_replace
+from tiles import Tile, tile_replace, tile_damage
 
 
 class GameMode(Enum):
@@ -24,6 +24,8 @@ class GameMode(Enum):
 
 
 NO_ITEM = Item(ItemID.EMPTY_HANDS)
+
+player_health = 10
 
 
 def main():
@@ -55,7 +57,7 @@ def main():
     game_world.generate_overworld_layer()
 
     player_vision = 17
-    player_health = 8
+    global player_health
     player_stamina = 10
     player_dir = Point(0, -1)
     player_pos = Point(game_world.size[0] // 2, game_world.size[1] // 2)
@@ -143,6 +145,7 @@ def main():
             return tile_loader.get_tile(*value.graphic)
 
     def move_player(direction: tuple[int, int]) -> Point:
+        global player_health
         try_pos = Point(player_pos.x + direction[0], player_pos.y + direction[1])
         move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
         if move_mob:
@@ -170,13 +173,25 @@ def main():
                 message_logs.appendleft(f"the {move_mob.name}")
             return player_pos
         move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
-        if move_tile is None or move_tile.has_tag(TileTag.BLOCK_MOVE):
-            message_logs.appendleft("you bump into")
-            if move_tile is None:
-                message_logs.appendleft("the void")
-            else:
-                message_logs.appendleft(f"the {move_tile.name}")
+        if move_tile is None:
+            message_logs.appendleft("you stare into")
+            message_logs.appendleft("the abyss")
             return player_pos
+        damage = tile_damage[move_tile.id]
+        if move_tile.has_tag(TileTag.BLOCK_MOVE):
+            message_logs.appendleft("you bump into")
+            message_logs.appendleft(f"the {move_tile.name}")
+            if move_tile.has_tag(TileTag.DAMAGE):
+                message_logs.appendleft("it hurts you")
+                message_logs.appendleft(f"for -{damage}hp")
+                player_health -= damage
+                player_health = max(0, player_health)
+            return player_pos
+        if move_tile.has_tag(TileTag.DAMAGE):
+            message_logs.appendleft(f"the {move_tile.name}")
+            message_logs.appendleft(f"hurts you -{damage}hp")
+            player_health -= damage
+            player_health = max(0, player_health)
         set_array(player_pos, game_world.overworld_layer.mob_array, None)
         set_array(try_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
         return try_pos
@@ -255,7 +270,7 @@ def main():
                             message_logs.appendleft("you cannot use")
                             message_logs.appendleft(f"the {current_item.name}")
                         if current_item is NO_ITEM and target_mob is None and \
-                                target_tile not in current_item.data["breakable"]:
+                                target_tile.id not in current_item.data["breakable"]:
                             message_logs.appendleft("your hands are")
                             message_logs.appendleft("empty")
                             displayed_empty_hands_message = True
@@ -308,9 +323,15 @@ def main():
                                 set_array(target_pos,
                                           game_world.overworld_layer.tile_array,
                                           Tile(current_item.data["place"]))
-                                message_logs.appendleft("you place the")
-                                message_logs.appendleft(f"{current_item.name}")
+                                if not current_item.has_tag(ItemTag.STACKABLE):
+                                    message_logs.appendleft("you use the")
+                                    message_logs.appendleft(f"{current_item.name}")
+                                else:
+                                    message_logs.appendleft("you place the")
+                                    message_logs.appendleft(f"{current_item.name}")
                                 current_item.count -= 1
+                                if not current_item.has_tag(ItemTag.STACKABLE):
+                                    current_item.count = 1
                                 if current_item.count <= 0:
                                     current_item = NO_ITEM
                                     inventory.remove(NO_ITEM)
@@ -324,10 +345,11 @@ def main():
                                     if target_tile.id in current_item.data["breakable"]:
                                         damage = current_item.data["tile_damage"]
                                         target_tile.health -= damage
-                                        message_logs.appendleft("you strike the")
-                                        message_logs.appendleft(f"{target_tile.name} "
-                                                                f"-{damage}hp")
-                                        if target_tile.health <= 0:
+                                        if target_tile.health > 0:
+                                            message_logs.appendleft("you strike the")
+                                            message_logs.appendleft(f"{target_tile.name} "
+                                                                    f"-{damage}hp")
+                                        else:
                                             tile, item = tile_replace[target_tile.id]
                                             set_array(target_pos,
                                                       game_world.overworld_layer.tile_array,

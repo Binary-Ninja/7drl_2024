@@ -18,7 +18,11 @@ class Color:
     DARK_RED = (128, 0, 0)
     MOB_GREEN = (64, 200, 64)
     BROWN = (170, 85, 0)
-    DARK_BROWN = (100, 50, 0)
+    DARK_BROWN = (32, 16, 0)
+    ORANGE = (255, 128, 0)
+    IRON = (230, 230, 230)
+    GOLD = (255, 215, 0)
+    GEM = (200, 0, 255)
 
 
 class Graphic:
@@ -28,6 +32,12 @@ class Graphic:
     STONE_TILE = (1, 17)
     TREE = (4, 2)
     CACTUS = (6, 1)
+    FARMLAND = (12, 6)
+    DOWN_STAIRS = (3, 6)
+    UP_STAIRS = (2, 6)
+    WHEAT = (17, 6)
+    PALM_TREE = (7, 2)
+    ORE = (1, 2)
 
     PLAYER = (25, 0)
     ZOMBIE = (24, 9)
@@ -54,6 +64,10 @@ class Graphic:
     SEEDS = (14, 6)
     PICKAXE = (43, 5)
     SWORD = (32, 8)
+    SHOVEL = (42, 5)
+    HOE = (44, 5)
+    AXE = (42, 7)
+    GEM = (32, 10)
 
 
 str_2_tile = {
@@ -126,6 +140,13 @@ class ItemID(Enum):
     WOOD_PICK = 9
     WOOD_SWORD = 10
     EMPTY_HANDS = 11
+    WOOD_SHOVEL = 12
+    WOOD_AXE = 13
+    WOOD_HOE = 14
+    WHEAT = 15
+    IRON_ORE = 16
+    GOLD_ORE = 17
+    GEM = 18
 
 
 class ItemTag(Enum):
@@ -147,8 +168,20 @@ class TileID(Enum):
     CACTUS = 6
     DIRT = 7
     HOLE = 8
+    FARMLAND = 9
+    LAVA = 10
+    WHEAT = 11
+    DOWN_STAIRS = 12
+    UP_STAIRS = 13
+    PALM_TREE = 14
+    IRON_ORE = 15
+    GOLD_ORE = 16
+    GEM_ORE = 17
 
 
 class TileTag(Enum):
     BLOCK_SIGHT = auto()
     BLOCK_MOVE = auto()
+    DAMAGE = auto()
+    DOWN_STAIRS = auto()
+    UP_STAIRS = auto()

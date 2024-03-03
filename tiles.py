@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from data import Color, Graphic, TileID, TileTag, ItemID
 
@@ -10,10 +10,25 @@ tile_replace = {
     TileID.TREE: (TileID.GRASS, ItemID.WOOD),
     TileID.CACTUS: (TileID.SAND, ItemID.WOOD),
     TileID.DIRT: (TileID.HOLE, ItemID.DIRT),
+    TileID.WHEAT: (TileID.FARMLAND, ItemID.WHEAT),
+    TileID.PALM_TREE: (TileID.SAND, ItemID.WOOD),
+    TileID.IRON_ORE: (TileID.DIRT, ItemID.IRON_ORE),
+    TileID.GOLD_ORE: (TileID.DIRT, ItemID.GOLD_ORE),
+    TileID.GEM_ORE: (TileID.DIRT, ItemID.GEM),
 }
 
+tile_damage = defaultdict(lambda: 0)
+tile_damage.update({
+    TileID.CACTUS: 1,
+    TileID.LAVA: 5,
+    TileID.IRON_ORE: 3,
+    TileID.GOLD_ORE: 3,
+    TileID.GEM_ORE: 3,
+})
 
-TileData = namedtuple("TileData", ("name", "graphic", "max_health", "tags"),
+
+TileData = namedtuple("TileData",
+                      ("name", "graphic", "max_health", "tags"),
                       defaults=(10, tuple(),))
 tile_data = {
     None: TileData("void", (Graphic.EMPTY, Color.WHITE),),  # off map edge
@@ -25,9 +40,24 @@ tile_data = {
     TileID.TREE: TileData("tree", (Graphic.TREE, Color.GREEN), 10,
                           (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.CACTUS: TileData("cactus", (Graphic.CACTUS, Color.GREEN), 10,
-                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
+                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
     TileID.DIRT: TileData("dirt", (Graphic.DIRT, Color.BROWN),),
     TileID.HOLE: TileData("hole", (Graphic.LIQUID, Color.DARK_BROWN),),
+    TileID.FARMLAND: TileData("farmland", (Graphic.FARMLAND, Color.BROWN),),
+    TileID.LAVA: TileData("lava", (Graphic.LIQUID, Color.ORANGE), (TileTag.DAMAGE,),),
+    TileID.WHEAT: TileData("wheat", (Graphic.WHEAT, Color.YELLOW), ),
+    TileID.DOWN_STAIRS: TileData("stairs", (Graphic.DOWN_STAIRS, Color.LIGHT_GRAY),
+                                 (TileTag.DOWN_STAIRS,)),
+    TileID.UP_STAIRS: TileData("stairs", (Graphic.UP_STAIRS, Color.LIGHT_GRAY),
+                               (TileTag.UP_STAIRS,)),
+    TileID.PALM_TREE: TileData("palm", (Graphic.PALM_TREE, Color.GREEN), 10,
+                               (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
+    TileID.IRON_ORE: TileData("iron ore", (Graphic.ORE, Color.IRON), 20,
+                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
+    TileID.GOLD_ORE: TileData("gold ore", (Graphic.ORE, Color.GOLD), 20,
+                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
+    TileID.GEM_ORE: TileData("gem ore", (Graphic.ORE, Color.GEM), 20,
+                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
 }
 
 

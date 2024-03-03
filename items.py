@@ -41,8 +41,34 @@ item_data = {
                                 }),
     ItemID.EMPTY_HANDS: ItemData("empty hands", (Graphic.EMPTY_HANDS, Color.YELLOW),
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE, ItemTag.PICKUP), {
-            "mob_damage": 1, "breakable": (TileID.TREE, TileID.CACTUS), "tile_damage": 1,
+            "mob_damage": 1, "breakable": (TileID.TREE, TileID.CACTUS, TileID.PALM_TREE),
+                                     "tile_damage": 1,
                                  }),
+    ItemID.WOOD_AXE: ItemData("wood axe", (Graphic.AXE, Color.BROWN),
+                               (ItemTag.BREAK_TILE,), {
+                                   "breakable": (TileID.TREE, TileID.CACTUS,
+                                                 TileID.PALM_TREE),
+                                   "tile_damage": 2,
+                               }),
+    ItemID.WOOD_HOE: ItemData("wood hoe", (Graphic.HOE, Color.BROWN),
+                              (ItemTag.PLACE_TILE, ItemTag.BREAK_TILE), {
+                                   "place": TileID.FARMLAND, "base": (TileID.DIRT,),
+            "breakable": (TileID.WHEAT,), "tile_damage": 10,
+                               }),
+    ItemID.WOOD_SHOVEL: ItemData("wood shovel", (Graphic.SHOVEL, Color.BROWN),
+                                 (ItemTag.BREAK_TILE,), {
+                                   "breakable": (TileID.DIRT, TileID.SAND,
+                                                 TileID.GRASS, TileID.FARMLAND),
+                                   "tile_damage": 10,
+                               }),
+    ItemID.WHEAT: ItemData("wheat", (Graphic.WHEAT, Color.YELLOW),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.IRON_ORE: ItemData("iron ore", (Graphic.STONE_ITEM, Color.IRON),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.GOLD_ORE: ItemData("gold ore", (Graphic.STONE_ITEM, Color.GOLD),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.GEM: ItemData("gem", (Graphic.GEM, Color.GEM),
+                           (ItemTag.STACKABLE,), ),
 }
 
 

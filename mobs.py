@@ -10,6 +10,9 @@ recipies = {
         ((ItemID.WORKBENCH, 1), (ItemID.WOOD, 10)),
         ((ItemID.WOOD_PICK, 1), (ItemID.WOOD, 10)),
         ((ItemID.WOOD_SWORD, 1), (ItemID.WOOD, 10)),
+        ((ItemID.WOOD_HOE, 1), (ItemID.WOOD, 10)),
+        ((ItemID.WOOD_SHOVEL, 1), (ItemID.WOOD, 10)),
+        ((ItemID.WOOD_AXE, 1), (ItemID.WOOD, 10)),
     ),
 }
 

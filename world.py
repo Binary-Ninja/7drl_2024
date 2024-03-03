@@ -58,18 +58,21 @@ def generate_overworld(size: tuple[int, int], world_seed: int) -> list[list]:
     opensimplex.seed(world_seed)
     rng = random.Random(world_seed)
     altitude_scale = 0.08
-    humidity_scale = 0.08
+    humidity_scale = 0.07
     humidity_offset = (300, 300)
     for x in range(size[0]):
         for y in range(size[1]):
             value = opensimplex.noise2(x * altitude_scale, y * altitude_scale)
+            humidity = opensimplex.noise2((x + humidity_offset[0]) * humidity_scale,
+                                          (y + humidity_offset[1]) * humidity_scale)
             if value < -0.2:
                 world_map[x][y] = Tile(TileID.WATER)
             elif value < 0:
-                world_map[x][y] = Tile(TileID.SAND)
+                if rng.random() > 0.95 and humidity >= -0.4:
+                    world_map[x][y] = Tile(TileID.PALM_TREE)
+                else:
+                    world_map[x][y] = Tile(TileID.SAND)
             elif value < 0.5:
-                humidity = opensimplex.noise2((x + humidity_offset[0]) * humidity_scale,
-                                              (y + humidity_offset[1]) * humidity_scale)
                 if humidity < -0.4:
                     if rng.random() > 0.95:
                         world_map[x][y] = Tile(TileID.CACTUS)
