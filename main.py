@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import sys
 from pathlib import Path
 import random
@@ -14,8 +15,30 @@ from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
 from items import Item, item_to_mob
 from mobs import Mob
-from tiles import Tile, tile_replace, tile_damage, TileID
+from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread
 from loots import tile_break_loot, resolve_loot
+
+
+def line_of_sight(start: PointType, end: PointType, tile_array: list[list[Tile]]) -> bool:
+    start, end = Point(*start), Point(*end)
+    dx, dy = end.x - start.x, end.y - start.y
+    nx, ny = math.fabs(dx), math.fabs(dy)
+    sign_x, sign_y = 1 if dx > 0 else -1, 1 if dy > 0 else -1
+
+    p = Point(*start)
+    ix = iy = 0
+
+    while ix < nx - 1 or iy < ny - 1:
+        if (1 + 2*ix) * ny < (1 + 2*iy) * nx:
+            p.x += sign_x
+            ix += 1
+        else:
+            p.y += sign_y
+            iy += 1
+        tile = get_array(p, tile_array)
+        if tile is None or tile.has_tag(TileTag.BLOCK_SIGHT):
+            return False
+    return True
 
 
 class GameMode(Enum):
@@ -57,10 +80,19 @@ def main():
 
     cursor_index = 0  # what inventory item it is on
 
+    world_time = 0
+    do_a_game_tick = False
+
+    day_cycle_timer = world_time
+    DAY_CYCLE_LENGTH = 20
+    night_time = False
+
     world_seed = random.getrandbits(64)
     world_seed = 1234
     print(world_seed)
-    game_world = World((100, 100), world_seed)
+    world_size = Point(100, 100)
+    print(world_size)
+    game_world = World(world_size, world_seed)
     game_world.generate_overworld_layer()
 
     player_vision = 17
@@ -230,6 +262,7 @@ def main():
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (0, -1):
+                            do_a_game_tick = True
                             player_pos = move_player((0, -1))
                         else:
                             player_dir = Point(0, -1)
@@ -243,6 +276,7 @@ def main():
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (0, 1):
+                            do_a_game_tick = True
                             player_pos = move_player((0, 1))
                         else:
                             player_dir = Point(0, 1)
@@ -256,6 +290,7 @@ def main():
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (-1, 0):
+                            do_a_game_tick = True
                             player_pos = move_player((-1, 0))
                         else:
                             player_dir = Point(-1, 0)
@@ -269,6 +304,7 @@ def main():
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (1, 0):
+                            do_a_game_tick = True
                             player_pos = move_player((1, 0))
                         else:
                             player_dir = Point(1, 0)
@@ -280,6 +316,7 @@ def main():
                         cursor_index %= len(crafting_list)
                 elif event.key == pg.K_c:
                     if game_mode is GameMode.MOVE:
+                        do_a_game_tick = True
                         target_pos = Point(player_pos.x + player_dir.x,
                                            player_pos.y + player_dir.y)
                         target_mob = get_array(target_pos,
@@ -511,9 +548,7 @@ def main():
                             game_mode = GameMode.INVENTORY
                 elif event.key == pg.K_z:
                     if game_mode is GameMode.MOVE:
-                        pass  # TODO: wait mechanic
-                        player_stamina += 1
-                        player_stamina = min(10, player_stamina)
+                        do_a_game_tick = True
                     else:
                         cursor_index = 0  # reset cursor
 
@@ -528,6 +563,51 @@ def main():
         if pg.time.get_ticks() - stam_flash_timer >= STAM_FLASH_FREQ:
             stam_flash_timer = pg.time.get_ticks()
             stam_flash = not stam_flash
+
+        # Do the game updates.
+        if do_a_game_tick:
+            do_a_game_tick = False
+            world_time += 1
+            if world_time - day_cycle_timer >= DAY_CYCLE_LENGTH:
+                day_cycle_timer = world_time
+                night_time = not night_time
+            print(f"tick {world_time} - {'night' if night_time else 'day'}")
+            player_stamina += 1
+            player_stamina = min(player_stamina, 10)
+
+            # Tick the world.
+            for x in range(world_size.x):
+                for y in range(world_size.y):
+                    # Tick the tiles first.
+                    current_tile = game_world.overworld_layer.tile_array[x][y]
+                    # Spread the tiles.
+                    if current_tile.has_tag(TileTag.SPREAD):
+                        spread_onto, spread_chance = tile_spread[current_tile.id]
+                        for nx in (-1, 0, 1):
+                            for ny in (-1, 0, 1):
+                                if nx == ny == 0:
+                                    continue  # this is the same tile
+                                if math.fabs(nx) == math.fabs(ny) == 1:
+                                    continue  # this is a diagonal
+                                neighbor = get_array((x + nx, y + ny),
+                                                     game_world.overworld_layer.tile_array)
+                                if neighbor is None:
+                                    continue
+                                elif neighbor.id == spread_onto and random.random() < spread_chance:
+                                    set_array((x + nx, y + ny),
+                                              game_world.overworld_layer.tile_array, Tile(current_tile.id))
+                    # Grow the tiles.
+                    if current_tile.has_tag(TileTag.GROW):
+                        grow_tile, grow_chance = tile_grow[current_tile.id]
+                        if random.random() < grow_chance:
+                            set_array((x, y),
+                                      game_world.overworld_layer.tile_array, Tile(grow_tile))
+                    # Spawn skeletons from desert bones.
+                    if current_tile.id is TileID.DESERT_BONES and night_time and random.random() < 0.1:
+                        if (player_pos.x - x) ** 2 + (player_pos.y - y) ** 2 < 5.5 ** 2:
+                            if get_array((x, y), game_world.overworld_layer.mob_array) is None:
+                                set_array((x, y), game_world.overworld_layer.tile_array, Tile(TileID.SAND))
+                                set_array((x, y), game_world.overworld_layer.mob_array, Mob(MobID.GREEN_SKELETON))
 
         # Draw.
         screen.fill((0, 0, 0))
@@ -577,6 +657,7 @@ def main():
             if stam_flash and player_stamina < 1:
                 tile = stam_full_img
             screen.blit(tile, ((40 + i) * tile_size.x, tile_size.y))
+        write_text((35, 2), f"time {world_time}-{'night' if night_time else 'day'}", Color.DARK_GRAY)
 
         # Draw current item and inventory.
         if game_mode is not GameMode.CRAFT:

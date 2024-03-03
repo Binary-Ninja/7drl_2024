@@ -261,3 +261,4 @@ class TileTag(Enum):
     LIGHT = auto()
     GROW = auto()
     CRUSH = auto()
+    SPREAD = auto()

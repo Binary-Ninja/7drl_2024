@@ -36,12 +36,20 @@ tile_damage.update({
     TileID.GEM_ORE: 3,
 })
 
-tile_grow = {
-    TileID.WHEAT_SEEDS: (TileID.WHEAT, 0.05),
-    TileID.TREE_SAPLING: (TileID.TREE, 0.1),
-    TileID.PALM_TREE_SAPLING: (TileID.PALM_TREE, 0.1),
+tile_grow = defaultdict(tuple)
+tile_grow.update({
+    TileID.WHEAT_SEEDS: (TileID.WHEAT, 0.02),
+    TileID.TREE_SAPLING: (TileID.TREE, 0.05),
+    TileID.PALM_TREE_SAPLING: (TileID.PALM_TREE, 0.05),
     TileID.CACTUS_SAPLING: (TileID.CACTUS, 0.05),
-}
+})
+
+tile_spread = defaultdict(tuple)
+tile_spread.update({
+    TileID.GRASS: (TileID.DIRT, 0.05),
+    TileID.WATER: (TileID.HOLE, 1),
+    TileID.LAVA: (TileID.HOLE, 0.5),
+})
 
 
 TileData = namedtuple("TileData",
@@ -49,7 +57,7 @@ TileData = namedtuple("TileData",
                       defaults=(10, tuple(),))
 tile_data = {
     None: TileData("void", (Graphic.EMPTY, Color.WHITE),),  # off map edge
-    TileID.GRASS: TileData("grass", (Graphic.GRASS, Color.GREEN),),
+    TileID.GRASS: TileData("grass", (Graphic.GRASS, Color.GREEN), 10, (TileTag.SPREAD,)),
     TileID.WINDOW: TileData("window", (Graphic.WINDOW, Color.LIGHT_BLUE), 2,
                             (TileTag.BLOCK_MOVE,)),
     TileID.WOOD_WALL: TileData("wood wall", (Graphic.PLANKS, Color.BROWN), 10,
@@ -61,7 +69,7 @@ tile_data = {
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.SAND: TileData("sand", (Graphic.SAND, Color.YELLOW),),
     TileID.DESERT_BONES: TileData("bones", (Graphic.DESERT_BONES, Color.WHITE), ),
-    TileID.WATER: TileData("water", (Graphic.LIQUID, Color.BLUE), 10, (TileTag.LIQUID,)),
+    TileID.WATER: TileData("water", (Graphic.LIQUID, Color.BLUE), 10, (TileTag.LIQUID, TileTag.SPREAD)),
     TileID.STONE: TileData("stone", (Graphic.STONE_TILE, Color.STONE), 10,
                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.TREE: TileData("tree", (Graphic.TREE, Color.GREEN), 10,
@@ -72,7 +80,7 @@ tile_data = {
     TileID.HOLE: TileData("hole", (Graphic.LIQUID, Color.DARK_BROWN),),
     TileID.FARMLAND: TileData("farmland", (Graphic.FARMLAND, Color.BROWN),),
     TileID.LAVA: TileData("lava", (Graphic.LIQUID, Color.ORANGE), 10,
-                          (TileTag.DAMAGE, TileTag.LIQUID),),
+                          (TileTag.DAMAGE, TileTag.LIQUID, TileTag.SPREAD),),
     TileID.WHEAT: TileData("wheat", (Graphic.WHEAT, Color.YELLOW), 10,
                            (TileTag.BLOCK_SIGHT), ),
     TileID.DOWN_STAIRS: TileData("stairs", (Graphic.DOWN_STAIRS, Color.LIGHT_GRAY),
