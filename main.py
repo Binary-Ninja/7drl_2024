@@ -14,7 +14,8 @@ from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
 from items import Item, item_to_mob
 from mobs import Mob
-from tiles import Tile, tile_replace, tile_damage
+from tiles import Tile, tile_replace, tile_damage, TileID
+from loots import tile_break_loot, resolve_loot
 
 
 class GameMode(Enum):
@@ -26,6 +27,7 @@ class GameMode(Enum):
 NO_ITEM = Item(ItemID.EMPTY_HANDS)
 
 player_health = 10
+player_stamina = 10
 
 
 def main():
@@ -48,6 +50,11 @@ def main():
     cursor_flash_timer = pg.time.get_ticks()
     CURSOR_FLASH_FREQ = 500
     cursor_show = True
+
+    stam_flash_timer = pg.time.get_ticks()
+    STAM_FLASH_FREQ = 200
+    stam_flash = True
+
     cursor_index = 0  # what inventory item it is on
 
     world_seed = random.getrandbits(64)
@@ -58,7 +65,7 @@ def main():
 
     player_vision = 17
     global player_health
-    player_stamina = 10
+    global player_stamina
     player_dir = Point(0, -1)
     player_pos = Point(game_world.size[0] // 2, game_world.size[1] // 2)
     set_array(player_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
@@ -67,7 +74,7 @@ def main():
     inventory: list[Item] = [Item(ItemID.WORKBENCH),
                              Item(ItemID.DIRT, 30), Item(ItemID.SAND, 9),
                              Item(ItemID.WOOD, 1000), Item(ItemID.STONE, 100),
-                             Item(ItemID.APPLE, 100),
+                             Item(ItemID.COCONUT, 100), Item(ItemID.COAL, 99)
                              ]
 
     message_logs: deque[str] = deque(maxlen=10)
@@ -89,6 +96,14 @@ def main():
 
     just_broken_a_tile = False
     displayed_empty_hands_message = False
+
+    def reduce_stamina(amount: int) -> bool:
+        global player_stamina
+        if player_stamina - amount < 0:
+            return False
+        else:
+            player_stamina -= amount
+            return True
 
     def add_to_inventory(item: Item, invent: list[Item]) -> None:
         if item.has_tag(ItemTag.STACKABLE):
@@ -158,10 +173,15 @@ def main():
                     try_tile = get_array(try_space, game_world.overworld_layer.tile_array)
                     # If it isn't the void and doesn't block movement.
                     if try_tile is not None and not try_tile.has_tag(TileTag.BLOCK_MOVE):
-                        set_array(try_space, game_world.overworld_layer.mob_array, move_mob)
-                        set_array(try_pos, game_world.overworld_layer.mob_array, None)
                         message_logs.appendleft("you push the")
                         message_logs.appendleft(f"{move_mob.name}")
+                        set_array(try_pos, game_world.overworld_layer.mob_array, None)
+                        if try_tile.has_tag(TileTag.LIQUID):
+                            message_logs.appendleft("it sinks into")
+                            message_logs.appendleft(f"the {try_tile.name}")
+                        else:
+                            set_array(try_space,
+                                      game_world.overworld_layer.mob_array, move_mob)
                     else:
                         message_logs.appendleft("you bump into")
                         message_logs.appendleft(f"the {move_mob.name}")
@@ -278,14 +298,21 @@ def main():
                             # if there is no mob, spawn one in
                             mob = Mob(current_item.data["mobid"])
                             if target_mob is None and \
-                                    not target_tile.has_tag(TileTag.BLOCK_MOVE):
-                                set_array(target_pos,
-                                          game_world.overworld_layer.mob_array, mob)
-                                current_item = NO_ITEM
-                                inventory.remove(NO_ITEM)
-                                message_logs.appendleft("you place the")
-                                message_logs.appendleft(f"{mob.name}")
-                                displayed_empty_hands_message = True
+                                    not target_tile.has_tag(TileTag.BLOCK_MOVE) and \
+                                    not target_tile.has_tag(TileTag.LIQUID):
+                                if reduce_stamina(1):
+                                    set_array(target_pos,
+                                              game_world.overworld_layer.mob_array, mob)
+                                    current_item.count -= 1
+                                    if current_item.count <= 0:
+                                        current_item = NO_ITEM
+                                        inventory.remove(NO_ITEM)
+                                        displayed_empty_hands_message = True
+                                    message_logs.appendleft("you place the")
+                                    message_logs.appendleft(f"{mob.name}")
+                                else:
+                                    message_logs.appendleft("you do not have")
+                                    message_logs.appendleft("the stamina")
                             else:
                                 message_logs.appendleft("you cannot put")
                                 message_logs.appendleft(f"{mob.name} here")
@@ -293,49 +320,79 @@ def main():
                             if target_mob is not None:
                                 item = item_to_mob[target_mob.id]
                                 if item is not None:
-                                    item = Item(item)
-                                    add_to_inventory(current_item, inventory)
-                                    current_item = item
-                                    set_array(target_pos,
-                                              game_world.overworld_layer.mob_array,
-                                              None)
-                                    message_logs.appendleft("you pick up the")
-                                    message_logs.appendleft(f"{item.name}")
+                                    if reduce_stamina(1):
+                                        item = Item(item)
+                                        add_to_inventory(current_item, inventory)
+                                        current_item = item
+                                        set_array(target_pos,
+                                                  game_world.overworld_layer.mob_array,
+                                                  None)
+                                        message_logs.appendleft("you pick up the")
+                                        message_logs.appendleft(f"{item.name}")
+                                    else:
+                                        message_logs.appendleft("you do not have")
+                                        message_logs.appendleft("the stamina")
                         if current_item.has_tag(ItemTag.HEAL):
                             if player_health < 10:
-                                prev_ph = player_health
-                                player_health += current_item.data["heal"]
-                                player_health = min(10, player_health)
+                                if reduce_stamina(current_item.data["stamina_cost"]):
+                                    prev_ph = player_health
+                                    player_health += current_item.data["heal"]
+                                    player_health = min(10, player_health)
+                                    current_item.count -= 1
+                                    message_logs.appendleft("you eat the")
+                                    message_logs.appendleft(f"{current_item.name} "
+                                                            f"+{player_health - prev_ph}hp")
+                                    if current_item.count <= 0:
+                                        current_item = NO_ITEM
+                                        inventory.remove(NO_ITEM)
+                                        displayed_empty_hands_message = True
+                                else:
+                                    message_logs.appendleft("you do not have")
+                                    message_logs.appendleft("the stamina")
+                            else:
+                                message_logs.appendleft("you have full")
+                                message_logs.appendleft("health points")
+                        if current_item.has_tag(ItemTag.STAMINA):
+                            if player_stamina < 10:
+                                prev_ps = player_stamina
+                                player_stamina += current_item.data["stamina"]
+                                player_stamina = min(10, player_stamina)
                                 current_item.count -= 1
                                 message_logs.appendleft("you eat the")
                                 message_logs.appendleft(f"{current_item.name} "
-                                                        f"+{player_health - prev_ph}hp")
+                                                        f"+{player_stamina - prev_ps} stam")
                                 if current_item.count <= 0:
                                     current_item = NO_ITEM
                                     inventory.remove(NO_ITEM)
                                     displayed_empty_hands_message = True
                             else:
                                 message_logs.appendleft("you have full")
-                                message_logs.appendleft("health points")
+                                message_logs.appendleft("stamina points")
                         if current_item.has_tag(ItemTag.PLACE_TILE):
                             if target_tile is not None and \
                                     target_tile.id in current_item.data["base"]:
-                                set_array(target_pos,
-                                          game_world.overworld_layer.tile_array,
-                                          Tile(current_item.data["place"]))
-                                if not current_item.has_tag(ItemTag.STACKABLE):
-                                    message_logs.appendleft("you use the")
-                                    message_logs.appendleft(f"{current_item.name}")
+                                stam_reduce = 1 if current_item.has_tag(ItemTag.STACKABLE)\
+                                    else current_item.data["stamina_cost"]
+                                if reduce_stamina(stam_reduce):
+                                    set_array(target_pos,
+                                              game_world.overworld_layer.tile_array,
+                                              Tile(current_item.data["place"]))
+                                    if not current_item.has_tag(ItemTag.STACKABLE):
+                                        message_logs.appendleft("you use the")
+                                        message_logs.appendleft(f"{current_item.name}")
+                                    else:
+                                        message_logs.appendleft("you place the")
+                                        message_logs.appendleft(f"{current_item.name}")
+                                    current_item.count -= 1
+                                    if not current_item.has_tag(ItemTag.STACKABLE):
+                                        current_item.count = 1
+                                    if current_item.count <= 0:
+                                        current_item = NO_ITEM
+                                        inventory.remove(NO_ITEM)
+                                        displayed_empty_hands_message = True
                                 else:
-                                    message_logs.appendleft("you place the")
-                                    message_logs.appendleft(f"{current_item.name}")
-                                current_item.count -= 1
-                                if not current_item.has_tag(ItemTag.STACKABLE):
-                                    current_item.count = 1
-                                if current_item.count <= 0:
-                                    current_item = NO_ITEM
-                                    inventory.remove(NO_ITEM)
-                                    displayed_empty_hands_message = True
+                                    message_logs.appendleft("you do not have")
+                                    message_logs.appendleft("the stamina")
                             else:
                                 message_logs.appendleft("you cannot put")
                                 message_logs.appendleft(f"{current_item.name} here")
@@ -343,21 +400,29 @@ def main():
                             if not (current_item.has_tag(ItemTag.DAMAGE_MOBS) and target_mob):
                                 if target_tile is not None:
                                     if target_tile.id in current_item.data["breakable"]:
-                                        damage = current_item.data["tile_damage"]
-                                        target_tile.health -= damage
-                                        if target_tile.health > 0:
-                                            message_logs.appendleft("you strike the")
-                                            message_logs.appendleft(f"{target_tile.name} "
-                                                                    f"-{damage}hp")
+                                        stam_cost = current_item.data["stamina_cost"]
+                                        if reduce_stamina(stam_cost):
+                                            damage = current_item.data["tile_damage"]
+                                            target_tile.health -= damage
+                                            if target_tile.health > 0:
+                                                message_logs.appendleft("you strike the")
+                                                message_logs.appendleft(f"{target_tile.name} "
+                                                                        f"-{damage}hp")
+                                            else:
+                                                tile = tile_replace[target_tile.id]
+                                                loot = resolve_loot(
+                                                    tile_break_loot[target_tile.id])
+                                                set_array(target_pos,
+                                                          game_world.overworld_layer.tile_array,
+                                                          Tile(tile))
+                                                for item in loot:
+                                                    add_to_inventory(item, inventory)
+                                                message_logs.appendleft("you remove the")
+                                                message_logs.appendleft(f"{target_tile.name}")
+                                            just_broken_a_tile = True
                                         else:
-                                            tile, item = tile_replace[target_tile.id]
-                                            set_array(target_pos,
-                                                      game_world.overworld_layer.tile_array,
-                                                      Tile(tile))
-                                            add_to_inventory(Item(item), inventory)
-                                            message_logs.appendleft("you remove the")
-                                            message_logs.appendleft(f"{target_tile.name}")
-                                        just_broken_a_tile = True
+                                            message_logs.appendleft("you do not have")
+                                            message_logs.appendleft("the stamina")
                                     elif displayed_empty_hands_message is False:
                                         message_logs.appendleft("you cannot use")
                                         message_logs.appendleft(f"{current_item.name}")
@@ -367,16 +432,22 @@ def main():
                         if current_item.has_tag(ItemTag.DAMAGE_MOBS):
                             if not just_broken_a_tile:
                                 if target_mob is not None:
-                                    damage = current_item.data["mob_damage"]
-                                    target_mob.health -= damage
-                                    message_logs.appendleft("you strike the")
-                                    message_logs.appendleft(f"{target_mob.name} -{damage}hp")
-                                    if target_mob.health <= 0:
-                                        set_array(target_pos,
-                                                  game_world.overworld_layer.mob_array,
-                                                  None)
-                                        message_logs.appendleft("you kill the")
-                                        message_logs.appendleft(f"{target_mob.name}")
+                                    stam_cost = current_item.data["stamina_cost"]
+                                    if reduce_stamina(stam_cost):
+                                        damage = current_item.data["mob_damage"]
+                                        target_mob.health -= damage
+                                        message_logs.appendleft("you strike the")
+                                        message_logs.appendleft(f"{target_mob.name}"
+                                                                f"-{damage}hp")
+                                        if target_mob.health <= 0:
+                                            set_array(target_pos,
+                                                      game_world.overworld_layer.mob_array,
+                                                      None)
+                                            message_logs.appendleft("you kill the")
+                                            message_logs.appendleft(f"{target_mob.name}")
+                                    else:
+                                        message_logs.appendleft("you do not have")
+                                        message_logs.appendleft("the stamina")
                                 elif displayed_empty_hands_message is False:
                                     message_logs.appendleft("you strike at")
                                     message_logs.appendleft("air uselessly")
@@ -414,17 +485,35 @@ def main():
                                            player_pos.y + player_dir.y)
                         target_mob = get_array(target_pos,
                                                game_world.overworld_layer.mob_array)
+                        target_tile = get_array(target_pos,
+                                                game_world.overworld_layer.tile_array)
                         if target_mob and target_mob.has_tag(MobTag.CRAFTING):
                             game_mode = GameMode.CRAFT
                             current_crafter = target_mob
                             crafting_list = current_crafter.recipies
                             message_logs.appendleft("you craft with")
                             message_logs.appendleft(f"the {current_crafter.name}")
+                        elif target_tile and target_tile.id in (TileID.OPEN_WOOD_DOOR,
+                                                                TileID.CLOSED_WOOD_DOOR):
+                            if target_tile.id is TileID.CLOSED_WOOD_DOOR:
+                                set_array(target_pos,
+                                          game_world.overworld_layer.tile_array,
+                                          Tile(TileID.OPEN_WOOD_DOOR))
+                                message_logs.appendleft("you open the")
+                                message_logs.appendleft(f"{target_tile.name}")
+                            else:
+                                set_array(target_pos,
+                                          game_world.overworld_layer.tile_array,
+                                          Tile(TileID.CLOSED_WOOD_DOOR))
+                                message_logs.appendleft("you close the")
+                                message_logs.appendleft(f"{target_tile.name}")
                         else:
                             game_mode = GameMode.INVENTORY
                 elif event.key == pg.K_z:
                     if game_mode is GameMode.MOVE:
                         pass  # TODO: wait mechanic
+                        player_stamina += 1
+                        player_stamina = min(10, player_stamina)
                     else:
                         cursor_index = 0  # reset cursor
 
@@ -435,6 +524,10 @@ def main():
         if pg.time.get_ticks() - cursor_flash_timer >= CURSOR_FLASH_FREQ:
             cursor_flash_timer = pg.time.get_ticks()
             cursor_show = not cursor_show
+
+        if pg.time.get_ticks() - stam_flash_timer >= STAM_FLASH_FREQ:
+            stam_flash_timer = pg.time.get_ticks()
+            stam_flash = not stam_flash
 
         # Draw.
         screen.fill((0, 0, 0))
@@ -481,6 +574,8 @@ def main():
         write_text((35, 1), "stam", Color.WHITE)
         for i in range(10):
             tile = stam_empty_img if i >= player_stamina else stam_full_img
+            if stam_flash and player_stamina < 1:
+                tile = stam_full_img
             screen.blit(tile, ((40 + i) * tile_size.x, tile_size.y))
 
         # Draw current item and inventory.

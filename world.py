@@ -74,7 +74,10 @@ def generate_overworld(size: tuple[int, int], world_seed: int) -> list[list]:
                     world_map[x][y] = Tile(TileID.SAND)
             elif value < 0.5:
                 if humidity < -0.4:
-                    if rng.random() > 0.95:
+                    desert_detail = rng.random()
+                    if desert_detail > 0.98:
+                        world_map[x][y] = Tile(TileID.DESERT_BONES)
+                    elif desert_detail > 0.95:
                         world_map[x][y] = Tile(TileID.CACTUS)
                     else:
                         world_map[x][y] = Tile(TileID.SAND)

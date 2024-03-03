@@ -5,6 +5,11 @@ from data import Color, Graphic, MobID, ItemID, ItemTag, TileID
 item_to_mob = defaultdict(lambda: None)
 item_to_mob.update({
     MobID.WORKBENCH: ItemID.WORKBENCH,
+    MobID.OVEN: ItemID.OVEN,
+    MobID.FURNACE: ItemID.FURNACE,
+    MobID.ANVIL: ItemID.ANVIL,
+    MobID.WOOD_LANTERN: ItemID.WOOD_LANTERN,
+    MobID.TORCH: ItemID.TORCH,
 })
 
 ItemData = namedtuple("ItemData", ("name", "graphic", "tags", "data"),
@@ -18,6 +23,27 @@ item_data = {
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.DIRT, "base": (TileID.HOLE, TileID.WATER)
                           }),
+    ItemID.WINDOW: ItemData("window", (Graphic.WINDOW, Color.LIGHT_BLUE),
+                          (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                              "place": TileID.WINDOW, "base": (TileID.DIRT, TileID.SAND,
+                                                               TileID.GRASS)
+                          }),
+    ItemID.WOOD_WALL: ItemData("wood wall", (Graphic.PLANKS, Color.BROWN),
+                          (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                              "place": TileID.WOOD_WALL, "base": (TileID.DIRT, TileID.GRASS,
+                                                                  TileID.SAND)
+                          }),
+    ItemID.STONE_WALL: ItemData("stone wall", (Graphic.BRICKS, Color.STONE),
+                          (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                              "place": TileID.STONE_WALL, "base": (TileID.DIRT, TileID.GRASS,
+                                                                   TileID.SAND)
+                          }),
+    ItemID.WOOD_DOOR: ItemData("wood door", (Graphic.DOOR_CLOSED, Color.BROWN),
+                          (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                              "place": TileID.CLOSED_WOOD_DOOR, "base": (TileID.DIRT,
+                                                                    TileID.GRASS,
+                                                                    TileID.SAND)
+                          }),
     ItemID.STONE: ItemData("stone", (Graphic.STONE_ITEM, Color.STONE),
                            (ItemTag.STACKABLE,), ),
     ItemID.SAND: ItemData("sand", (Graphic.SAND, Color.YELLOW),
@@ -25,50 +51,111 @@ item_data = {
             "place": TileID.SAND, "base": (TileID.DIRT,)
                           }),
     ItemID.WOOD: ItemData("wood", (Graphic.WOOD, Color.BROWN), (ItemTag.STACKABLE,), ),
+    ItemID.BONE: ItemData("bone", (Graphic.BONE, Color.WHITE), (ItemTag.STACKABLE,), ),
     ItemID.PICKUP: ItemData("pickup", (Graphic.PICKUP, Color.BROWN), (ItemTag.PICKUP,)),
     ItemID.APPLE: ItemData("apple", (Graphic.APPLE, Color.RED),
                            (ItemTag.STACKABLE, ItemTag.HEAL), {
-            "heal": 1
+            "heal": 1,
+                               "stamina_cost": 1,
                            }),
-    ItemID.WHEAT_SEEDS: ItemData("seeds", (Graphic.SEEDS, Color.GREEN), (ItemTag.STACKABLE,)),
+    ItemID.WHEAT_SEEDS: ItemData("seeds", (Graphic.SEEDS, Color.GREEN),
+                                 (ItemTag.STACKABLE, ItemTag.PLACE_TILE),{
+            "place": TileID.WHEAT, "base": (TileID.FARMLAND,),
+                                 }),
     ItemID.WOOD_PICK: ItemData("wood pick", (Graphic.PICKAXE, Color.BROWN),
                                (ItemTag.BREAK_TILE,), {
-            "breakable": (TileID.STONE,), "tile_damage": 2,
+            "breakable": (TileID.STONE, TileID.STONE_WALL), "tile_damage": 2,
+                                   "stamina_cost": 5,
                                }),
     ItemID.WOOD_SWORD: ItemData("wood sword", (Graphic.SWORD, Color.BROWN),
                                 (ItemTag.DAMAGE_MOBS,), {
-            "mob_damage": 2
+            "mob_damage": 2,
+                                    "stamina_cost": 5,
                                 }),
     ItemID.EMPTY_HANDS: ItemData("empty hands", (Graphic.EMPTY_HANDS, Color.YELLOW),
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE, ItemTag.PICKUP), {
             "mob_damage": 1, "breakable": (TileID.TREE, TileID.CACTUS, TileID.PALM_TREE),
                                      "tile_damage": 1,
+                                     "stamina_cost": 1,
                                  }),
     ItemID.WOOD_AXE: ItemData("wood axe", (Graphic.AXE, Color.BROWN),
                                (ItemTag.BREAK_TILE,), {
                                    "breakable": (TileID.TREE, TileID.CACTUS,
-                                                 TileID.PALM_TREE),
+                                                 TileID.PALM_TREE, TileID.WOOD_WALL,
+                                                 TileID.OPEN_WOOD_DOOR,
+                                                 TileID.CLOSED_WOOD_DOOR,
+                                                 TileID.WINDOW),
                                    "tile_damage": 2,
+                                  "stamina_cost": 5,
                                }),
     ItemID.WOOD_HOE: ItemData("wood hoe", (Graphic.HOE, Color.BROWN),
                               (ItemTag.PLACE_TILE, ItemTag.BREAK_TILE), {
                                    "place": TileID.FARMLAND, "base": (TileID.DIRT,),
             "breakable": (TileID.WHEAT,), "tile_damage": 10,
+                                  "stamina_cost": 5,
                                }),
     ItemID.WOOD_SHOVEL: ItemData("wood shovel", (Graphic.SHOVEL, Color.BROWN),
                                  (ItemTag.BREAK_TILE,), {
                                    "breakable": (TileID.DIRT, TileID.SAND,
-                                                 TileID.GRASS, TileID.FARMLAND),
+                                                 TileID.GRASS, TileID.FARMLAND,
+                                                 TileID.DESERT_BONES),
                                    "tile_damage": 10,
+            "stamina_cost": 5,
                                }),
     ItemID.WHEAT: ItemData("wheat", (Graphic.WHEAT, Color.YELLOW),
                            (ItemTag.STACKABLE,), ),
     ItemID.IRON_ORE: ItemData("iron ore", (Graphic.STONE_ITEM, Color.IRON),
-                           (ItemTag.STACKABLE,), ),
+                              (ItemTag.STACKABLE,), ),
     ItemID.GOLD_ORE: ItemData("gold ore", (Graphic.STONE_ITEM, Color.GOLD),
                            (ItemTag.STACKABLE,), ),
     ItemID.GEM: ItemData("gem", (Graphic.GEM, Color.GEM),
+                         (ItemTag.STACKABLE,), ),
+    ItemID.COCONUT: ItemData("coconut", (Graphic.COCONUT, Color.BROWN),
+                             (ItemTag.STACKABLE, ItemTag.STAMINA), {
+                               "stamina": 3,
+                           }),
+    ItemID.COAL: ItemData("coal", (Graphic.STONE_ITEM, Color.DARK_GRAY),
                            (ItemTag.STACKABLE,), ),
+    ItemID.CLOTH: ItemData("cloth", (Graphic.CLOTH, Color.MOB_GREEN),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.SLIME: ItemData("slime", (Graphic.SLIME_ITEM, Color.MOB_GREEN),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.IRON_BAR: ItemData("iron bar", (Graphic.INGOT, Color.IRON),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.GOLD_BAR: ItemData("gold bar", (Graphic.INGOT, Color.GOLD),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.GLASS: ItemData("glass", (Graphic.GLASS, Color.WHITE),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.BREAD: ItemData("bread", (Graphic.BREAD, Color.LIGHT_BROWN),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": 3,
+                               "stamina_cost": 3,
+                           }),
+    ItemID.APPLE_PIE: ItemData("pie", (Graphic.PIE, Color.LIGHT_BROWN),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": 5,
+                               "stamina_cost": 3,
+                           }),
+    ItemID.OVEN: ItemData("oven", (Graphic.OVEN, Color.LIGHT_BROWN),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.OVEN,
+                               }),
+    ItemID.FURNACE: ItemData("furnace", (Graphic.FURNACE, Color.LIGHT_GRAY),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.FURNACE,
+                               }),
+    ItemID.ANVIL: ItemData("anvil", (Graphic.ANVIL, Color.LIGHT_GRAY),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.ANVIL,
+                               }),
+    ItemID.WOOD_LANTERN: ItemData("wood lantern", (Graphic.LANTERN, Color.BROWN),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.WOOD_LANTERN,
+                               }),
+    ItemID.TORCH: ItemData("torch", (Graphic.TORCH, Color.YELLOW),
+                               (ItemTag.SPAWN_MOB, ItemTag.STACKABLE), {
+                                   "mobid": MobID.TORCH,
+                               }),
 }
 
 

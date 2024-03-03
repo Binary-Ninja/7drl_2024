@@ -8,6 +8,7 @@ PointType = tuple[int, int] | Point
 
 class Color:
     GREEN = (0, 255, 0)
+    LIGHT_GREEN = (64, 255, 64)
     YELLOW = (255, 255, 0)
     DARK_YELLOW = (128, 128, 0)
     BLUE = (0, 0, 255)
@@ -16,13 +17,16 @@ class Color:
     LIGHT_GRAY = (200, 200, 200)
     RED = (255, 0, 0)
     DARK_RED = (128, 0, 0)
-    MOB_GREEN = (64, 200, 64)
+    MOB_GREEN = (128, 255, 128)
     BROWN = (170, 85, 0)
     DARK_BROWN = (32, 16, 0)
     ORANGE = (255, 128, 0)
     IRON = (230, 230, 230)
     GOLD = (255, 215, 0)
     GEM = (200, 0, 255)
+    DARK_GRAY = (64, 64, 64)
+    LIGHT_BROWN = (200, 200, 170)
+    LIGHT_BLUE = (0, 100, 255)
 
 
 class Graphic:
@@ -38,6 +42,13 @@ class Graphic:
     WHEAT = (17, 6)
     PALM_TREE = (7, 2)
     ORE = (1, 2)
+    DESERT_BONES = (0, 15)
+
+    WINDOW = (1, 4)
+    PLANKS = (13, 16)
+    BRICKS = (10, 17)
+    DOOR_CLOSED = (8, 9)
+    DOOR_OPEN = (9, 9)
 
     PLAYER = (25, 0)
     ZOMBIE = (24, 9)
@@ -55,6 +66,12 @@ class Graphic:
     EMPTY = (0, 0)
 
     WORKBENCH = (14, 9)
+    OVEN = (8, 21)
+    FURNACE = (47, 4)
+    ANVIL = (14, 15)
+    LANTERN = (44, 4)
+    TORCH = (3, 15)
+
     DIRT = (6, 0)
     STONE_ITEM = (5, 2)
     WOOD = (18, 6)
@@ -68,6 +85,14 @@ class Graphic:
     HOE = (44, 5)
     AXE = (42, 7)
     GEM = (32, 10)
+    COCONUT = (27, 21)
+    SLIME_ITEM = (17, 12)
+    CLOTH = (47, 6)
+    INGOT = (34, 10)
+    GLASS = (41, 13)
+    BREAD = (47, 7)
+    PIE = (37, 2)
+    BONE = (32, 12)
 
 
 str_2_tile = {
@@ -121,6 +146,11 @@ class MobID(Enum):
     GREEN_SKELETON = 4
     AIR_WIZARD = 5
     WORKBENCH = 6
+    OVEN = 7
+    FURNACE = 8
+    ANVIL = 9
+    WOOD_LANTERN = 10
+    TORCH = 11
 
 
 class MobTag(Enum):
@@ -147,6 +177,25 @@ class ItemID(Enum):
     IRON_ORE = 16
     GOLD_ORE = 17
     GEM = 18
+    COCONUT = 19
+    COAL = 20
+    CLOTH = 21
+    SLIME = 22
+    IRON_BAR = 23
+    GOLD_BAR = 24
+    GLASS = 25
+    BREAD = 26
+    APPLE_PIE = 27
+    OVEN = 28
+    FURNACE = 29
+    ANVIL = 30
+    WOOD_LANTERN = 31
+    TORCH = 32
+    BONE = 33
+    WINDOW = 34
+    WOOD_WALL = 35
+    STONE_WALL = 36
+    WOOD_DOOR = 37
 
 
 class ItemTag(Enum):
@@ -157,6 +206,7 @@ class ItemTag(Enum):
     BREAK_TILE = auto()
     PLACE_TILE = auto()
     DAMAGE_MOBS = auto()
+    STAMINA = auto()
 
 
 class TileID(Enum):
@@ -177,6 +227,12 @@ class TileID(Enum):
     IRON_ORE = 15
     GOLD_ORE = 16
     GEM_ORE = 17
+    DESERT_BONES = 18
+    WINDOW = 19
+    STONE_WALL = 20
+    WOOD_WALL = 21
+    OPEN_WOOD_DOOR = 22
+    CLOSED_WOOD_DOOR = 23
 
 
 class TileTag(Enum):
@@ -185,3 +241,5 @@ class TileTag(Enum):
     DAMAGE = auto()
     DOWN_STAIRS = auto()
     UP_STAIRS = auto()
+    LIQUID = auto()
+    LIGHT = auto()

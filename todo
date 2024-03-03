@@ -1,3 +1,16 @@
- - add loot table functionality for drops
- - improve break tile functionality to drain stamina
  - add the rest of the basic items possible with existing stuff (in progress)
+
+ - next major update
+ - time system
+ - mob AI
+ - LOS and FOV
+ - Day/night cycle
+ - lighting
+ - wizard mode of some kind
+
+ - world refactor
+
+ - potions
+ - fire
+ - magic wands
+ - liquid borders and animations

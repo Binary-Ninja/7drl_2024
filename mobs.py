@@ -8,17 +8,40 @@ from items import ItemID
 recipies = {
     MobID.WORKBENCH: (
         ((ItemID.WORKBENCH, 1), (ItemID.WOOD, 10)),
-        ((ItemID.WOOD_PICK, 1), (ItemID.WOOD, 10)),
-        ((ItemID.WOOD_SWORD, 1), (ItemID.WOOD, 10)),
-        ((ItemID.WOOD_HOE, 1), (ItemID.WOOD, 10)),
-        ((ItemID.WOOD_SHOVEL, 1), (ItemID.WOOD, 10)),
-        ((ItemID.WOOD_AXE, 1), (ItemID.WOOD, 10)),
+        ((ItemID.OVEN, 1), (ItemID.STONE, 10)),
+        ((ItemID.FURNACE, 1), (ItemID.STONE, 20)),
+        ((ItemID.ANVIL, 1), (ItemID.IRON_BAR, 5)),
+        ((ItemID.WOOD_LANTERN, 1), (ItemID.WOOD, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2)),
+        ((ItemID.TORCH, 2), (ItemID.WOOD, 2), (ItemID.COAL, 1)),
+        ((ItemID.WOOD_SWORD, 1), (ItemID.WOOD, 5)),
+        ((ItemID.WOOD_PICK, 1), (ItemID.WOOD, 5)),
+        ((ItemID.WOOD_AXE, 1), (ItemID.WOOD, 5)),
+        ((ItemID.WOOD_SHOVEL, 1), (ItemID.WOOD, 5)),
+        ((ItemID.WOOD_HOE, 1), (ItemID.WOOD, 5)),
+        ((ItemID.WINDOW, 1), (ItemID.WOOD, 2), (ItemID.GLASS, 4)),
+        ((ItemID.WOOD_WALL, 1), (ItemID.WOOD, 4)),
+        ((ItemID.WOOD_DOOR, 1), (ItemID.WOOD, 8)),
+        ((ItemID.STONE_WALL, 1), (ItemID.STONE, 4)),
+    ),
+    MobID.OVEN: (
+        ((ItemID.BREAD, 1), (ItemID.WHEAT, 5)),
+        ((ItemID.APPLE_PIE, 1), (ItemID.WHEAT, 5), (ItemID.APPLE, 5)),
+    ),
+    MobID.FURNACE: (
+        ((ItemID.GLASS, 1), (ItemID.SAND, 4), (ItemID.COAL, 1)),
+        ((ItemID.IRON_BAR, 1), (ItemID.IRON_ORE, 4), (ItemID.COAL, 1)),
+        ((ItemID.GOLD_BAR, 1), (ItemID.GOLD_ORE, 4), (ItemID.COAL, 1)),
+    ),
+    MobID.ANVIL: (
+        ((ItemID.GLASS, 1), (ItemID.SAND, 4), (ItemID.COAL, 1)),
+        ((ItemID.IRON_BAR, 1), (ItemID.IRON_ORE, 4), (ItemID.COAL, 1)),
+        ((ItemID.GOLD_BAR, 1), (ItemID.GOLD_ORE, 4), (ItemID.COAL, 1)),
     ),
 }
 
 
 MobData = namedtuple("MobData", ("name", "graphic", "max_health", "tags",
-                                 "recipies"), defaults=(10, tuple(), None,))
+                                 "recipies", "light"), defaults=(10, tuple(), None, None))
 mob_data = {
     MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE)),
     MobID.GREEN_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_GREEN)),
@@ -28,6 +51,16 @@ mob_data = {
     MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100),
     MobID.WORKBENCH: MobData("workbench", (Graphic.WORKBENCH, Color.BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.WORKBENCH]),
+    MobID.OVEN: MobData("oven", (Graphic.OVEN, Color.LIGHT_BROWN), 10,
+                             (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.OVEN]),
+    MobID.FURNACE: MobData("furnace", (Graphic.FURNACE, Color.LIGHT_GRAY), 10,
+                             (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.FURNACE]),
+    MobID.ANVIL: MobData("anvil", (Graphic.ANVIL, Color.LIGHT_GRAY), 10,
+                             (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.ANVIL]),
+    MobID.WOOD_LANTERN: MobData("wood lantern", (Graphic.LANTERN, Color.BROWN), 10,
+                             (MobTag.PUSHABLE, ), tuple(), 10),
+    MobID.TORCH: MobData("torch", (Graphic.TORCH, Color.YELLOW), 8,
+                             (MobTag.PUSHABLE, ), tuple(), 5),
 }
 
 
