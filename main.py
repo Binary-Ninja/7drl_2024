@@ -85,6 +85,9 @@ def main():
     current_crafter = None  # the current crafting station in use
     crafting_list = None  # the list of recipies
 
+    just_broken_a_tile = False
+    displayed_empty_hands_message = False
+
     def add_to_inventory(item: Item, invent: list[Item]) -> None:
         if item.has_tag(ItemTag.STACKABLE):
             for invent_item in invent:
@@ -248,6 +251,14 @@ def main():
                                                game_world.overworld_layer.mob_array)
                         target_tile = get_array(target_pos,
                                                 game_world.overworld_layer.tile_array)
+                        if current_item.tags == (ItemTag.STACKABLE,):
+                            message_logs.appendleft("you cannot use")
+                            message_logs.appendleft(f"the {current_item.name}")
+                        if current_item is NO_ITEM and target_mob is None and \
+                                target_tile not in current_item.data["breakable"]:
+                            message_logs.appendleft("your hands are")
+                            message_logs.appendleft("empty")
+                            displayed_empty_hands_message = True
                         if current_item.has_tag(ItemTag.SPAWN_MOB):
                             # if there is no mob, spawn one in
                             mob = Mob(current_item.data["mobid"])
@@ -256,8 +267,10 @@ def main():
                                 set_array(target_pos,
                                           game_world.overworld_layer.mob_array, mob)
                                 current_item = NO_ITEM
+                                inventory.remove(NO_ITEM)
                                 message_logs.appendleft("you place the")
                                 message_logs.appendleft(f"{mob.name}")
+                                displayed_empty_hands_message = True
                             else:
                                 message_logs.appendleft("you cannot put")
                                 message_logs.appendleft(f"{mob.name} here")
@@ -266,8 +279,7 @@ def main():
                                 item = item_to_mob[target_mob.id]
                                 if item is not None:
                                     item = Item(item)
-                                    if current_item is not NO_ITEM:
-                                        add_to_inventory(current_item, inventory)
+                                    add_to_inventory(current_item, inventory)
                                     current_item = item
                                     set_array(target_pos,
                                               game_world.overworld_layer.mob_array,
@@ -285,6 +297,8 @@ def main():
                                                         f"+{player_health - prev_ph}hp")
                                 if current_item.count <= 0:
                                     current_item = NO_ITEM
+                                    inventory.remove(NO_ITEM)
+                                    displayed_empty_hands_message = True
                             else:
                                 message_logs.appendleft("you have full")
                                 message_logs.appendleft("health points")
@@ -299,42 +313,56 @@ def main():
                                 current_item.count -= 1
                                 if current_item.count <= 0:
                                     current_item = NO_ITEM
+                                    inventory.remove(NO_ITEM)
+                                    displayed_empty_hands_message = True
                             else:
                                 message_logs.appendleft("you cannot put")
                                 message_logs.appendleft(f"{current_item.name} here")
                         if current_item.has_tag(ItemTag.BREAK_TILE):
                             if not (current_item.has_tag(ItemTag.DAMAGE_MOBS) and target_mob):
-                                if target_tile is not None and \
-                                        target_tile.id in current_item.data["breakable"]:
-                                    tile, item = tile_replace[target_tile.id]
-                                    set_array(target_pos,
-                                              game_world.overworld_layer.tile_array,
-                                              Tile(tile))
-                                    add_to_inventory(Item(item), inventory)
-                                    message_logs.appendleft("you remove the")
-                                    message_logs.appendleft(f"{target_tile.name}")
+                                if target_tile is not None:
+                                    if target_tile.id in current_item.data["breakable"]:
+                                        damage = current_item.data["tile_damage"]
+                                        target_tile.health -= damage
+                                        message_logs.appendleft("you strike the")
+                                        message_logs.appendleft(f"{target_tile.name} "
+                                                                f"-{damage}hp")
+                                        if target_tile.health <= 0:
+                                            tile, item = tile_replace[target_tile.id]
+                                            set_array(target_pos,
+                                                      game_world.overworld_layer.tile_array,
+                                                      Tile(tile))
+                                            add_to_inventory(Item(item), inventory)
+                                            message_logs.appendleft("you remove the")
+                                            message_logs.appendleft(f"{target_tile.name}")
+                                        just_broken_a_tile = True
+                                    elif displayed_empty_hands_message is False:
+                                        message_logs.appendleft("you cannot use")
+                                        message_logs.appendleft(f"{current_item.name}")
                                 else:
-                                    message_logs.appendleft("you cannot use")
-                                    message_logs.appendleft(f"{current_item.name}")
+                                    message_logs.appendleft("the unfeeling")
+                                    message_logs.appendleft("void mocks you")
                         if current_item.has_tag(ItemTag.DAMAGE_MOBS):
-                            if target_mob is not None:
-                                damage = current_item.data["damage"]
-                                target_mob.health -= damage
-                                message_logs.appendleft("you strike the")
-                                message_logs.appendleft(f"{target_mob.name} -{damage}hp")
-                                if target_mob.health <= 0:
-                                    set_array(target_pos,
-                                              game_world.overworld_layer.mob_array,
-                                              None)
-                                    message_logs.appendleft("you kill the")
-                                    message_logs.appendleft(f"{target_mob.name}")
-                            else:
-                                message_logs.appendleft("you strike at")
-                                message_logs.appendleft("air uselessly")
+                            if not just_broken_a_tile:
+                                if target_mob is not None:
+                                    damage = current_item.data["mob_damage"]
+                                    target_mob.health -= damage
+                                    message_logs.appendleft("you strike the")
+                                    message_logs.appendleft(f"{target_mob.name} -{damage}hp")
+                                    if target_mob.health <= 0:
+                                        set_array(target_pos,
+                                                  game_world.overworld_layer.mob_array,
+                                                  None)
+                                        message_logs.appendleft("you kill the")
+                                        message_logs.appendleft(f"{target_mob.name}")
+                                elif displayed_empty_hands_message is False:
+                                    message_logs.appendleft("you strike at")
+                                    message_logs.appendleft("air uselessly")
+                        just_broken_a_tile = False
+                        displayed_empty_hands_message = False
                     elif game_mode is GameMode.INVENTORY:
                         item = inventory.pop(cursor_index)
-                        if current_item != NO_ITEM:
-                            add_to_inventory(current_item, inventory)
+                        add_to_inventory(current_item, inventory)
                         current_item = item
                         # back to move mode
                         cursor_index = 0

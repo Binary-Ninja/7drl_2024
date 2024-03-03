@@ -33,15 +33,15 @@ item_data = {
     ItemID.WHEAT_SEEDS: ItemData("seeds", (Graphic.SEEDS, Color.GREEN), (ItemTag.STACKABLE,)),
     ItemID.WOOD_PICK: ItemData("wood pick", (Graphic.PICKAXE, Color.BROWN),
                                (ItemTag.BREAK_TILE,), {
-            "breakable": (TileID.STONE,)
+            "breakable": (TileID.STONE,), "tile_damage": 2,
                                }),
     ItemID.WOOD_SWORD: ItemData("wood sword", (Graphic.SWORD, Color.BROWN),
                                 (ItemTag.DAMAGE_MOBS,), {
-            "damage": 2
+            "mob_damage": 2
                                 }),
     ItemID.EMPTY_HANDS: ItemData("empty hands", (Graphic.EMPTY_HANDS, Color.YELLOW),
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE, ItemTag.PICKUP), {
-            "damage": 1, "breakable": (TileID.TREE, TileID.CACTUS)
+            "mob_damage": 1, "breakable": (TileID.TREE, TileID.CACTUS), "tile_damage": 1,
                                  }),
 }
 
