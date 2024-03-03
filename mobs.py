@@ -1,29 +1,15 @@
-from enum import Enum, auto
 from collections import namedtuple
 
-from data import Color, Graphic
+from data import Color, Graphic, MobID, MobTag
 from items import ItemID
-
-
-class MobID(Enum):
-    PLAYER = 1
-    GREEN_ZOMBIE = 2
-    GREEN_SLIME = 3
-    GREEN_SKELETON = 4
-    AIR_WIZARD = 5
-    WORKBENCH = 6
-
-
-class MobTag(Enum):
-    PUSHABLE = auto()
-    CRAFTING = auto()
 
 
 # First item is the result, the rest are the ingredients.
 recipies = {
     MobID.WORKBENCH: (
         ((ItemID.WORKBENCH, 1), (ItemID.WOOD, 10)),
-        ((ItemID.DIRT, 12), (ItemID.STONE, 6), (ItemID.WOOD, 6)),
+        ((ItemID.WOOD_PICK, 1), (ItemID.WOOD, 10)),
+        ((ItemID.WOOD_SWORD, 1), (ItemID.WOOD, 10)),
     ),
 }
 

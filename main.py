@@ -10,10 +10,11 @@ import pygame as pg
 
 from tileloader import TileLoader
 from world import World, set_array, get_array
-from data import Point, str_2_tile, PointType, Graphic, Color
-from items import Item, ItemID, ItemTag
-from tiles import TileTag
-from mobs import Mob, MobID, MobTag
+from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
+                  TileTag, MobID, MobTag)
+from items import Item
+from mobs import Mob
+from tiles import Tile, tile_replace
 
 
 class GameMode(Enum):
@@ -54,7 +55,7 @@ def main():
     game_world.generate_overworld_layer()
 
     player_vision = 17
-    player_health = 10
+    player_health = 8
     player_stamina = 10
     player_dir = Point(0, -1)
     player_pos = Point(game_world.size[0] // 2, game_world.size[1] // 2)
@@ -62,14 +63,9 @@ def main():
 
     current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.PICKUP), Item(ItemID.WORKBENCH),
-                             Item(ItemID.DIRT, 23), Item(ItemID.SAND, 2),
-                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
-                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
-                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
-                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
-                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
-                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
-                             Item(ItemID.WOOD, 99), Item(ItemID.STONE, 100),
+                             Item(ItemID.DIRT, 30), Item(ItemID.SAND, 9),
+                             Item(ItemID.WOOD, 1000), Item(ItemID.STONE, 100),
+                             Item(ItemID.APPLE, 100),
                              ]
 
     message_logs: deque[str] = deque(maxlen=10)
@@ -103,7 +99,7 @@ def main():
     def remove_from_inventory(item: tuple[ItemID, int], invent: list[Item]) -> Item | None:
         for index, invent_item in enumerate(invent):
             if invent_item.id is item[0]:
-                if invent_item.has_tag(ItemTag.STACKABLE):
+                if not invent_item.has_tag(ItemTag.STACKABLE):
                     return invent.pop(index)
                 else:
                     invent_item.count -= item[1]
@@ -246,7 +242,88 @@ def main():
                         cursor_index %= len(crafting_list)
                 elif event.key == pg.K_c:
                     if game_mode is GameMode.MOVE:
-                        pass  # TODO: use current item
+                        if current_item != NO_ITEM:
+                            target_pos = Point(player_pos.x + player_dir.x,
+                                               player_pos.y + player_dir.y)
+                            target_mob = get_array(target_pos,
+                                                   game_world.overworld_layer.mob_array)
+                            target_tile = get_array(target_pos,
+                                                    game_world.overworld_layer.tile_array)
+                            if current_item.has_tag(ItemTag.SPAWN_MOB):
+                                # if there is no mob, spawn one in
+                                if target_mob is None:
+                                    mob = Mob(current_item.data[0])
+                                    set_array(target_pos,
+                                              game_world.overworld_layer.mob_array, mob)
+                                    current_item = NO_ITEM
+                                    message_logs.appendleft("you place the")
+                                    message_logs.appendleft(f"{mob.name}")
+                            elif current_item.has_tag(ItemTag.PICKUP):
+                                if target_mob is not None:
+                                    item = Item(current_item.data[target_mob.id])
+                                    add_to_inventory(current_item, inventory)
+                                    current_item = item
+                                    set_array(target_pos,
+                                              game_world.overworld_layer.mob_array,
+                                              None)
+                                    message_logs.appendleft("you pick up the")
+                                    message_logs.appendleft(f"{item.name}")
+                            elif current_item.has_tag(ItemTag.HEAL):
+                                if player_health < 10:
+                                    prev_ph = player_health
+                                    player_health += current_item.data[0]
+                                    player_health = min(10, player_health)
+                                    current_item.count -= 1
+                                    message_logs.appendleft("you eat the")
+                                    message_logs.appendleft(f"{current_item.name} "
+                                                            f"+{player_health - prev_ph}hp")
+                                    if current_item.count <= 0:
+                                        current_item = NO_ITEM
+                                else:
+                                    message_logs.appendleft("you have full")
+                                    message_logs.appendleft("health points")
+                            elif current_item.has_tag(ItemTag.PLACE_TILE):
+                                if target_tile is not None and \
+                                        target_tile.id in current_item.data[1:]:
+                                    set_array(target_pos,
+                                              game_world.overworld_layer.tile_array,
+                                              Tile(current_item.data[0]))
+                                    message_logs.appendleft("you place the")
+                                    message_logs.appendleft(f"{current_item.name}")
+                                    current_item.count -= 1
+                                    if current_item.count <= 0:
+                                        current_item = NO_ITEM
+                                else:
+                                    message_logs.appendleft("you cannot put")
+                                    message_logs.appendleft(f"{current_item.name} here")
+                            elif current_item.has_tag(ItemTag.BREAK_TILE):
+                                if target_tile is not None and \
+                                        target_tile.id in current_item.data:
+                                    tile, item = tile_replace[target_tile.id]
+                                    set_array(target_pos,
+                                              game_world.overworld_layer.tile_array,
+                                              Tile(tile))
+                                    add_to_inventory(Item(item), inventory)
+                                    message_logs.appendleft("you break the")
+                                    message_logs.appendleft(f"{target_tile.name}")
+                                else:
+                                    message_logs.appendleft("you cannot use")
+                                    message_logs.appendleft(f"{current_item.name}")
+                            elif current_item.has_tag(ItemTag.DAMAGE_MOBS):
+                                if target_mob is not None:
+                                    target_mob.health -= current_item.data[0]
+                                    message_logs.appendleft("you strike the")
+                                    message_logs.appendleft(f"{target_mob.name} "
+                                                            f"-{current_item.data[0]}hp")
+                                    if target_mob.health <= 0:
+                                        set_array(target_pos,
+                                                  game_world.overworld_layer.mob_array,
+                                                  None)
+                                        message_logs.appendleft("you kill the")
+                                        message_logs.appendleft(f"{target_mob.name}")
+                                else:
+                                    message_logs.appendleft("you strike at")
+                                    message_logs.appendleft("air uselessly")
                     elif game_mode is GameMode.INVENTORY:
                         item = inventory.pop(cursor_index)
                         if current_item != NO_ITEM:
@@ -284,6 +361,8 @@ def main():
                             game_mode = GameMode.CRAFT
                             current_crafter = target_mob
                             crafting_list = current_crafter.recipies
+                            message_logs.appendleft("you craft with")
+                            message_logs.appendleft(f"the {current_crafter.name}")
                         else:
                             game_mode = GameMode.INVENTORY
                 elif event.key == pg.K_z:

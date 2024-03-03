@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum, auto
 
 Point = namedtuple("Point", ["x", "y"])
 
@@ -17,6 +18,7 @@ class Color:
     DARK_RED = (128, 0, 0)
     MOB_GREEN = (64, 200, 64)
     BROWN = (170, 85, 0)
+    DARK_BROWN = (100, 50, 0)
 
 
 class Graphic:
@@ -47,6 +49,10 @@ class Graphic:
     STONE_ITEM = (5, 2)
     WOOD = (18, 6)
     PICKUP = (41, 0)
+    APPLE = (33, 18)
+    SEEDS = (14, 6)
+    PICKAXE = (43, 5)
+    SWORD = (32, 8)
 
 
 str_2_tile = {
@@ -87,5 +93,60 @@ str_2_tile = {
     "y": (46, 19),
     "z": (47, 19),
     " ": (0, 0),
+    "+": (36, 20),
+    "-": (37, 20),
 
 }
+
+
+class MobID(Enum):
+    PLAYER = 1
+    GREEN_ZOMBIE = 2
+    GREEN_SLIME = 3
+    GREEN_SKELETON = 4
+    AIR_WIZARD = 5
+    WORKBENCH = 6
+
+
+class MobTag(Enum):
+    PUSHABLE = auto()
+    CRAFTING = auto()
+
+
+class ItemID(Enum):
+    WORKBENCH = 1
+    DIRT = 2
+    STONE = 3
+    SAND = 4
+    WOOD = 5
+    PICKUP = 6
+    APPLE = 7
+    WHEAT_SEEDS = 8
+    WOOD_PICK = 9
+    WOOD_SWORD = 10
+
+
+class ItemTag(Enum):
+    STACKABLE = auto()
+    PICKUP = auto()
+    SPAWN_MOB = auto()
+    HEAL = auto()
+    BREAK_TILE = auto()
+    PLACE_TILE = auto()
+    DAMAGE_MOBS = auto()
+
+
+class TileID(Enum):
+    GRASS = 1
+    SAND = 2
+    WATER = 3
+    STONE = 4
+    TREE = 5
+    CACTUS = 6
+    DIRT = 7
+    HOLE = 8
+
+
+class TileTag(Enum):
+    BLOCK_SIGHT = auto()
+    BLOCK_MOVE = auto()

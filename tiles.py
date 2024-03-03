@@ -1,35 +1,33 @@
-from enum import Enum, auto
 from collections import namedtuple
 
-from data import Color, Graphic
+from data import Color, Graphic, TileID, TileTag, ItemID
 
 
-class TileID(Enum):
-    GRASS = 1
-    SAND = 2
-    WATER = 3
-    STONE = 4
-    TREE = 5
-    CACTUS = 6
+tile_replace = {
+    TileID.GRASS: (TileID.DIRT, ItemID.WHEAT_SEEDS),
+    TileID.SAND: (TileID.DIRT, ItemID.SAND),
+    TileID.STONE: (TileID.DIRT, ItemID.STONE),
+    TileID.TREE: (TileID.GRASS, ItemID.WOOD),
+    TileID.CACTUS: (TileID.SAND, ItemID.WOOD),
+    TileID.DIRT: (TileID.HOLE, ItemID.DIRT),
+}
 
 
-class TileTag(Enum):
-    BLOCK_SIGHT = auto()
-    BLOCK_MOVE = auto()
-
-
-TileData = namedtuple("TileData", ("name", "graphic", "tags"))
+TileData = namedtuple("TileData", ("name", "graphic", "tags"),
+                      defaults=(tuple(),))
 tile_data = {
-    None: TileData("void", (Graphic.EMPTY, Color.WHITE), tuple()),  # off map edge
-    TileID.GRASS: TileData("grass", (Graphic.GRASS, Color.GREEN), tuple()),
-    TileID.SAND: TileData("sand", (Graphic.SAND, Color.YELLOW), tuple()),
-    TileID.WATER: TileData("water", (Graphic.LIQUID, Color.BLUE), tuple()),
+    None: TileData("void", (Graphic.EMPTY, Color.WHITE),),  # off map edge
+    TileID.GRASS: TileData("grass", (Graphic.GRASS, Color.GREEN),),
+    TileID.SAND: TileData("sand", (Graphic.SAND, Color.YELLOW),),
+    TileID.WATER: TileData("water", (Graphic.LIQUID, Color.BLUE),),
     TileID.STONE: TileData("stone", (Graphic.STONE_TILE, Color.STONE),
                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.TREE: TileData("tree", (Graphic.TREE, Color.GREEN),
                           (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.CACTUS: TileData("cactus", (Graphic.CACTUS, Color.GREEN),
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
+    TileID.DIRT: TileData("dirt", (Graphic.DIRT, Color.BROWN),),
+    TileID.HOLE: TileData("hole", (Graphic.LIQUID, Color.DARK_BROWN),),
 }
 
 
