@@ -35,6 +35,7 @@ tile_break_loot.update({
     TileID.CACTUS_SAPLING: (LootItem(ItemID.CACTUS_SAPLING),),
     TileID.CLOUD: (LootItem(ItemID.CLOUD),),
     TileID.CLOUD_BANK: (LootItem(ItemID.CLOUD, 1.0, 2, 4),),
+    TileID.WHEAT_SEEDS: (LootItem(ItemID.WHEAT_SEEDS),),
 })
 
 

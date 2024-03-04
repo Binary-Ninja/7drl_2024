@@ -78,9 +78,15 @@ mob_data = {
     MobID.ANVIL: MobData("anvil", (Graphic.ANVIL, Color.LIGHT_GRAY), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.ANVIL]),
     MobID.WOOD_LANTERN: MobData("wood lantern", (Graphic.LANTERN, Color.BROWN), 10,
-                             (MobTag.PUSHABLE, ), tuple(), 10),
+                             (MobTag.PUSHABLE, ), tuple(), 6),
     MobID.TORCH: MobData("torch", (Graphic.TORCH, Color.YELLOW), 8,
-                             (MobTag.PUSHABLE, ), tuple(), 5),
+                             (MobTag.PUSHABLE, ), tuple(), 3),
+    MobID.IRON_LANTERN: MobData("iron lantern", (Graphic.LANTERN, Color.IRON), 10,
+                                (MobTag.PUSHABLE,), tuple(), 10),
+    MobID.GOLD_LANTERN: MobData("gold lantern", (Graphic.LANTERN, Color.GOLD), 10,
+                                (MobTag.PUSHABLE,), tuple(), 14),
+    MobID.GEM_LANTERN: MobData("gem lantern", (Graphic.LANTERN, Color.GEM), 10,
+                                (MobTag.PUSHABLE,), tuple(), 18),
 }
 
 
@@ -94,6 +100,7 @@ class Mob:
         self.tags = self.mob_data.tags
         self.recipies = self.mob_data.recipies
         self.light = self.mob_data.light
+        self.target_space = None
 
     def has_tag(self, tag: MobTag) -> bool:
         return tag in self.tags

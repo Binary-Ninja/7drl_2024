@@ -27,6 +27,7 @@ tile_replace: dict[TileID, TileID] = {
     TileID.OBSIDIAN_BRICKS: TileID.SAND,
     TileID.CLOUD: TileID.AIR,
     TileID.CLOUD_BANK: TileID.CLOUD,
+    TileID.WHEAT_SEEDS: TileID.DIRT,
 }
 
 tile_damage = defaultdict(lambda: 0)
@@ -67,11 +68,11 @@ tile_data = {
     TileID.GRASS: TileData("grass", (Graphic.GRASS, Color.GREEN), 10, (TileTag.SPREAD,)),
     TileID.WINDOW: TileData("window", (Graphic.WINDOW, Color.LIGHT_BLUE), 2,
                             (TileTag.BLOCK_MOVE,)),
-    TileID.WOOD_WALL: TileData("wood wall", (Graphic.PLANKS, Color.BROWN), 10,
+    TileID.WOOD_WALL: TileData("wd. wall", (Graphic.PLANKS, Color.BROWN), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
-    TileID.STONE_WALL: TileData("stone wall", (Graphic.BRICKS, Color.STONE), 10,
+    TileID.STONE_WALL: TileData("st. wall", (Graphic.BRICKS, Color.STONE), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
-    TileID.OBSIDIAN_BRICKS: TileData("ob. bricks", (Graphic.BRICKS, Color.OBSIDIAN), 20,
+    TileID.OBSIDIAN_BRICKS: TileData("ob. wall", (Graphic.BRICKS, Color.OBSIDIAN), 20,
                                 (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.CLOUD_BANK: TileData("cloud bank", (Graphic.STONE_TILE, Color.WHITE), 20,
                                 (TileTag.BLOCK_SIGHT,)),
@@ -93,7 +94,7 @@ tile_data = {
     TileID.LAVA: TileData("lava", (Graphic.LIQUID, Color.ORANGE), 10,
                           (TileTag.DAMAGE, TileTag.LIQUID, TileTag.SPREAD, TileTag.LIGHT),),
     TileID.WHEAT: TileData("wheat", (Graphic.WHEAT, Color.YELLOW), 10,
-                           (TileTag.BLOCK_SIGHT), ),
+                           (TileTag.BLOCK_SIGHT,), ),
     TileID.DOWN_STAIRS: TileData("stairs", (Graphic.DOWN_STAIRS, Color.LIGHT_GRAY),
                                  (TileTag.DOWN_STAIRS,)),
     TileID.UP_STAIRS: TileData("stairs", (Graphic.UP_STAIRS, Color.LIGHT_GRAY),

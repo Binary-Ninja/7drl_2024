@@ -150,6 +150,7 @@ str_2_tile = {
     "S": (42, 12),
     ".": (46, 17),
     ":": (45, 17),
+    ">": (29, 20),
 
 }
 
@@ -166,6 +167,9 @@ class MobID(Enum):
     ANVIL = 9
     WOOD_LANTERN = 10
     TORCH = 11
+    IRON_LANTERN = 12
+    GOLD_LANTERN = 13
+    GEM_LANTERN = 14
 
 
 class MobTag(Enum):
@@ -242,6 +246,9 @@ class ItemID(Enum):
     GEM_SHOVEL = 63
     GEM_HOE = 64
     CLOUD = 65
+    IRON_LANTERN = 66
+    GOLD_LANTERN = 67
+    GEM_LANTERN = 68
 
 
 class ItemTag(Enum):

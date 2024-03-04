@@ -28,12 +28,12 @@ item_data = {
                               "place": TileID.WINDOW, "base": (TileID.DIRT, TileID.SAND,
                                                                TileID.GRASS)
                           }),
-    ItemID.WOOD_WALL: ItemData("wood wall", (Graphic.PLANKS, Color.BROWN),
+    ItemID.WOOD_WALL: ItemData("wd. wall", (Graphic.PLANKS, Color.BROWN),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.WOOD_WALL, "base": (TileID.DIRT, TileID.GRASS,
                                                                   TileID.SAND)
                           }),
-    ItemID.STONE_WALL: ItemData("stone wall", (Graphic.BRICKS, Color.STONE),
+    ItemID.STONE_WALL: ItemData("st. wall", (Graphic.BRICKS, Color.STONE),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.STONE_WALL, "base": (TileID.DIRT, TileID.GRASS,
                                                                    TileID.SAND)
@@ -152,6 +152,18 @@ item_data = {
                                (ItemTag.SPAWN_MOB,), {
                                    "mobid": MobID.WOOD_LANTERN,
                                }),
+    ItemID.IRON_LANTERN: ItemData("iron lantern", (Graphic.LANTERN, Color.IRON),
+                                  (ItemTag.SPAWN_MOB,), {
+                                      "mobid": MobID.IRON_LANTERN,
+                                  }),
+    ItemID.GOLD_LANTERN: ItemData("gold lantern", (Graphic.LANTERN, Color.GOLD),
+                                  (ItemTag.SPAWN_MOB,), {
+                                      "mobid": MobID.GOLD_LANTERN,
+                                  }),
+    ItemID.GEM_LANTERN: ItemData("gem lantern", (Graphic.LANTERN, Color.GEM),
+                                  (ItemTag.SPAWN_MOB,), {
+                                      "mobid": MobID.GEM_LANTERN,
+                                  }),
     ItemID.TORCH: ItemData("torch", (Graphic.TORCH, Color.YELLOW),
                                (ItemTag.SPAWN_MOB, ItemTag.STACKABLE), {
                                    "mobid": MobID.TORCH,
