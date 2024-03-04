@@ -19,6 +19,10 @@ item_data = {
                                (ItemTag.SPAWN_MOB,), {
             "mobid": MobID.WORKBENCH,
                                }),
+    ItemID.SPAWN_EGG_GREEN_ZOMBIE: ItemData("spawn egg", (Graphic.EGG, Color.MOB_GREEN),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.GREEN_ZOMBIE,
+                               }),
     ItemID.DIRT: ItemData("dirt", (Graphic.DIRT, Color.BROWN),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.DIRT, "base": (TileID.HOLE, TileID.WATER)
@@ -38,7 +42,7 @@ item_data = {
                               "place": TileID.STONE_WALL, "base": (TileID.DIRT, TileID.GRASS,
                                                                    TileID.SAND)
                           }),
-    ItemID.WOOD_DOOR: ItemData("wood door", (Graphic.DOOR_CLOSED, Color.BROWN),
+    ItemID.WOOD_DOOR: ItemData("wd. door", (Graphic.DOOR_CLOSED, Color.BROWN),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.CLOSED_WOOD_DOOR, "base": (TileID.DIRT,
                                                                     TileID.GRASS,
@@ -58,7 +62,7 @@ item_data = {
             "heal": 1,
                                "stamina_cost": 1,
                            }),
-    ItemID.WHEAT_SEEDS: ItemData("wheat seeds", (Graphic.SEEDS, Color.GREEN),
+    ItemID.WHEAT_SEEDS: ItemData("wh. seeds", (Graphic.SEEDS, Color.GREEN),
                                  (ItemTag.STACKABLE, ItemTag.PLACE_TILE),{
             "place": TileID.WHEAT_SEEDS, "base": (TileID.FARMLAND,),
                                  }),

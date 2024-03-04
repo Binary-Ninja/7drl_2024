@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from data import Color, Graphic, MobID, MobTag
 from items import ItemID
@@ -11,7 +11,7 @@ recipies = {
         ((ItemID.OVEN, 1), (ItemID.STONE, 10)),
         ((ItemID.FURNACE, 1), (ItemID.STONE, 20)),
         ((ItemID.ANVIL, 1), (ItemID.IRON_BAR, 5)),
-        ((ItemID.WOOD_LANTERN, 1), (ItemID.WOOD, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2)),
+        ((ItemID.WOOD_LANTERN, 1), (ItemID.WOOD, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
         ((ItemID.TORCH, 2), (ItemID.WOOD, 2), (ItemID.COAL, 1)),
         ((ItemID.WOOD_SWORD, 1), (ItemID.WOOD, 5)),
         ((ItemID.WOOD_PICK, 1), (ItemID.WOOD, 5)),
@@ -56,19 +56,67 @@ recipies = {
         ((ItemID.GEM_AXE, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
         ((ItemID.GEM_SHOVEL, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
         ((ItemID.GEM_HOE, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
+        ((ItemID.IRON_LANTERN, 1), (ItemID.IRON_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.GOLD_LANTERN, 1), (ItemID.GOLD_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.GEM_LANTERN, 1), (ItemID.GEM, 25), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
     ),
 }
+
+mob_damage = {
+    MobID.GREEN_ZOMBIE: 1,
+    MobID.GREEN_SLIME: 1,
+    MobID.GREEN_SKELETON: 1,
+    MobID.RED_ZOMBIE: 2,
+    MobID.RED_SLIME: 2,
+    MobID.RED_SKELETON: 2,
+    MobID.WHITE_ZOMBIE: 3,
+    MobID.WHITE_SLIME: 3,
+    MobID.WHITE_SKELETON: 3,
+    MobID.BLACK_ZOMBIE: 4,
+    MobID.BLACK_SLIME: 4,
+    MobID.BLACK_SKELETON: 4,
+    MobID.AIR_WIZARD: 5,
+}
+
+mob_ai_timer = defaultdict(lambda: 1)
+mob_ai_timer.update({
+    MobID.GREEN_ZOMBIE: 3,
+    MobID.GREEN_SLIME: 3,
+    MobID.GREEN_SKELETON: 2,
+    MobID.RED_ZOMBIE: 3,
+    MobID.RED_SLIME: 3,
+    MobID.RED_SKELETON: 2,
+    MobID.WHITE_ZOMBIE: 3,
+    MobID.WHITE_SLIME: 3,
+    MobID.WHITE_SKELETON: 3,
+    MobID.BLACK_ZOMBIE: 3,
+    MobID.BLACK_SLIME: 2,
+    MobID.BLACK_SKELETON: 4,
+    MobID.AIR_WIZARD: 2,
+})
 
 
 MobData = namedtuple("MobData", ("name", "graphic", "max_health", "tags",
                                  "recipies", "light"), defaults=(10, tuple(), None, 0))
 mob_data = {
-    MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE), 10, tuple(), tuple(), 3),
-    MobID.GREEN_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_GREEN), 10, (MobTag.AI_FOLLOW,)),
-    MobID.GREEN_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_GREEN), 10, (MobTag.AI_JUMP,)),
+    MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE), 10, tuple(), tuple(), 0),
+    MobID.GREEN_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_GREEN), 10, (MobTag.AI_FOLLOW, MobTag.DAMAGE)),
+    MobID.GREEN_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_GREEN), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
     MobID.GREEN_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_GREEN), 10,
-                                  (MobTag.PUSHABLE, MobTag.AI_SHOOT)),
-    MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100),
+                                  (MobTag.PUSHABLE, MobTag.AI_SHOOT, MobTag.DAMAGE)),
+    MobID.RED_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_RED), 10, (MobTag.AI_FOLLOW, MobTag.DAMAGE)),
+    MobID.RED_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_RED), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
+    MobID.RED_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_RED), 10,
+                                  (MobTag.PUSHABLE, MobTag.AI_SHOOT, MobTag.DAMAGE)),
+    MobID.WHITE_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_WHITE), 10, (MobTag.AI_FOLLOW, MobTag.DAMAGE)),
+    MobID.WHITE_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_WHITE), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
+    MobID.WHITE_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_WHITE), 10,
+                                  (MobTag.PUSHABLE, MobTag.AI_SHOOT, MobTag.DAMAGE)),
+    MobID.BLACK_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_BLACK), 10, (MobTag.AI_FOLLOW, MobTag.DAMAGE)),
+    MobID.BLACK_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_BLACK), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
+    MobID.BLACK_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_BLACK), 10,
+                                  (MobTag.PUSHABLE, MobTag.AI_SHOOT, MobTag.DAMAGE)),
+    MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100, (MobTag.DAMAGE,)),
     MobID.WORKBENCH: MobData("workbench", (Graphic.WORKBENCH, Color.BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.WORKBENCH]),
     MobID.OVEN: MobData("oven", (Graphic.OVEN, Color.LIGHT_BROWN), 10,
@@ -101,6 +149,8 @@ class Mob:
         self.recipies = self.mob_data.recipies
         self.light = self.mob_data.light
         self.target_space = None
+        self.ai_tick = 0
+        self.ai_timer = mob_ai_timer[self.id]
 
     def has_tag(self, tag: MobTag) -> bool:
         return tag in self.tags

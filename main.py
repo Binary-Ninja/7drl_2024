@@ -14,7 +14,7 @@ from world import World, set_array, get_array, make_2d_array
 from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
 from items import Item, item_to_mob
-from mobs import Mob
+from mobs import Mob, mob_damage
 from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light
 from loots import tile_break_loot, resolve_loot
 
@@ -33,8 +33,11 @@ NO_ITEM = Item(ItemID.EMPTY_HANDS)
 
 MOB_SIM_DISTANCE = 25
 MAX_VIEW_DIST = 25
+CHASE_DISTANCE = 8
+JUMP_DISTANCE = 6
 
 player_vision = 17
+player_light_radius = 3.5
 player_health = 10
 player_stamina = 10
 regen_stam = True
@@ -46,7 +49,7 @@ def main():
     pg.init()
 
     screen = pg.display.set_mode((800, 560))  # 50x35 tiles
-    pg.display.set_caption("7DRL 2024")
+    pg.display.set_caption("Outlast 7DRL 2024")
     clock = pg.time.Clock()
     font = pg.font.Font(None, 20)
 
@@ -58,6 +61,9 @@ def main():
     stam_empty_img = tile_loader.get_tile(Graphic.STAM_EMPTY, Color.DARK_YELLOW)
     cursor_img = tile_loader.get_tile(Graphic.CURSOR, Color.WHITE)
     cursor_img2 = tile_loader.get_tile(Graphic.CURSOR2, Color.WHITE)
+    icon_image = tile_loader.get_tile(Graphic.AIR_WIZARD, Color.RED)
+
+    pg.display.set_icon(icon_image)
 
     cursor_flash_timer = pg.time.get_ticks()
     CURSOR_FLASH_FREQ = 500
@@ -103,6 +109,7 @@ def main():
                              Item(ItemID.COCONUT, 100), Item(ItemID.COAL, 99),
                              Item(ItemID.WINDOW, 100), Item(ItemID.STONE_WALL, 99),
                              Item(ItemID.WOOD_DOOR, 100), Item(ItemID.WHEAT_SEEDS, 99),
+                             Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 100), Item(ItemID.GEM, 99),
                              ]
 
     message_logs: deque[str] = deque(maxlen=10)
@@ -128,13 +135,13 @@ def main():
     displayed_no_use_message = False
 
     def calc_paths():
+        return
         global path_to_player
         frontier: deque[Point] = deque()
         frontier.append(player_pos)
         path_to_player = {player_pos: player_pos}
 
         while len(frontier):
-            return
             current = frontier.pop()
             for x in (-1, 0, 1):
                 for y in (-1, 0, 1):
@@ -277,8 +284,10 @@ def main():
     # add some test mobs
     spawn_mob((48, 48), MobID.WORKBENCH)
     spawn_mob((49, 49), MobID.WOOD_LANTERN)
-    for _ in range(2):
-        spawn_mob((_ * 2, 0), MobID.GREEN_ZOMBIE)
+    spawn_mob((60, 50), MobID.GREEN_SLIME)
+    # spawn_mob((50, 52), MobID.GREEN_ZOMBIE)
+    # spawn_mob((50, 60), MobID.GREEN_SKELETON)
+    # spawn_mob((50, 62), MobID.GREEN_ZOMBIE)
 
     calc_lightmap()
 
@@ -386,7 +395,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((0, -1))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_lightmap()
                             calc_paths()
                         else:
                             player_dir = Point(0, -1)
@@ -403,7 +411,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((0, 1))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_lightmap()
                             calc_paths()
                         else:
                             player_dir = Point(0, 1)
@@ -420,7 +427,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((-1, 0))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_lightmap()
                             calc_paths()
                         else:
                             player_dir = Point(-1, 0)
@@ -437,7 +443,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((1, 0))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_lightmap()
                             calc_paths()
                         else:
                             player_dir = Point(1, 0)
@@ -827,9 +832,61 @@ def main():
                     if not distance_within(player_pos, (x, y), MOB_SIM_DISTANCE):
                         continue  # mobs outside this radius won't be ticked
                     if current_mob.has_tag(MobTag.AI_FOLLOW):
-                        pass
+                        current_mob.ai_tick += 1
+                        if current_mob.ai_tick % current_mob.ai_timer != 0:
+                            continue  # only tick every ai_timer ticks
+                        if distance_within((x, y), player_pos, CHASE_DISTANCE):
+                            # chase player
+                            dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
+                        else:
+                            # wander randomly
+                            dir_vec = pg.Vector2(random.random(), random.random()).normalize()
+                        if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
+                            # mob wants to move horizontally
+                            try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                        else:
+                            # mob is diagonal or wants to move vertically
+                            try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
+                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
+                            player_health -= mob_damage[current_mob.id]
+                            player_health = max(0, player_health)
+                            message_logs.appendleft(f"the {current_mob.name}")
+                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE):
+                            set_array((x, y), game_world.overworld_layer.mob_array, None)
+                            set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                            if move_tile.has_tag(TileTag.CRUSH):
+                                set_array(try_pos, game_world.overworld_layer.tile_array,
+                                          Tile(tile_replace[move_tile.id]))
+                            already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_JUMP):
-                        pass
+                        current_mob.ai_tick += 1
+                        if current_mob.ai_tick % current_mob.ai_timer != 0:
+                            continue  # only tick every ai_timer ticks
+                        if distance_within((x, y), player_pos, JUMP_DISTANCE):
+                            # chase player
+                            dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
+                        else:
+                            # wander randomly
+                            dir_vec = pg.Vector2(random.random(), random.random()).normalize()
+                        try_pos = Point(x + int(math.copysign(1, dir_vec.x)),
+                                        y + int(math.copysign(1, dir_vec.y)))
+                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
+                            player_health -= mob_damage[current_mob.id]
+                            player_health = max(0, player_health)
+                            message_logs.appendleft(f"the {current_mob.name}")
+                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE):
+                            set_array((x, y), game_world.overworld_layer.mob_array, None)
+                            set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                            if move_tile.has_tag(TileTag.CRUSH):
+                                set_array(try_pos, game_world.overworld_layer.tile_array,
+                                          Tile(tile_replace[move_tile.id]))
+                            already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_SHOOT):
                         pass
 
@@ -842,7 +899,8 @@ def main():
             dy = 0
             for y in range(-player_vision, player_vision + 1):
                 real_pos = Point(player_pos.x + x, player_pos.y + y)
-                if (not do_fov or fov_field[x][y]) and (not level_is_dark or light_map[real_pos.x][real_pos.y]):
+                if (not do_fov or fov_field[x][y]) and (not level_is_dark or light_map[real_pos.x][real_pos.y] or
+                                                        distance_within(player_pos, real_pos, player_light_radius)):
                     mob = get_array_tile(real_pos,
                                          game_world.overworld_layer.mob_array)
                     if mob:
@@ -894,10 +952,10 @@ def main():
         else:
             write_text((35, 3), "current recipie", Color.WHITE)
             ingredients = crafting_list[cursor_index]
-            color = Color.WHITE if craftable(ingredients[1:], inventory) else Color.LIGHT_GRAY
             for index, ingredient in enumerate(ingredients):
                 if index == 0:
                     continue  # this is the result of the recipie
+                color = Color.WHITE if craftable((ingredient,), inventory) else Color.LIGHT_GRAY
                 item = Item(*ingredient)
                 tile = tile_loader.get_tile(*item.graphic)
                 screen.blit(tile, (36 * tile_size.x, (3 + index) * tile_size.y))

@@ -19,6 +19,9 @@ class Color:
     RED = (255, 0, 0)
     DARK_RED = (128, 0, 0)
     MOB_GREEN = (128, 255, 128)
+    MOB_RED = (255, 128, 128)
+    MOB_WHITE = (200, 200, 200)
+    MOB_BLACK = (64, 64, 64)
     BROWN = (170, 85, 0)
     DARK_BROWN = (32, 16, 0)
     ORANGE = (255, 128, 0)
@@ -104,6 +107,7 @@ class Graphic:
     BONE = (32, 12)
     EMPTY_BOTTLE = (32, 14)
     FULL_BOTTLE = (32, 13)
+    EGG = (34, 17)
 
 
 str_2_tile = {
@@ -170,6 +174,15 @@ class MobID(Enum):
     IRON_LANTERN = 12
     GOLD_LANTERN = 13
     GEM_LANTERN = 14
+    RED_ZOMBIE = 15
+    RED_SLIME = 16
+    RED_SKELETON = 17
+    WHITE_ZOMBIE = 18
+    WHITE_SLIME = 19
+    WHITE_SKELETON = 20
+    BLACK_ZOMBIE = 21
+    BLACK_SLIME = 22
+    BLACK_SKELETON = 23
 
 
 class MobTag(Enum):
@@ -178,6 +191,7 @@ class MobTag(Enum):
     AI_FOLLOW = auto()
     AI_SHOOT = auto()
     AI_JUMP = auto()
+    DAMAGE = auto()
 
 
 class ItemID(Enum):
@@ -249,6 +263,7 @@ class ItemID(Enum):
     IRON_LANTERN = 66
     GOLD_LANTERN = 67
     GEM_LANTERN = 68
+    SPAWN_EGG_GREEN_ZOMBIE = 69
 
 
 class ItemTag(Enum):
