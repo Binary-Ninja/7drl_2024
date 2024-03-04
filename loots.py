@@ -12,7 +12,7 @@ tile_break_loot = defaultdict(tuple)
 tile_break_loot.update({
     TileID.GRASS: (LootItem(ItemID.WHEAT_SEEDS, 0.4), ),
     TileID.SAND: (LootItem(ItemID.SAND), ),
-    TileID.STONE: (LootItem(ItemID.STONE, 1.0, 2, 5), LootItem(ItemID.COAL, 0.8, 1, 3)),
+    TileID.STONE: (LootItem(ItemID.STONE, 1.0, 2, 5), LootItem(ItemID.COAL, 0.5, 1, 3)),
     TileID.TREE: (LootItem(ItemID.WOOD, 1.0, 2, 5), LootItem(ItemID.APPLE, 0.5, 1, 3),
                   LootItem(ItemID.TREE_SAPLING, 0.8, 1, 2)),
     TileID.CACTUS: (LootItem(ItemID.WOOD), LootItem(ItemID.POKE_PEAR, 0.5, 1, 2),
@@ -33,6 +33,8 @@ tile_break_loot.update({
     TileID.TREE_SAPLING: (LootItem(ItemID.TREE_SAPLING),),
     TileID.PALM_TREE_SAPLING: (LootItem(ItemID.PALM_TREE_SAPLING),),
     TileID.CACTUS_SAPLING: (LootItem(ItemID.CACTUS_SAPLING),),
+    TileID.CLOUD: (LootItem(ItemID.CLOUD),),
+    TileID.CLOUD_BANK: (LootItem(ItemID.CLOUD, 1.0, 2, 4),),
 })
 
 

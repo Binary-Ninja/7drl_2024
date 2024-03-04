@@ -24,6 +24,9 @@ tile_replace: dict[TileID, TileID] = {
     TileID.TREE_SAPLING: TileID.GRASS,
     TileID.PALM_TREE_SAPLING: TileID.SAND,
     TileID.CACTUS_SAPLING: TileID.SAND,
+    TileID.OBSIDIAN_BRICKS: TileID.SAND,
+    TileID.CLOUD: TileID.AIR,
+    TileID.CLOUD_BANK: TileID.CLOUD,
 }
 
 tile_damage = defaultdict(lambda: 0)
@@ -46,10 +49,14 @@ tile_grow.update({
 
 tile_spread = defaultdict(tuple)
 tile_spread.update({
-    TileID.GRASS: (TileID.DIRT, 0.05),
+    TileID.GRASS: (TileID.DIRT, 0.01),
     TileID.WATER: (TileID.HOLE, 1),
-    TileID.LAVA: (TileID.HOLE, 0.5),
+    TileID.LAVA: (TileID.HOLE, 0.25),
 })
+
+tile_light = {
+    TileID.LAVA: 1,
+}
 
 
 TileData = namedtuple("TileData",
@@ -64,6 +71,10 @@ tile_data = {
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.STONE_WALL: TileData("stone wall", (Graphic.BRICKS, Color.STONE), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
+    TileID.OBSIDIAN_BRICKS: TileData("ob. bricks", (Graphic.BRICKS, Color.OBSIDIAN), 20,
+                                (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
+    TileID.CLOUD_BANK: TileData("cloud bank", (Graphic.STONE_TILE, Color.WHITE), 20,
+                                (TileTag.BLOCK_SIGHT,)),
     TileID.OPEN_WOOD_DOOR: TileData("wood door", (Graphic.DOOR_OPEN, Color.BROWN), 10,),
     TileID.CLOSED_WOOD_DOOR: TileData("wood door", (Graphic.DOOR_CLOSED, Color.BROWN), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
@@ -77,10 +88,10 @@ tile_data = {
     TileID.CACTUS: TileData("cactus", (Graphic.CACTUS, Color.GREEN), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
     TileID.DIRT: TileData("dirt", (Graphic.DIRT, Color.BROWN),),
-    TileID.HOLE: TileData("hole", (Graphic.LIQUID, Color.DARK_BROWN),),
+    TileID.HOLE: TileData("hole", (Graphic.HOLE, Color.DARK_BROWN),),
     TileID.FARMLAND: TileData("farmland", (Graphic.FARMLAND, Color.BROWN),),
     TileID.LAVA: TileData("lava", (Graphic.LIQUID, Color.ORANGE), 10,
-                          (TileTag.DAMAGE, TileTag.LIQUID, TileTag.SPREAD),),
+                          (TileTag.DAMAGE, TileTag.LIQUID, TileTag.SPREAD, TileTag.LIGHT),),
     TileID.WHEAT: TileData("wheat", (Graphic.WHEAT, Color.YELLOW), 10,
                            (TileTag.BLOCK_SIGHT), ),
     TileID.DOWN_STAIRS: TileData("stairs", (Graphic.DOWN_STAIRS, Color.LIGHT_GRAY),
@@ -98,12 +109,15 @@ tile_data = {
     TileID.WHEAT_SEEDS: TileData("wheat seeds", (Graphic.SEEDS, Color.GREEN), 10,
                              (TileTag.GROW, TileTag.CRUSH)),
     TileID.TREE_SAPLING: TileData("sapling", (Graphic.SMALL_TREE, Color.GREEN), 5,
-                                 (TileTag.GROW,)),
+                                 (TileTag.GROW, TileTag.BLOCK_MOVE)),
     TileID.PALM_TREE_SAPLING: TileData("sapling", (Graphic.SMALL_TREE,
                                                         Color.LIGHT_GREEN), 5,
-                                 (TileTag.GROW,)),
+                                 (TileTag.GROW, TileTag.BLOCK_MOVE)),
     TileID.CACTUS_SAPLING: TileData("cactus", (Graphic.SMALL_CACTUS, Color.GREEN), 5,
-                                 (TileTag.GROW,)),
+                                 (TileTag.GROW, TileTag.DAMAGE, TileTag.BLOCK_MOVE)),
+    TileID.AIR: TileData("air", (Graphic.AIR, Color.LIGHT_BLUE), 5,
+                                    (TileTag.BLOCK_MOVE,)),
+    TileID.CLOUD: TileData("cloud", (Graphic.CLOUD, Color.WHITE), 10, ),
 }
 
 

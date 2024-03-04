@@ -15,6 +15,7 @@ class Color:
     STONE = (170, 170, 170)
     WHITE = (255, 255, 255)
     LIGHT_GRAY = (200, 200, 200)
+    MED_GRAY = (128, 128, 128)
     RED = (255, 0, 0)
     DARK_RED = (128, 0, 0)
     MOB_GREEN = (128, 255, 128)
@@ -27,12 +28,14 @@ class Color:
     DARK_GRAY = (64, 64, 64)
     LIGHT_BROWN = (200, 200, 170)
     LIGHT_BLUE = (0, 100, 255)
+    OBSIDIAN = (150, 0, 210)
 
 
 class Graphic:
     GRASS = (5, 0)
     SAND = (2, 0)
     LIQUID = (8, 5)
+    HOLE = (8, 5)
     STONE_TILE = (1, 17)
     TREE = (4, 2)
     CACTUS = (6, 1)
@@ -45,6 +48,8 @@ class Graphic:
     DESERT_BONES = (0, 15)
     SMALL_TREE = (2, 1)
     SMALL_CACTUS = (7, 1)
+    AIR = (8, 5)
+    CLOUD = (7, 0)
 
     WINDOW = (1, 4)
     PLANKS = (13, 16)
@@ -97,6 +102,8 @@ class Graphic:
     BREAD = (47, 7)
     PIE = (37, 2)
     BONE = (32, 12)
+    EMPTY_BOTTLE = (32, 14)
+    FULL_BOTTLE = (32, 13)
 
 
 str_2_tile = {
@@ -141,6 +148,8 @@ str_2_tile = {
     "-": (37, 20),
     "H": (42, 10),
     "S": (42, 12),
+    ".": (46, 17),
+    ":": (45, 17),
 
 }
 
@@ -162,6 +171,9 @@ class MobID(Enum):
 class MobTag(Enum):
     PUSHABLE = auto()
     CRAFTING = auto()
+    AI_FOLLOW = auto()
+    AI_SHOOT = auto()
+    AI_JUMP = auto()
 
 
 class ItemID(Enum):
@@ -208,6 +220,28 @@ class ItemID(Enum):
     TREE_SAPLING = 41
     PALM_TREE_SAPLING = 42
     CACTUS_SAPLING = 43
+    BOTTLE = 44
+    STONE_SWORD = 45
+    STONE_PICK = 46
+    STONE_AXE = 47
+    STONE_SHOVEL = 48
+    STONE_HOE = 49
+    IRON_SWORD = 50
+    IRON_PICK = 51
+    IRON_AXE = 52
+    IRON_SHOVEL = 53
+    IRON_HOE = 54
+    GOLD_SWORD = 55
+    GOLD_PICK = 56
+    GOLD_AXE = 57
+    GOLD_SHOVEL = 58
+    GOLD_HOE = 59
+    GEM_SWORD = 60
+    GEM_PICK = 61
+    GEM_AXE = 62
+    GEM_SHOVEL = 63
+    GEM_HOE = 64
+    CLOUD = 65
 
 
 class ItemTag(Enum):
@@ -249,6 +283,10 @@ class TileID(Enum):
     TREE_SAPLING = 25
     PALM_TREE_SAPLING = 26
     CACTUS_SAPLING = 27
+    OBSIDIAN_BRICKS = 28
+    AIR = 29
+    CLOUD = 30
+    CLOUD_BANK = 31
 
 
 class TileTag(Enum):
