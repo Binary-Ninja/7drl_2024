@@ -67,7 +67,7 @@ tile_spread.update({
 
 tile_light = {
     TileID.LAVA: 1,
-    TileID.LAPIS_ORE: 2,
+    TileID.LAPIS_ORE: 1,
 }
 
 

@@ -54,7 +54,7 @@ class Graphic:
     AIR = (8, 5)
     CLOUD = (7, 0)
     WEB = (2, 15)
-    GRASS2 = (0, 1)
+    GRASS2 = (1, 0)
     TREE2 = (2, 1)
     THORNS = (6, 2)
 
@@ -71,6 +71,7 @@ class Graphic:
     AIR_WIZARD = (24, 1)
     SPIDER = (28, 5)
     BAT = (26, 8)
+    SKULL = (38, 11)
 
     HEART_FULL = (42, 10)
     HEART_EMPTY = (40, 10)
@@ -122,6 +123,7 @@ class Graphic:
     STRING = (11, 14)
     FISH = (33, 17)
     MEAT = (33, 16)
+    EYE = (41, 3)
 
 
 str_2_tile = {
@@ -199,6 +201,10 @@ class MobID(Enum):
     BLACK_SLIME = 22
     BLACK_SKELETON = 23
     BED = 24
+    BAT = 25
+    FLAME_SKULL = 26
+    SPIDER = 27
+    HELL_SPIDER = 28
 
 
 class MobTag(Enum):
@@ -207,6 +213,8 @@ class MobTag(Enum):
     AI_FOLLOW = auto()
     AI_SHOOT = auto()
     AI_JUMP = auto()
+    AI_WANDER = auto()
+    AI_SPIDER = auto()
     DAMAGE = auto()
     NO_DESPAWN = auto()
     BED = auto()
@@ -294,6 +302,7 @@ class ItemID(Enum):
     IRON_FISH_SPEAR = 79
     GOLD_FISH_SPEAR = 80
     GEM_FISH_SPEAR = 81
+    SPIDER_EYE = 82
 
 
 class ItemTag(Enum):
@@ -344,6 +353,8 @@ class TileID(Enum):
     WEB = 32
     LAPIS_ORE = 33
     THORNS = 34
+    FLOOR_FUNGUS = 35
+    BIG_MUSHROOM = 36
 
 
 class TileTag(Enum):

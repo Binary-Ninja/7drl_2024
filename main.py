@@ -41,6 +41,7 @@ CHASE_DISTANCE = 10
 JUMP_DISTANCE = 8
 SKELETON_SHOOT_RADIUS = 5
 SKELETON_SIGHT_RADIUS = 12
+SPIDER_CHASE_RADIUS = 5
 
 player_vision = 17
 player_light_radius = 2.5
@@ -86,7 +87,7 @@ def main():
     do_a_game_tick = False
 
     day_cycle_timer = world_time
-    DAY_CYCLE_LENGTH = 20
+    DAY_CYCLE_LENGTH = 500
     night_time = False
     level_is_dark = False
     number_of_mobs = 0  # TODO: dont forget to update this to load on layer load when i add world layers
@@ -776,7 +777,7 @@ def main():
             stam_flash = not stam_flash
 
         # Get the current player light radius
-        light_radius = item_light[current_item] if current_item.has_tag(ItemTag.LIGHT) else player_light_radius
+        light_radius = item_light[current_item.id] if current_item.has_tag(ItemTag.LIGHT) else player_light_radius
 
         # Do the game updates.
         if do_a_game_tick:
@@ -825,7 +826,10 @@ def main():
                     try_mob = game_world.overworld_layer.mob_array[sx][sy]
                     if try_mob or try_tile.has_tag(TileTag.BLOCK_MOVE) or try_tile.has_tag(TileTag.LIQUID):
                         continue  # don't replace another mob or spawn in a wall
-                    mob_id = random.choice((MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON))
+                    if try_tile.id == TileID.WEB:
+                        mob_id = MobID.SPIDER
+                    else:
+                        mob_id = random.choice((MobID.BAT, MobID.FLAME_SKULL, MobID.SPIDER))
                     game_world.overworld_layer.mob_array[sx][sy] = Mob(mob_id)
                     number_of_mobs += 1
                     print(f"Spawned {mob_id} at ({sx},{sy}) on {i}")
@@ -1015,6 +1019,79 @@ def main():
                                 set_array(try_pos, game_world.overworld_layer.tile_array,
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
+                    elif current_mob.has_tag(MobTag.AI_WANDER):
+                        current_mob.ai_tick += 1
+                        if current_mob.ai_tick % current_mob.ai_timer != 0:
+                            continue  # only tick every ai_timer ticks
+                        # wander randomly
+                        dir_vec = pg.Vector2(random.random(), random.random()).normalize()
+                        # make dir_vec only cardinal directions
+                        if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
+                            dir_vec = Point(int(math.copysign(1, dir_vec.x)), 0)
+                        else:
+                            dir_vec = Point(0, int(math.copysign(1, dir_vec.y)))
+                        # if it is moving in the opposite direction as last move
+                        if dir_vec == (-current_mob.last_dir.x, -current_mob.last_dir.y):
+                            # go the direction of last time
+                            # if a mob is going right, it cannot go left without going up or down first
+                            dir_vec = Point(-dir_vec.x, -dir_vec.y)
+                        current_mob.last_dir = dir_vec
+                        if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
+                            # mob wants to move horizontally
+                            try_pos = Point(x + dir_vec.x, y)
+                        else:
+                            # mob is diagonal or wants to move vertically
+                            try_pos = Point(x, y + dir_vec.y)
+                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
+                            player_health -= mob_damage[current_mob.id]
+                            player_health = max(0, player_health)
+                            message_logs.appendleft(f"the {current_mob.name}")
+                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        if move_tile and not move_mob:
+                            if not move_tile.has_tag(TileTag.BLOCK_MOVE):
+                                set_array((x, y), game_world.overworld_layer.mob_array, None)
+                                set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                                if move_tile.has_tag(TileTag.CRUSH):
+                                    set_array(try_pos, game_world.overworld_layer.tile_array,
+                                              Tile(tile_replace[move_tile.id]))
+                                already_mob_ticked.add(current_mob)
+                            else:
+                                current_mob.last_dir = Point(-dir_vec.x, -dir_vec.y)
+                    elif current_mob.has_tag(MobTag.AI_SPIDER):
+                        current_mob.ai_tick += 1
+                        if current_mob.ai_tick % current_mob.ai_timer != 0:
+                            continue  # only tick every ai_timer ticks
+                        player_tile = get_array(player_pos, game_world.overworld_layer.tile_array)
+                        if player_tile.id != TileID.WEB:
+                            continue  # don't do anything if player isn't on a web
+                        if distance_within((x, y), player_pos, SPIDER_CHASE_RADIUS):
+                            # chase player
+                            dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
+                        else:
+                            continue  # squat until player on web is close
+                        if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
+                            # mob wants to move horizontally
+                            try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                        else:
+                            # mob is diagonal or wants to move vertically
+                            try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
+                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
+                            player_health -= mob_damage[current_mob.id]
+                            player_health = max(0, player_health)
+                            message_logs.appendleft(f"the {current_mob.name}")
+                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
+                                move_tile.has_tag(TileTag.LIQUID):
+                            set_array((x, y), game_world.overworld_layer.mob_array, None)
+                            set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                            if move_tile.has_tag(TileTag.CRUSH):
+                                set_array(try_pos, game_world.overworld_layer.tile_array,
+                                          Tile(tile_replace[move_tile.id]))
+                            already_mob_ticked.add(current_mob)
 
         # Calculate the light map before drawing if needed.
         if do_calc_light_map:
@@ -1024,7 +1101,6 @@ def main():
 
         # Draw.
         screen.fill((0, 0, 0))
-
         # Display world.
         dx = 0
         for x in range(-player_vision, player_vision + 1):

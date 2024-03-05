@@ -49,7 +49,7 @@ class World:
         self.cave_layer = Layer(None, None, None)
 
     def generate_overworld_layer(self):
-        tile_array = generate_caves(self.size, self.seed)
+        tile_array = generate_caverns(self.size, self.seed)
         mob_array = make_2d_array(self.size, None)
         mem_array = make_2d_array(self.size, None)
         self.overworld_layer = Layer(tile_array, mob_array, mem_array)
@@ -135,4 +135,48 @@ def generate_caves(size: tuple[int, int], world_seed: int) -> list[list]:
                     world_map[x][y] = Tile(TileID.STONE)
             else:
                 world_map[x][y] = Tile(TileID.LAPIS_ORE)
+    return world_map
+
+
+def generate_caverns(size: tuple[int, int], world_seed: int) -> list[list]:
+    world_map = make_2d_array(size, Tile(TileID.DIRT))
+    opensimplex.seed(world_seed)
+    rng = random.Random(world_seed)
+    altitude_scale = 0.08
+    altitude_offset = (500, 500)
+    ore_scale = 0.2
+    ore_offset = (250, 250)
+    biome_scale = 0.1
+    biome_offset = (0, 0)
+    water_scale = 0.08
+    water_offset = (300, 300)
+    for x in range(size[0]):
+        for y in range(size[1]):
+            altitude = opensimplex.noise2((x + altitude_offset[0]) * altitude_scale,
+                                          (y + altitude_offset[1]) * altitude_scale)
+            ore = opensimplex.noise2((x + ore_offset[0]) * ore_scale,
+                                     (y + ore_offset[1]) * ore_scale)
+            biome = opensimplex.noise2((x + biome_offset[0]) * biome_scale,
+                                     (y + biome_offset[1]) * biome_scale)
+            water = opensimplex.noise2((x + water_offset[0]) * water_scale,
+                                     (y + water_offset[1]) * water_scale)
+            if altitude < 0:
+                if biome < -0.3 and rng.random() + biome < 0.2:
+                    world_map[x][y] = Tile(TileID.DIRT)
+                elif biome < 0.5:
+                    if rng.random() > 0.98:
+                        world_map[x][y] = Tile(TileID.DIRT)
+                    else:
+                        pass  # already dirt
+                else:
+                    world_map[x][y] = Tile(TileID.DIRT)
+            elif altitude < 0.7:
+                if ore < -0.5:
+                    world_map[x][y] = Tile(TileID.GOLD_ORE)
+                else:
+                    world_map[x][y] = Tile(TileID.STONE)
+            else:
+                world_map[x][y] = Tile(TileID.LAPIS_ORE)
+            if water < -0.2:
+                world_map[x][y] = Tile(TileID.WATER)
     return world_map

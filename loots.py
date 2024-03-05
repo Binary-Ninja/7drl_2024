@@ -55,6 +55,9 @@ mob_death_loot.update({
     MobID.BLACK_ZOMBIE: (LootItem(ItemID.CLOTH, 1.0, 1, 3), LootItem(ItemID.WHEAT, 0.05, 1, 1)),
     MobID.BLACK_SLIME: (LootItem(ItemID.SLIME, 1.0, 2, 4),),
     MobID.BLACK_SKELETON: (LootItem(ItemID.BONE, 1.0, 2, 3), LootItem(ItemID.GOLD_APPLE, 0.02, 1, 1)),
+    MobID.FLAME_SKULL: (LootItem(ItemID.BONE, 1.0, 3, 4), LootItem(ItemID.COAL, 1.0, 1, 2)),
+    MobID.SPIDER: (LootItem(ItemID.STRING, 1.0, 1, 4), LootItem(ItemID.SPIDER_EYE, 0.2, 1, 8)),
+    MobID.HELL_SPIDER: (LootItem(ItemID.STRING, 1.0, 1, 4), LootItem(ItemID.SPIDER_EYE, 0.2, 1, 8)),
 })
 
 fishing_loot = defaultdict(tuple)

@@ -78,6 +78,11 @@ item_data = {
             "heal": 1,
                                "stamina_cost": 1,
                            }),
+    ItemID.SPIDER_EYE: ItemData("spidereye", (Graphic.EYE, Color.RED),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": -3,
+                               "stamina_cost": 1,
+                           }),
     ItemID.FISH: ItemData("fish", (Graphic.FISH, Color.LIGHT_BLUE),
                            (ItemTag.STACKABLE, ItemTag.HEAL), {
                                "heal": 2,

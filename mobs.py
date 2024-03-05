@@ -1,6 +1,6 @@
 from collections import namedtuple, defaultdict
 
-from data import Color, Graphic, MobID, MobTag
+from data import Color, Graphic, MobID, MobTag, Point
 from items import ItemID
 
 
@@ -81,6 +81,10 @@ mob_damage = {
     MobID.BLACK_SLIME: 4,
     MobID.BLACK_SKELETON: 4,
     MobID.AIR_WIZARD: 5,
+    MobID.BAT: 0,
+    MobID.FLAME_SKULL: 2,
+    MobID.SPIDER: 2,
+    MobID.HELL_SPIDER: 3,
 }
 
 mob_ai_timer = defaultdict(lambda: 1)
@@ -98,6 +102,10 @@ mob_ai_timer.update({
     MobID.BLACK_SLIME: 2,
     MobID.BLACK_SKELETON: 4,
     MobID.AIR_WIZARD: 2,
+    MobID.BAT: 1,
+    MobID.FLAME_SKULL: 2,
+    MobID.SPIDER: 1,
+    MobID.HELL_SPIDER: 1,
 })
 
 
@@ -105,6 +113,10 @@ MobData = namedtuple("MobData", ("name", "graphic", "max_health", "tags",
                                  "recipies", "light"), defaults=(10, tuple(), None, 0))
 mob_data = {
     MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE), 10, (MobTag.NO_DESPAWN,), tuple(), 0),
+    MobID.BAT: MobData("bat", (Graphic.BAT, Color.BROWN), 5, (MobTag.AI_WANDER,)),
+    MobID.FLAME_SKULL: MobData("fireskull", (Graphic.SKULL, Color.YELLOW), 5, (MobTag.AI_WANDER, MobTag.DAMAGE,)),
+    MobID.SPIDER: MobData("spider", (Graphic.SPIDER, Color.MED_GRAY), 5, (MobTag.AI_SPIDER, MobTag.DAMAGE, MobTag.NO_DESPAWN)),
+    MobID.HELL_SPIDER: MobData("hellspider", (Graphic.SPIDER, Color.RED), 5, (MobTag.AI_SPIDER, MobTag.DAMAGE)),
     MobID.GREEN_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_GREEN), 10, (MobTag.AI_FOLLOW, MobTag.DAMAGE)),
     MobID.GREEN_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_GREEN), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
     MobID.GREEN_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_GREEN), 10,
@@ -157,6 +169,7 @@ class Mob:
         self.recipies = self.mob_data.recipies
         self.light = self.mob_data.light
         self.target_space = None
+        self.last_dir = Point(0, -1)  # assume the last direction was up
         self.ai_tick = 0
         self.ai_timer = mob_ai_timer[self.id]
 
