@@ -23,22 +23,27 @@ recipies = {
         ((ItemID.STONE_AXE, 1), (ItemID.WOOD, 5), (ItemID.STONE, 5)),
         ((ItemID.STONE_SHOVEL, 1), (ItemID.WOOD, 5), (ItemID.STONE, 5)),
         ((ItemID.STONE_HOE, 1), (ItemID.WOOD, 5), (ItemID.STONE, 5)),
-        ((ItemID.WINDOW, 1), (ItemID.WOOD, 2), (ItemID.GLASS, 4)),
+        ((ItemID.STRING, 4), (ItemID.CLOTH, 1), ),
+        ((ItemID.CLOTH, 1), (ItemID.STRING, 4)),
+        ((ItemID.BED, 1), (ItemID.WOOD, 10), (ItemID.CLOTH, 10)),
         ((ItemID.WOOD_WALL, 1), (ItemID.WOOD, 4)),
         ((ItemID.WOOD_DOOR, 1), (ItemID.WOOD, 8)),
         ((ItemID.STONE_WALL, 1), (ItemID.STONE, 4)),
         ((ItemID.COCKTAIL, 1), (ItemID.BOTTLE, 1), (ItemID.APPLE, 1), (ItemID.COCONUT, 1), (ItemID.POKE_PEAR, 1)),
     ),
     MobID.OVEN: (
-        ((ItemID.BREAD, 1), (ItemID.WHEAT, 5)),
-        ((ItemID.APPLE_PIE, 1), (ItemID.WHEAT, 5), (ItemID.APPLE, 5)),
-        ((ItemID.GOLD_APPLE, 1), (ItemID.APPLE, 1), (ItemID.GOLD_BAR, 15)),
+        ((ItemID.BREAD, 1), (ItemID.WHEAT, 5), (ItemID.WOOD, 2)),
+        ((ItemID.APPLE_PIE, 1), (ItemID.WHEAT, 5), (ItemID.APPLE, 5), (ItemID.WOOD, 2)),
+        ((ItemID.COOKED_FISH, 1), (ItemID.FISH, 1), (ItemID.WOOD, 2)),
+        ((ItemID.COOKED_DEEP_FISH, 1), (ItemID.DEEP_FISH, 1), (ItemID.WOOD, 2)),
     ),
     MobID.FURNACE: (
         ((ItemID.GLASS, 1), (ItemID.SAND, 4), (ItemID.COAL, 1)),
         ((ItemID.BOTTLE, 1), (ItemID.GLASS, 2), (ItemID.COAL, 1)),
+        ((ItemID.WINDOW, 1), (ItemID.GLASS, 4),),
         ((ItemID.IRON_BAR, 1), (ItemID.IRON_ORE, 4), (ItemID.COAL, 1)),
         ((ItemID.GOLD_BAR, 1), (ItemID.GOLD_ORE, 4), (ItemID.COAL, 1)),
+        ((ItemID.GOLD_APPLE, 1), (ItemID.APPLE, 1), (ItemID.GOLD_BAR, 15), (ItemID.COAL, 2)),
     ),
     MobID.ANVIL: (
         ((ItemID.IRON_SWORD, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
@@ -135,6 +140,8 @@ mob_data = {
                                 (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 14),
     MobID.GEM_LANTERN: MobData("gem lantern", (Graphic.LANTERN, Color.GEM), 10,
                                 (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 18),
+    MobID.BED: MobData("bed", (Graphic.BED, Color.RED), 10,
+                               (MobTag.PUSHABLE, MobTag.NO_DESPAWN, MobTag.BED), tuple(),),
 }
 
 

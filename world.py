@@ -51,13 +51,13 @@ class World:
     def generate_overworld_layer(self):
         tile_array = generate_caves(self.size, self.seed)
         mob_array = make_2d_array(self.size, None)
-        mem_array = make_2d_array(self.size, False)
+        mem_array = make_2d_array(self.size, None)
         self.overworld_layer = Layer(tile_array, mob_array, mem_array)
 
     def generate_caves(self):
         tile_array = generate_caves(self.size, self.seed)
         mob_array = make_2d_array(self.size, None)
-        mem_array = make_2d_array(self.size, False)
+        mem_array = make_2d_array(self.size, None)
         self.cave_layer = Layer(tile_array, mob_array, mem_array)
 
 
@@ -122,9 +122,12 @@ def generate_caves(size: tuple[int, int], world_seed: int) -> list[list]:
                 if biome < -0.3 and rng.random() + biome < 0.2:
                     world_map[x][y] = Tile(TileID.WEB)
                 elif biome < 0.5:
-                    world_map[x][y] = Tile(TileID.DIRT)
+                    if rng.random() > 0.98:
+                        world_map[x][y] = Tile(TileID.THORNS)
+                    else:
+                        pass  # already dirt
                 else:
-                    world_map[x][y] = Tile(TileID.WHEAT_SEEDS)
+                    world_map[x][y] = Tile(TileID.SAND)
             elif altitude < 0.7:
                 if ore < -0.5:
                     world_map[x][y] = Tile(TileID.IRON_ORE)

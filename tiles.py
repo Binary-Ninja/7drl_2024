@@ -30,6 +30,7 @@ tile_replace: dict[TileID, TileID] = {
     TileID.WHEAT_SEEDS: TileID.DIRT,
     TileID.WEB: TileID.DIRT,
     TileID.LAPIS_ORE: TileID.DIRT,
+    TileID.THORNS: TileID.DIRT,
 }
 
 tile_damage = defaultdict(lambda: 0)
@@ -41,6 +42,7 @@ tile_damage.update({
     TileID.GOLD_ORE: 3,
     TileID.GEM_ORE: 3,
     TileID.LAPIS_ORE: 5,
+    TileID.THORNS: 2,
 })
 
 tile_drain = defaultdict(lambda: 0)
@@ -65,7 +67,7 @@ tile_spread.update({
 
 tile_light = {
     TileID.LAVA: 1,
-    TileID.LAPIS_ORE: 3,
+    TileID.LAPIS_ORE: 2,
 }
 
 
@@ -97,6 +99,8 @@ tile_data = {
                           (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.CACTUS: TileData("cactus", (Graphic.CACTUS, Color.GREEN), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
+    TileID.THORNS: TileData("thorns", (Graphic.THORNS, Color.LIGHT_BROWN), 10,
+                            (TileTag.BLOCK_MOVE, TileTag.DAMAGE)),
     TileID.DIRT: TileData("dirt", (Graphic.DIRT, Color.BROWN),),
     TileID.HOLE: TileData("hole", (Graphic.HOLE, Color.DARK_BROWN),),
     TileID.FARMLAND: TileData("farmland", (Graphic.FARMLAND, Color.BROWN),),

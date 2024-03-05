@@ -54,6 +54,9 @@ class Graphic:
     AIR = (8, 5)
     CLOUD = (7, 0)
     WEB = (2, 15)
+    GRASS2 = (0, 1)
+    TREE2 = (2, 1)
+    THORNS = (6, 2)
 
     WINDOW = (1, 4)
     PLANKS = (13, 16)
@@ -84,9 +87,13 @@ class Graphic:
     ANVIL = (14, 15)
     LANTERN = (44, 4)
     TORCH = (3, 15)
+    BED = (5, 8)
+    CAULDRON = (5, 14)
+    SKULL_BOOKS = (4, 7)
 
     DIRT = (6, 0)
     STONE_ITEM = (5, 2)
+    TORCH_ITEM = (43, 3)
     WOOD = (18, 6)
     PICKUP = (41, 0)
     EMPTY_HANDS = (41, 1)
@@ -97,6 +104,7 @@ class Graphic:
     PICKAXE = (43, 5)
     SWORD = (32, 8)
     SHOVEL = (42, 5)
+    FISHING_SPEAR = (41, 5)
     HOE = (44, 5)
     AXE = (42, 7)
     GEM = (32, 10)
@@ -111,6 +119,9 @@ class Graphic:
     EMPTY_BOTTLE = (32, 14)
     FULL_BOTTLE = (32, 13)
     EGG = (34, 17)
+    STRING = (11, 14)
+    FISH = (33, 17)
+    MEAT = (33, 16)
 
 
 str_2_tile = {
@@ -187,6 +198,7 @@ class MobID(Enum):
     BLACK_ZOMBIE = 21
     BLACK_SLIME = 22
     BLACK_SKELETON = 23
+    BED = 24
 
 
 class MobTag(Enum):
@@ -197,6 +209,7 @@ class MobTag(Enum):
     AI_JUMP = auto()
     DAMAGE = auto()
     NO_DESPAWN = auto()
+    BED = auto()
 
 
 class ItemID(Enum):
@@ -270,6 +283,17 @@ class ItemID(Enum):
     GEM_LANTERN = 68
     SPAWN_EGG_GREEN_ZOMBIE = 69
     LAPIS = 70
+    BED = 71
+    STRING = 72
+    FISH = 73
+    DEEP_FISH = 74
+    FIRE_FISH = 75
+    COOKED_FISH = 76
+    COOKED_DEEP_FISH = 77
+    FISH_SPEAR = 78
+    IRON_FISH_SPEAR = 79
+    GOLD_FISH_SPEAR = 80
+    GEM_FISH_SPEAR = 81
 
 
 class ItemTag(Enum):
@@ -281,6 +305,8 @@ class ItemTag(Enum):
     PLACE_TILE = auto()
     DAMAGE_MOBS = auto()
     STAMINA = auto()
+    LIGHT = auto()
+    FISH = auto()
 
 
 class TileID(Enum):
@@ -317,6 +343,7 @@ class TileID(Enum):
     CLOUD_BANK = 31
     WEB = 32
     LAPIS_ORE = 33
+    THORNS = 34
 
 
 class TileTag(Enum):

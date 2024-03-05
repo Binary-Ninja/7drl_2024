@@ -9,7 +9,21 @@ item_to_mob.update({
     MobID.FURNACE: ItemID.FURNACE,
     MobID.ANVIL: ItemID.ANVIL,
     MobID.WOOD_LANTERN: ItemID.WOOD_LANTERN,
+    MobID.IRON_LANTERN: ItemID.IRON_LANTERN,
+    MobID.GOLD_LANTERN: ItemID.GOLD_LANTERN,
+    MobID.GEM_LANTERN: ItemID.GEM_LANTERN,
     MobID.TORCH: ItemID.TORCH,
+    MobID.BED: ItemID.BED,
+})
+
+item_light = defaultdict(lambda: 0)
+item_light.update({
+    ItemID.TORCH: 3,
+    ItemID.WOOD_LANTERN: 6,
+    ItemID.IRON_LANTERN: 10,
+    ItemID.GOLD_LANTERN: 14,
+    ItemID.GEM_LANTERN: 18,
+    ItemID.LAPIS: 3,
 })
 
 ItemData = namedtuple("ItemData", ("name", "graphic", "tags", "data"),
@@ -50,6 +64,8 @@ item_data = {
                           }),
     ItemID.STONE: ItemData("stone", (Graphic.STONE_ITEM, Color.STONE),
                            (ItemTag.STACKABLE,), ),
+    ItemID.STRING: ItemData("string", (Graphic.STRING, Color.WHITE),
+                           (ItemTag.STACKABLE,), ),
     ItemID.SAND: ItemData("sand", (Graphic.SAND, Color.YELLOW),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
             "place": TileID.SAND, "base": (TileID.DIRT,)
@@ -62,10 +78,60 @@ item_data = {
             "heal": 1,
                                "stamina_cost": 1,
                            }),
+    ItemID.FISH: ItemData("fish", (Graphic.FISH, Color.LIGHT_BLUE),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": 2,
+                               "stamina_cost": 4,
+                           }),
+    ItemID.DEEP_FISH: ItemData("blobfish", (Graphic.FISH, Color.LIGHT_GRAY),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": 2,
+                               "stamina_cost": 2,
+                           }),
+    ItemID.FIRE_FISH: ItemData("firefish", (Graphic.FISH, Color.ORANGE),
+                           (ItemTag.STACKABLE, ItemTag.STAMINA, ItemTag.HEAL), {
+                               "heal": -2,
+                               "stamina_cost": 0,
+            "stamina": 5,
+                           }),
+    ItemID.COOKED_FISH: ItemData("fish meat", (Graphic.MEAT, Color.LIGHT_BLUE),
+                          (ItemTag.STACKABLE, ItemTag.HEAL), {
+                              "heal": 3,
+                              "stamina_cost": 1,
+                          }),
+    ItemID.COOKED_DEEP_FISH: ItemData("bfish meat", (Graphic.MEAT, Color.LIGHT_GRAY),
+                               (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
+                                   "heal": 1,
+                                   "stamina_cost": 0, "stamina": 1,
+                               }),
     ItemID.WHEAT_SEEDS: ItemData("wh. seeds", (Graphic.SEEDS, Color.GREEN),
                                  (ItemTag.STACKABLE, ItemTag.PLACE_TILE),{
             "place": TileID.WHEAT_SEEDS, "base": (TileID.FARMLAND,),
                                  }),
+    ItemID.FISH_SPEAR: ItemData("fishspear", (Graphic.FISHING_SPEAR, Color.BROWN),
+                               (ItemTag.FISH,), {
+                                   "fishable": (TileID.WATER, ),
+                                   "stamina_cost": 4,
+            "fish_chance": 0.1,
+                               }),
+    ItemID.IRON_FISH_SPEAR: ItemData("i.fishspear", (Graphic.FISHING_SPEAR, Color.IRON),
+                               (ItemTag.FISH,), {
+                                   "fishable": (TileID.WATER, TileID.LAVA),
+                                   "stamina_cost": 3,
+                                   "fish_chance": 0.15,
+                               }),
+    ItemID.GOLD_FISH_SPEAR: ItemData("g.fishspear", (Graphic.FISHING_SPEAR, Color.GOLD),
+                                     (ItemTag.FISH,), {
+                                         "fishable": (TileID.WATER, TileID.LAVA),
+                                         "stamina_cost": 2,
+                                         "fish_chance": 0.2,
+                                     }),
+    ItemID.GEM_FISH_SPEAR: ItemData("gm.fishspear", (Graphic.FISHING_SPEAR, Color.GEM),
+                                     (ItemTag.FISH,), {
+                                         "fishable": (TileID.WATER, TileID.LAVA),
+                                         "stamina_cost": 1,
+                                         "fish_chance": 0.25,
+                                     }),
     ItemID.WOOD_PICK: ItemData("wood pick", (Graphic.PICKAXE, Color.BROWN),
                                (ItemTag.BREAK_TILE,), {
             "breakable": (TileID.STONE, TileID.STONE_WALL, TileID.WINDOW, TileID.CLOUD_BANK), "tile_damage": 2,
@@ -89,7 +155,7 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW),
+                                                 TileID.WINDOW, TileID.THORNS),
                                    "tile_damage": 2,
                                   "stamina_cost": 5,
                                }),
@@ -156,30 +222,34 @@ item_data = {
                                    "mobid": MobID.ANVIL,
                                }),
     ItemID.WOOD_LANTERN: ItemData("wood lantern", (Graphic.LANTERN, Color.BROWN),
-                               (ItemTag.SPAWN_MOB,), {
+                               (ItemTag.SPAWN_MOB, ItemTag.LIGHT), {
                                    "mobid": MobID.WOOD_LANTERN,
                                }),
     ItemID.IRON_LANTERN: ItemData("iron lantern", (Graphic.LANTERN, Color.IRON),
-                                  (ItemTag.SPAWN_MOB,), {
+                                  (ItemTag.SPAWN_MOB, ItemTag.LIGHT), {
                                       "mobid": MobID.IRON_LANTERN,
                                   }),
     ItemID.GOLD_LANTERN: ItemData("gold lantern", (Graphic.LANTERN, Color.GOLD),
-                                  (ItemTag.SPAWN_MOB,), {
+                                  (ItemTag.SPAWN_MOB, ItemTag.LIGHT), {
                                       "mobid": MobID.GOLD_LANTERN,
                                   }),
     ItemID.GEM_LANTERN: ItemData("gem lantern", (Graphic.LANTERN, Color.GEM),
-                                  (ItemTag.SPAWN_MOB,), {
+                                  (ItemTag.SPAWN_MOB, ItemTag.LIGHT), {
                                       "mobid": MobID.GEM_LANTERN,
                                   }),
-    ItemID.TORCH: ItemData("torch", (Graphic.TORCH, Color.YELLOW),
-                               (ItemTag.SPAWN_MOB, ItemTag.STACKABLE), {
+    ItemID.BED: ItemData("bed", (Graphic.BED, Color.RED),
+                                 (ItemTag.SPAWN_MOB,), {
+                                     "mobid": MobID.BED,
+                                 }),
+    ItemID.TORCH: ItemData("torch", (Graphic.TORCH_ITEM, Color.YELLOW),
+                               (ItemTag.SPAWN_MOB, ItemTag.STACKABLE, ItemTag.LIGHT), {
                                    "mobid": MobID.TORCH,
                                }),
     ItemID.GOLD_APPLE: ItemData("gold apple", (Graphic.APPLE, Color.GOLD),
                            (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
-                               "heal": 5,
+                               "heal": 10,
                                "stamina_cost": 0,
-            "stamina": 5,
+            "stamina": 10,
                            }),
     ItemID.POKE_PEAR: ItemData("pokepear", (Graphic.PEAR, Color.YELLOW),
                            (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
@@ -228,7 +298,7 @@ item_data = {
                                                 TileID.PALM_TREE, TileID.WOOD_WALL,
                                                 TileID.OPEN_WOOD_DOOR,
                                                 TileID.CLOSED_WOOD_DOOR,
-                                                TileID.WINDOW),
+                                                TileID.WINDOW, TileID.THORNS),
                                   "tile_damage": 3,
                                   "stamina_cost": 4,
                               }),
@@ -265,7 +335,7 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW),
+                                                 TileID.WINDOW, TileID.THORNS),
                                    "tile_damage": 4,
                                    "stamina_cost": 3,
                                }),
@@ -303,7 +373,7 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW),
+                                                 TileID.WINDOW, TileID.THORNS),
                                    "tile_damage": 5,
                                    "stamina_cost": 2,
                                }),
@@ -341,7 +411,7 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW),
+                                                 TileID.WINDOW, TileID.THORNS),
                                    "tile_damage": 10,
                                    "stamina_cost": 1,
                                }),

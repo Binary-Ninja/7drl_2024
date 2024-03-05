@@ -13,10 +13,10 @@ from tileloader import TileLoader
 from world import World, set_array, get_array, make_2d_array
 from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
-from items import Item, item_to_mob
+from items import Item, item_to_mob, item_light
 from mobs import Mob, mob_damage
 from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light, tile_drain
-from loots import tile_break_loot, resolve_loot, mob_death_loot
+from loots import tile_break_loot, resolve_loot, mob_death_loot, fishing_loot
 
 
 def distance_within(a: PointType, b: PointType, dist: int | float) -> bool:
@@ -43,10 +43,11 @@ SKELETON_SHOOT_RADIUS = 5
 SKELETON_SIGHT_RADIUS = 12
 
 player_vision = 17
-player_light_radius = 3.5
+player_light_radius = 2.5
 player_health = 10
 player_stamina = 10
 regen_stam = True
+do_calc_light_map = True
 light_map: list[list[bool]] = []
 path_to_player: dict[tuple, tuple] = {}
 
@@ -85,7 +86,7 @@ def main():
     do_a_game_tick = False
 
     day_cycle_timer = world_time
-    DAY_CYCLE_LENGTH = 400
+    DAY_CYCLE_LENGTH = 20
     night_time = False
     level_is_dark = False
     number_of_mobs = 0  # TODO: dont forget to update this to load on layer load when i add world layers
@@ -100,6 +101,7 @@ def main():
     game_world = World(world_size, world_seed)
     game_world.generate_overworld_layer()
 
+    global do_calc_light_map
     global player_vision
     global path_to_player
     global light_map
@@ -114,8 +116,8 @@ def main():
     current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.WORKBENCH), Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
                              Item(ItemID.STONE_WALL, 30), Item(ItemID.SAND, 99),
-                             # Item(ItemID.WOOD, 1000), Item(ItemID.STONE, 100),
-                             # Item(ItemID.COCONUT, 100), Item(ItemID.COAL, 99),
+                             Item(ItemID.GEM_FISH_SPEAR, 1), Item(ItemID.BED, 1),
+                             Item(ItemID.WOOD, 100), Item(ItemID.OVEN, 1),
                              # Item(ItemID.WINDOW, 100), Item(ItemID.STONE_WALL, 99),
                              # Item(ItemID.WOOD_DOOR, 100), Item(ItemID.WHEAT_SEEDS, 99),
                              Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 100), Item(ItemID.GEM_LANTERN, 1),
@@ -194,7 +196,12 @@ def main():
         for x in range(-radius, radius + 1):
             for y in range(-radius, radius + 1):
                 real_pos = Point(start.x + x, start.y + y)
-                if distance_within(start, real_pos, radius + 0.5):
+                if radius == 1:
+                    if master is not None:
+                        set_array((real_pos.x, real_pos.y), master, True)
+                    else:
+                        fov_field[x][y] = True
+                elif distance_within(start, real_pos, radius + 0.5):
                     if master is not None:
                         if line_of_sight(start, real_pos):
                             set_array(real_pos, master, True)
@@ -268,8 +275,6 @@ def main():
     # spawn_mob((50, 60), MobID.GREEN_SKELETON)
     # spawn_mob((50, 62), MobID.GREEN_ZOMBIE)
 
-    calc_lightmap()
-
     def write_text(pos: PointType, text: str, color: tuple[int, int, int]):
         for index, char in enumerate(text):
             char_tile = tile_loader.get_tile(str_2_tile[char], color)
@@ -285,7 +290,7 @@ def main():
             return tile_loader.get_tile(tile, color)
 
     def move_player(direction: tuple[int, int]) -> Point:
-        global player_health, light_map, player_stamina, regen_stam
+        global player_health, light_map, player_stamina, regen_stam, do_calc_light_map
         try_pos = Point(player_pos.x + direction[0], player_pos.y + direction[1])
         move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
         if move_mob:
@@ -313,7 +318,7 @@ def main():
                                 message_logs.appendleft("it crushes the")
                                 message_logs.appendleft(f"{try_tile.name}")
                         if move_mob.light > 0:
-                            calc_lightmap()
+                            do_calc_light_map = True
                     else:
                         message_logs.appendleft("you bump into")
                         message_logs.appendleft(f"the {move_mob.name}")
@@ -487,7 +492,7 @@ def main():
                                     message_logs.appendleft("you place the")
                                     message_logs.appendleft(f"{mob.name}")
                                     if mob.light > 0:
-                                        calc_lightmap()
+                                        do_calc_light_map = True
                                 else:
                                     message_logs.appendleft("you do not have")
                                     message_logs.appendleft("the stamina")
@@ -508,7 +513,7 @@ def main():
                                         message_logs.appendleft("you pick up the")
                                         message_logs.appendleft(f"{item.name}")
                                         if target_mob.light > 0:
-                                            calc_lightmap()
+                                            do_calc_light_map = True
                                     else:
                                         message_logs.appendleft("you do not have")
                                         message_logs.appendleft("the stamina")
@@ -518,10 +523,14 @@ def main():
                                     prev_ph = player_health
                                     player_health += current_item.data["heal"]
                                     player_health = min(10, player_health)
+                                    player_health = max(0, player_health)
                                     current_item.count -= 1
                                     message_logs.appendleft("you eat the")
-                                    message_logs.appendleft(f"{current_item.name} "
-                                                            f"+{player_health - prev_ph}H")
+                                    if player_health - prev_ph >= 0:
+                                        message_logs.appendleft(f"{current_item.name} "
+                                                                f"+{player_health - prev_ph}H")
+                                    else:
+                                        message_logs.appendleft(f"{current_item.name} -{player_health - prev_ph}H")
                                     if current_item.count <= 0:
                                         current_item = NO_ITEM
                                         inventory.remove(NO_ITEM)
@@ -560,7 +569,7 @@ def main():
                                               game_world.overworld_layer.tile_array, tile)
                                     fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                     if tile.has_tag(TileTag.BLOCK_SIGHT) ^ target_tile.has_tag(TileTag.BLOCK_SIGHT):
-                                        calc_lightmap()
+                                        do_calc_light_map = True
                                         print("place diff")
                                     if not current_item.has_tag(ItemTag.STACKABLE):
                                         message_logs.appendleft("you use the")
@@ -615,7 +624,7 @@ def main():
                                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                                 if tile.has_tag(TileTag.BLOCK_SIGHT) ^ \
                                                         target_tile.has_tag(TileTag.BLOCK_SIGHT):
-                                                    calc_lightmap()
+                                                    do_calc_light_map = True
                                                     print("broken diff")
                                                 for item in loot:
                                                     add_to_inventory(item, inventory)
@@ -644,7 +653,7 @@ def main():
                                                       game_world.overworld_layer.mob_array,
                                                       None)
                                             if target_mob.light > 0:
-                                                calc_lightmap()
+                                                do_calc_light_map = True
                                             loot = resolve_loot(mob_death_loot[target_mob.id])
                                             for item in loot:
                                                 add_to_inventory(item, inventory)
@@ -660,6 +669,23 @@ def main():
                                 elif displayed_empty_hands_message is False:
                                     message_logs.appendleft("you strike at")
                                     message_logs.appendleft("air uselessly")
+                        if current_item.has_tag(ItemTag.FISH):
+                            if target_tile is not None and target_tile.id in current_item.data["fishable"]:
+                                if reduce_stamina(current_item.data["stamina_cost"]):
+                                    if random.random() < current_item.data["fish_chance"]:
+                                        loot = Item(random.choice(fishing_loot[target_tile.id]).id)
+                                        add_to_inventory(loot, inventory)
+                                        message_logs.appendleft("you fish and")
+                                        message_logs.appendleft(f"catch {loot.name}")
+                                    else:
+                                        message_logs.appendleft("you fish and")
+                                        message_logs.appendleft("catch nothing")
+                                else:
+                                    message_logs.appendleft("you do not have")
+                                    message_logs.appendleft("the stamina")
+                            else:
+                                message_logs.appendleft("you cannot fish")
+                                message_logs.appendleft(f"in {target_tile.name}")
                         just_broken_a_tile = False
                         displayed_empty_hands_message = False
                         displayed_no_use_message = False
@@ -704,6 +730,16 @@ def main():
                             crafting_list = current_crafter.recipies
                             message_logs.appendleft("you craft with")
                             message_logs.appendleft(f"the {current_crafter.name}")
+                        elif target_mob and target_mob.has_tag(MobTag.BED):
+                            if night_time:
+                                night_time = False
+                                level_is_dark = False
+                                day_cycle_timer = world_time
+                                message_logs.appendleft("you sleep the")
+                                message_logs.appendleft("night away")
+                            else:
+                                message_logs.appendleft("you cannot rest")
+                                message_logs.appendleft("during the day")
                         elif target_tile and target_tile.id in (TileID.OPEN_WOOD_DOOR,
                                                                 TileID.CLOSED_WOOD_DOOR):
                             if target_tile.id is TileID.CLOSED_WOOD_DOOR:
@@ -738,6 +774,9 @@ def main():
         if pg.time.get_ticks() - stam_flash_timer >= STAM_FLASH_FREQ:
             stam_flash_timer = pg.time.get_ticks()
             stam_flash = not stam_flash
+
+        # Get the current player light radius
+        light_radius = item_light[current_item] if current_item.has_tag(ItemTag.LIGHT) else player_light_radius
 
         # Do the game updates.
         if do_a_game_tick:
@@ -780,8 +819,8 @@ def main():
                 for i in range(100):
                     # Attempt to place 100 times before giving up
                     sx, sy = random.randrange(world_size[0]), random.randrange(world_size[1])
-                    if light_map[sx][sy] or distance_within((sx, sy), player_pos, player_light_radius + 1):
-                        continue  # don't spawn if the tile is lit or too close to player
+                    if light_map[sx][sy] or distance_within((sx, sy), player_pos, light_radius + 1):
+                        continue  # don't spawn if the tile is lit
                     try_tile = game_world.overworld_layer.tile_array[sx][sy]
                     try_mob = game_world.overworld_layer.mob_array[sx][sy]
                     if try_mob or try_tile.has_tag(TileTag.BLOCK_MOVE) or try_tile.has_tag(TileTag.LIQUID):
@@ -825,7 +864,7 @@ def main():
                                         # if we are changing a vision blocker to clear or vice versa
                                         # if they are both clear or vision blockers we don't need to update
                                         fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                                        calc_lightmap()
+                                        do_calc_light_map = True
                     # Grow the tiles.
                     if current_tile.has_tag(TileTag.GROW):
                         grow_tile, grow_chance = tile_grow[current_tile.id]
@@ -836,8 +875,8 @@ def main():
                             if current_tile.has_tag(TileTag.LIGHT) or tile.has_tag(TileTag.LIGHT) or\
                                     current_tile.has_tag(TileTag.BLOCK_SIGHT) ^ tile.has_tag(TileTag.BLOCK_SIGHT):
                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                                calc_lightmap()
-                            if line_of_sight(player_pos, (x, y)):
+                                do_calc_light_map = True
+                            if light_map[x][y] and line_of_sight(player_pos, (x, y)):
                                 message_logs.appendleft(f"{current_tile.name}")
                                 message_logs.appendleft(f"grow> {tile.name}")
                     # Spawn skeletons from desert bones.
@@ -851,15 +890,17 @@ def main():
                                     message_logs.appendleft("from the sand")
                     # Tick the mobs.
                     current_mob = game_world.overworld_layer.mob_array[x][y]
-                    if current_mob is None or current_mob.has_tag(MobTag.NO_DESPAWN):
+                    if current_mob is None or current_mob.id == MobID.PLAYER:
                         continue
                     if current_mob in already_mob_ticked:
                         continue
                     if not level_is_dark and random.random() < MOB_DESPAWN_CHANCE:
-                        game_world.overworld_layer.mob_array[x][y] = None
-                        number_of_mobs -= 1
-                        print(f"Despawned mob. Mobs: {number_of_mobs}")
-                        continue
+                        if not current_mob.has_tag(MobTag.NO_DESPAWN) and not \
+                                distance_within((x, y), player_pos, light_radius + 1):
+                            game_world.overworld_layer.mob_array[x][y] = None
+                            number_of_mobs -= 1
+                            print(f"Despawned mob. Mobs: {number_of_mobs}")
+                            continue
                     if not distance_within(player_pos, (x, y), MOB_SIM_DISTANCE):
                         continue  # mobs outside this radius won't be ticked
                     if current_mob.has_tag(MobTag.AI_FOLLOW):
@@ -931,7 +972,7 @@ def main():
                             (player_pos.x - SKELETON_SHOOT_RADIUS, player_pos.y),
                         ]
                         for target_space in target_spaces:
-                            if (x, y) == target_space:
+                            if (x, y) == target_space and line_of_sight((x, y), target_space):
                                 player_health -= mob_damage[current_mob.id]
                                 player_health = max(0, player_health)
                                 message_logs.appendleft(f"the {current_mob.name}s")
@@ -975,6 +1016,12 @@ def main():
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
 
+        # Calculate the light map before drawing if needed.
+        if do_calc_light_map:
+            do_calc_light_map = False
+            print("recalc lightmap")
+            calc_lightmap()
+
         # Draw.
         screen.fill((0, 0, 0))
 
@@ -985,8 +1032,10 @@ def main():
             for y in range(-player_vision, player_vision + 1):
                 real_pos = Point(player_pos.x + x, player_pos.y + y)
                 if (not do_fov or fov_field[x][y]) and (not level_is_dark or get_array(real_pos, light_map) or
-                                                        distance_within(player_pos, real_pos, player_light_radius)):
-                    set_array(real_pos, game_world.overworld_layer.mem_array, True)
+                                                        distance_within(player_pos, real_pos, light_radius)):
+                    tile_mem = get_array(real_pos, game_world.overworld_layer.tile_array)
+                    if tile_mem:
+                        set_array(real_pos, game_world.overworld_layer.mem_array, tile_mem.id)
                     mob = get_array_tile(real_pos, game_world.overworld_layer.mob_array)
                     if mob:
                         screen.blit(mob, (dx * tile_size.x, dy * tile_size.y))
@@ -994,10 +1043,11 @@ def main():
                         tile = get_array_tile(real_pos, game_world.overworld_layer.tile_array)
                         if tile:
                             screen.blit(tile, (dx * tile_size.x, dy * tile_size.y))
-                elif get_array(real_pos, game_world.overworld_layer.mem_array):
-                    tile = get_array_tile(real_pos, game_world.overworld_layer.tile_array, True)
-                    if tile:
-                        screen.blit(tile, (dx * tile_size.x, dy * tile_size.y))
+                elif tile_id := get_array(real_pos, game_world.overworld_layer.mem_array):
+                    tile_pos, color = Tile(tile_id).graphic
+                    color = tuple(pg.Color(color).lerp((0, 0, 0), 0.75))
+                    tile_image = tile_loader.get_tile(tile_pos, color)
+                    screen.blit(tile_image, (dx * tile_size.x, dy * tile_size.y))
                 dy += 1
             dx += 1
 

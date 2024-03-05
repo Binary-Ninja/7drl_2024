@@ -37,6 +37,8 @@ tile_break_loot.update({
     TileID.CLOUD_BANK: (LootItem(ItemID.CLOUD, 1.0, 2, 4),),
     TileID.WHEAT_SEEDS: (LootItem(ItemID.WHEAT_SEEDS),),
     TileID.LAPIS_ORE: (LootItem(ItemID.LAPIS, 1.0, 2, 3),),
+    TileID.WEB: (LootItem(ItemID.STRING, 1.0, 2, 4),),
+    TileID.THORNS: (LootItem(ItemID.WOOD, 0.5),),
 })
 
 mob_death_loot = defaultdict(tuple)
@@ -53,6 +55,42 @@ mob_death_loot.update({
     MobID.BLACK_ZOMBIE: (LootItem(ItemID.CLOTH, 1.0, 1, 3), LootItem(ItemID.WHEAT, 0.05, 1, 1)),
     MobID.BLACK_SLIME: (LootItem(ItemID.SLIME, 1.0, 2, 4),),
     MobID.BLACK_SKELETON: (LootItem(ItemID.BONE, 1.0, 2, 3), LootItem(ItemID.GOLD_APPLE, 0.02, 1, 1)),
+})
+
+fishing_loot = defaultdict(tuple)
+fishing_loot.update({
+    TileID.WATER: (LootItem(ItemID.FISH), LootItem(ItemID.FISH),
+                   LootItem(ItemID.FISH), LootItem(ItemID.FISH),
+                   LootItem(ItemID.FISH), LootItem(ItemID.FISH),
+                   LootItem(ItemID.FISH), LootItem(ItemID.FISH),
+                   LootItem(ItemID.FISH), LootItem(ItemID.FISH),
+                   LootItem(ItemID.DEEP_FISH), LootItem(ItemID.DEEP_FISH),
+                   LootItem(ItemID.DEEP_FISH), LootItem(ItemID.DEEP_FISH),
+                   LootItem(ItemID.DEEP_FISH), LootItem(ItemID.DEEP_FISH),
+                   LootItem(ItemID.BONE), LootItem(ItemID.BOTTLE),
+                   LootItem(ItemID.SLIME), LootItem(ItemID.STRING),
+                   LootItem(ItemID.BONE), LootItem(ItemID.BOTTLE),
+                   LootItem(ItemID.SLIME), LootItem(ItemID.STRING),
+                   LootItem(ItemID.FISH), LootItem(ItemID.COCKTAIL),
+                   ),
+    TileID.LAVA: (
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.FIRE_FISH), LootItem(ItemID.FIRE_FISH),
+        LootItem(ItemID.BONE), LootItem(ItemID.IRON_ORE),
+        LootItem(ItemID.BONE), LootItem(ItemID.IRON_ORE),
+        LootItem(ItemID.BONE), LootItem(ItemID.GOLD_ORE),
+        LootItem(ItemID.BONE), LootItem(ItemID.GOLD_ORE),
+        LootItem(ItemID.LAPIS), LootItem(ItemID.GOLD_APPLE),
+    ),
 })
 
 
