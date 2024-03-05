@@ -6,6 +6,7 @@ from data import Color, Graphic, TileID, TileTag
 tile_replace: dict[TileID, TileID] = {
     TileID.GRASS: TileID.DIRT,
     TileID.SAND: TileID.DIRT,
+    TileID.ASH: TileID.DIRT,
     TileID.STONE: TileID.DIRT,
     TileID.TREE: TileID.GRASS,
     TileID.CACTUS: TileID.SAND,
@@ -31,6 +32,10 @@ tile_replace: dict[TileID, TileID] = {
     TileID.WEB: TileID.DIRT,
     TileID.LAPIS_ORE: TileID.DIRT,
     TileID.THORNS: TileID.DIRT,
+    TileID.BIG_MUSHROOM: TileID.FLOOR_FUNGUS,
+    TileID.FLOOR_FUNGUS: TileID.DIRT,
+    TileID.SHROOM_SAPLING: TileID.FLOOR_FUNGUS,
+    TileID.QUARTZ_ORE: TileID.CLOUD,
 }
 
 tile_damage = defaultdict(lambda: 0)
@@ -41,8 +46,9 @@ tile_damage.update({
     TileID.IRON_ORE: 3,
     TileID.GOLD_ORE: 3,
     TileID.GEM_ORE: 3,
-    TileID.LAPIS_ORE: 5,
+    TileID.LAPIS_ORE: 4,
     TileID.THORNS: 2,
+    TileID.QUARTZ_ORE: 5,
 })
 
 tile_drain = defaultdict(lambda: 0)
@@ -56,6 +62,7 @@ tile_grow.update({
     TileID.TREE_SAPLING: (TileID.TREE, 0.05),
     TileID.PALM_TREE_SAPLING: (TileID.PALM_TREE, 0.05),
     TileID.CACTUS_SAPLING: (TileID.CACTUS, 0.05),
+    TileID.SHROOM_SAPLING: (TileID.BIG_MUSHROOM, 0.05),
 })
 
 tile_spread = defaultdict(tuple)
@@ -68,6 +75,8 @@ tile_spread.update({
 tile_light = {
     TileID.LAVA: 1,
     TileID.LAPIS_ORE: 1,
+    TileID.BIG_MUSHROOM: 1,
+    TileID.SHROOM_SAPLING: 1,
 }
 
 
@@ -77,6 +86,7 @@ TileData = namedtuple("TileData",
 tile_data = {
     None: TileData("void", (Graphic.EMPTY, Color.WHITE),),  # off map edge
     TileID.GRASS: TileData("grass", (Graphic.GRASS, Color.GREEN), 10, (TileTag.SPREAD,)),
+    TileID.FLOOR_FUNGUS: TileData("fungus", (Graphic.GRASS2, Color.LIGHT_BLUE), 10,),
     TileID.WINDOW: TileData("window", (Graphic.WINDOW, Color.LIGHT_BLUE), 2,
                             (TileTag.BLOCK_MOVE,)),
     TileID.WOOD_WALL: TileData("wd. wall", (Graphic.PLANKS, Color.BROWN), 10,
@@ -91,12 +101,15 @@ tile_data = {
     TileID.CLOSED_WOOD_DOOR: TileData("wd. door", (Graphic.DOOR_CLOSED, Color.BROWN), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.SAND: TileData("sand", (Graphic.SAND, Color.YELLOW),),
+    TileID.ASH: TileData("ash", (Graphic.SAND, Color.MED_GRAY), ),
     TileID.DESERT_BONES: TileData("bones", (Graphic.DESERT_BONES, Color.WHITE), ),
     TileID.WATER: TileData("water", (Graphic.LIQUID, Color.BLUE), 10, (TileTag.LIQUID, TileTag.SPREAD)),
     TileID.STONE: TileData("stone", (Graphic.STONE_TILE, Color.STONE), 10,
                            (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
     TileID.TREE: TileData("tree", (Graphic.TREE, Color.GREEN), 10,
                           (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT)),
+    TileID.BIG_MUSHROOM: TileData("shroom", (Graphic.TREE2, Color.LIGHT_BLUE), 10,
+                          (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.LIGHT)),
     TileID.CACTUS: TileData("cactus", (Graphic.CACTUS, Color.GREEN), 10,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
     TileID.THORNS: TileData("thorns", (Graphic.THORNS, Color.LIGHT_BROWN), 10,
@@ -122,10 +135,14 @@ tile_data = {
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
     TileID.LAPIS_ORE: TileData("lapis ore", (Graphic.ORE, Color.BLUE), 30,
                               (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE, TileTag.LIGHT)),
+    TileID.QUARTZ_ORE: TileData("quartz ore", (Graphic.ORE, Color.WHITE), 40,
+                               (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE,)),
     TileID.WHEAT_SEEDS: TileData("wheat seeds", (Graphic.SEEDS, Color.GREEN), 10,
                              (TileTag.GROW, TileTag.CRUSH)),
     TileID.TREE_SAPLING: TileData("sapling", (Graphic.SMALL_TREE, Color.GREEN), 5,
                                  (TileTag.GROW, TileTag.BLOCK_MOVE)),
+    TileID.SHROOM_SAPLING: TileData("sapling", (Graphic.SMALL_TREE, Color.LIGHT_BLUE), 5,
+                                  (TileTag.GROW, TileTag.BLOCK_MOVE, TileTag.LIGHT)),
     TileID.PALM_TREE_SAPLING: TileData("sapling", (Graphic.SMALL_TREE,
                                                         Color.LIGHT_GREEN), 5,
                                  (TileTag.GROW, TileTag.BLOCK_MOVE)),

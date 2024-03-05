@@ -37,9 +37,17 @@ item_data = {
                                (ItemTag.SPAWN_MOB,), {
                                    "mobid": MobID.GREEN_ZOMBIE,
                                }),
+    ItemID.DUCK_EGG: ItemData("duck egg", (Graphic.EGG, Color.LIGHT_BROWN),
+                                            (ItemTag.SPAWN_MOB,), {
+                                                "mobid": MobID.DUCK,
+                                            }),
     ItemID.DIRT: ItemData("dirt", (Graphic.DIRT, Color.BROWN),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.DIRT, "base": (TileID.HOLE, TileID.WATER)
+                          }),
+    ItemID.FUNGUS: ItemData("fungus", (Graphic.GRASS2, Color.LIGHT_BLUE),
+                          (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                              "place": TileID.FLOOR_FUNGUS, "base": (TileID.DIRT, )
                           }),
     ItemID.WINDOW: ItemData("window", (Graphic.WINDOW, Color.LIGHT_BLUE),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
@@ -64,11 +72,17 @@ item_data = {
                           }),
     ItemID.STONE: ItemData("stone", (Graphic.STONE_ITEM, Color.STONE),
                            (ItemTag.STACKABLE,), ),
+    ItemID.FAIRY_DUST: ItemData("pixiedust", (Graphic.FULL_BOTTLE, Color.PINK),
+                           (ItemTag.STACKABLE,), ),
     ItemID.STRING: ItemData("string", (Graphic.STRING, Color.WHITE),
                            (ItemTag.STACKABLE,), ),
     ItemID.SAND: ItemData("sand", (Graphic.SAND, Color.YELLOW),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
             "place": TileID.SAND, "base": (TileID.DIRT,)
+                          }),
+    ItemID.ASH: ItemData("ash", (Graphic.SAND, Color.MED_GRAY),
+                          (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                              "place": TileID.ASH, "base": (TileID.DIRT,)
                           }),
     ItemID.WOOD: ItemData("wood", (Graphic.WOOD, Color.BROWN), (ItemTag.STACKABLE,), ),
     ItemID.BONE: ItemData("bone", (Graphic.BONE, Color.WHITE), (ItemTag.STACKABLE,), ),
@@ -78,6 +92,38 @@ item_data = {
             "heal": 1,
                                "stamina_cost": 1,
                            }),
+    ItemID.BOILED_EGG: ItemData("boiled egg", (Graphic.EGG, Color.WHITE),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": 5,
+                               "stamina_cost": 1,
+                           }),
+    ItemID.TUBER: ItemData("tuber", (Graphic.CARROT, Color.LIGHT_BLUE),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": -1,
+                               "stamina_cost": 0,
+                           }),
+    ItemID.COOKED_TUBER: ItemData("roast tuber", (Graphic.CARROT, Color.LIGHT_BLUE),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": 4,
+                               "stamina_cost": 2,
+                           }),
+    ItemID.DUCK_MEAT: ItemData("duckmeat", (Graphic.MEAT2, Color.LIGHT_BROWN),
+                           (ItemTag.STACKABLE, ItemTag.HEAL), {
+                               "heal": -3,
+                               "stamina_cost": 0,
+                           }),
+    ItemID.PASTRY: ItemData("pastry", (Graphic.PIE, Color.LIGHT_BLUE),
+                                  (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
+                                      "heal": 5,
+                                      "stamina_cost": 0,
+            "stamina": 2,
+                                  }),
+    ItemID.COOKED_DUCK_MEAT: ItemData("duck roast", (Graphic.MEAT2, Color.BROWN),
+                            (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
+                                "heal": 6,
+                                "stamina_cost": 0,
+                                "stamina": 3,
+                            }),
     ItemID.SPIDER_EYE: ItemData("spidereye", (Graphic.EYE, Color.RED),
                            (ItemTag.STACKABLE, ItemTag.HEAL), {
                                "heal": -3,
@@ -150,9 +196,12 @@ item_data = {
                                 }),
     ItemID.EMPTY_HANDS: ItemData("empty hands", (Graphic.EMPTY_HANDS, Color.YELLOW),
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE, ItemTag.PICKUP), {
-            "mob_damage": 1, "breakable": (TileID.TREE, TileID.CACTUS, TileID.PALM_TREE),
+            "mob_damage": 1, "breakable": (TileID.TREE, TileID.CACTUS, TileID.PALM_TREE,
+                                           TileID.TREE_SAPLING, TileID.PALM_TREE_SAPLING, TileID.CACTUS_SAPLING,
+                                           TileID.SHROOM_SAPLING, TileID.WINDOW,
+                                           ),
                                      "tile_damage": 1,
-                                     "stamina_cost": 1,
+                                     "stamina_cost": 2,
                                  }),
     ItemID.WOOD_AXE: ItemData("wood axe", (Graphic.AXE, Color.BROWN),
                                (ItemTag.BREAK_TILE,), {
@@ -160,7 +209,10 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW, TileID.THORNS),
+                                                 TileID.WINDOW, TileID.THORNS,
+                                                 TileID.TREE_SAPLING, TileID.PALM_TREE_SAPLING, TileID.CACTUS_SAPLING,
+                                                 TileID.SHROOM_SAPLING,
+                                                 ),
                                    "tile_damage": 2,
                                   "stamina_cost": 5,
                                }),
@@ -174,7 +226,9 @@ item_data = {
                                  (ItemTag.BREAK_TILE,), {
                                    "breakable": (TileID.DIRT, TileID.SAND,
                                                  TileID.GRASS, TileID.FARMLAND,
-                                                 TileID.DESERT_BONES, TileID.CLOUD),
+                                                 TileID.DESERT_BONES, TileID.CLOUD, TileID.FLOOR_FUNGUS,
+                                                 TileID.ASH,
+                                                 ),
                                    "tile_damage": 10,
             "stamina_cost": 5,
                                }),
@@ -184,6 +238,8 @@ item_data = {
                               (ItemTag.STACKABLE,), ),
     ItemID.LAPIS: ItemData("lapis", (Graphic.INGOT, Color.BLUE),
                               (ItemTag.STACKABLE,), ),
+    ItemID.QUARTZ: ItemData("quartz", (Graphic.GEM, Color.WHITE),
+                           (ItemTag.STACKABLE,), ),
     ItemID.GOLD_ORE: ItemData("gold ore", (Graphic.STONE_ITEM, Color.GOLD),
                            (ItemTag.STACKABLE,), ),
     ItemID.GEM: ItemData("gem", (Graphic.GEM, Color.GEM),
@@ -272,6 +328,10 @@ item_data = {
                                  (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                                      "place": TileID.TREE_SAPLING, "base": (TileID.GRASS,),
                                  }),
+    ItemID.SHROOM_SAPLING: ItemData("sapling", (Graphic.SMALL_TREE, Color.LIGHT_BLUE),
+                                  (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
+                                      "place": TileID.SHROOM_SAPLING, "base": (TileID.FLOOR_FUNGUS,),
+                                  }),
     ItemID.PALM_TREE_SAPLING: ItemData("sapling", (Graphic.SMALL_TREE,
                                                         Color.LIGHT_GREEN),
                                  (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
@@ -303,7 +363,10 @@ item_data = {
                                                 TileID.PALM_TREE, TileID.WOOD_WALL,
                                                 TileID.OPEN_WOOD_DOOR,
                                                 TileID.CLOSED_WOOD_DOOR,
-                                                TileID.WINDOW, TileID.THORNS),
+                                                TileID.WINDOW, TileID.THORNS,
+                                                TileID.TREE_SAPLING, TileID.PALM_TREE_SAPLING, TileID.CACTUS_SAPLING,
+                                                TileID.SHROOM_SAPLING,
+                                                ),
                                   "tile_damage": 3,
                                   "stamina_cost": 4,
                               }),
@@ -311,7 +374,9 @@ item_data = {
                                  (ItemTag.BREAK_TILE,), {
                                      "breakable": (TileID.DIRT, TileID.SAND,
                                                    TileID.GRASS, TileID.FARMLAND,
-                                                   TileID.DESERT_BONES, TileID.CLOUD),
+                                                   TileID.DESERT_BONES, TileID.CLOUD, TileID.FLOOR_FUNGUS,
+                                                   TileID.ASH,
+                                                   ),
                                      "tile_damage": 10,
                                      "stamina_cost": 4,
                                  }),
@@ -340,7 +405,10 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW, TileID.THORNS),
+                                                 TileID.WINDOW, TileID.THORNS,
+                                                 TileID.TREE_SAPLING, TileID.PALM_TREE_SAPLING, TileID.CACTUS_SAPLING,
+                                                 TileID.SHROOM_SAPLING,
+                                                 ),
                                    "tile_damage": 4,
                                    "stamina_cost": 3,
                                }),
@@ -348,7 +416,9 @@ item_data = {
                                   (ItemTag.BREAK_TILE,), {
                                       "breakable": (TileID.DIRT, TileID.SAND,
                                                     TileID.GRASS, TileID.FARMLAND,
-                                                    TileID.DESERT_BONES, TileID.CLOUD),
+                                                    TileID.DESERT_BONES, TileID.CLOUD, TileID.FLOOR_FUNGUS,
+                                                    TileID.ASH,
+                                                    ),
                                       "tile_damage": 10,
                                       "stamina_cost": 3,
                                   }),
@@ -378,7 +448,10 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW, TileID.THORNS),
+                                                 TileID.WINDOW, TileID.THORNS,
+                                                 TileID.TREE_SAPLING, TileID.PALM_TREE_SAPLING, TileID.CACTUS_SAPLING,
+                                                 TileID.SHROOM_SAPLING,
+                                                 ),
                                    "tile_damage": 5,
                                    "stamina_cost": 2,
                                }),
@@ -386,7 +459,9 @@ item_data = {
                                   (ItemTag.BREAK_TILE,), {
                                       "breakable": (TileID.DIRT, TileID.SAND,
                                                     TileID.GRASS, TileID.FARMLAND,
-                                                    TileID.DESERT_BONES, TileID.CLOUD),
+                                                    TileID.DESERT_BONES, TileID.CLOUD, TileID.FLOOR_FUNGUS,
+                                                    TileID.ASH,
+                                                    ),
                                       "tile_damage": 10,
                                       "stamina_cost": 2,
                                   }),
@@ -406,7 +481,7 @@ item_data = {
                                 (ItemTag.BREAK_TILE,), {
                                     "breakable": (TileID.STONE, TileID.STONE_WALL, TileID.WINDOW, TileID.IRON_ORE,
                                                   TileID.GOLD_ORE, TileID.GEM_ORE, TileID.OBSIDIAN_BRICKS,
-                                                  TileID.CLOUD_BANK, TileID.LAPIS_ORE),
+                                                  TileID.CLOUD_BANK, TileID.LAPIS_ORE, TileID.QUARTZ_ORE),
                                     "tile_damage": 10,
                                     "stamina_cost": 1,
                                 }),
@@ -416,7 +491,10 @@ item_data = {
                                                  TileID.PALM_TREE, TileID.WOOD_WALL,
                                                  TileID.OPEN_WOOD_DOOR,
                                                  TileID.CLOSED_WOOD_DOOR,
-                                                 TileID.WINDOW, TileID.THORNS),
+                                                 TileID.WINDOW, TileID.THORNS,
+                                                 TileID.TREE_SAPLING, TileID.PALM_TREE_SAPLING, TileID.CACTUS_SAPLING,
+                                                 TileID.SHROOM_SAPLING,
+                                                 ),
                                    "tile_damage": 10,
                                    "stamina_cost": 1,
                                }),
@@ -424,7 +502,9 @@ item_data = {
                                   (ItemTag.BREAK_TILE,), {
                                       "breakable": (TileID.DIRT, TileID.SAND,
                                                     TileID.GRASS, TileID.FARMLAND,
-                                                    TileID.DESERT_BONES, TileID.CLOUD),
+                                                    TileID.DESERT_BONES, TileID.CLOUD, TileID.FLOOR_FUNGUS,
+                                                    TileID.ASH,
+                                                    ),
                                       "tile_damage": 10,
                                       "stamina_cost": 1,
                                   }),

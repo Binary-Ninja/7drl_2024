@@ -30,8 +30,9 @@ class Color:
     GEM = (200, 0, 255)
     DARK_GRAY = (64, 64, 64)
     LIGHT_BROWN = (200, 200, 170)
-    LIGHT_BLUE = (0, 100, 255)
+    LIGHT_BLUE = (100, 100, 255)
     OBSIDIAN = (150, 0, 210)
+    PINK = (255, 100, 255)
 
 
 class Graphic:
@@ -55,7 +56,7 @@ class Graphic:
     CLOUD = (7, 0)
     WEB = (2, 15)
     GRASS2 = (1, 0)
-    TREE2 = (2, 1)
+    TREE2 = (4, 1)
     THORNS = (6, 2)
 
     WINDOW = (1, 4)
@@ -72,6 +73,9 @@ class Graphic:
     SPIDER = (28, 5)
     BAT = (26, 8)
     SKULL = (38, 11)
+    SHADE = (24, 7)
+    DUCK = (25, 7)
+    FAIRY = (31, 5)
 
     HEART_FULL = (42, 10)
     HEART_EMPTY = (40, 10)
@@ -100,6 +104,7 @@ class Graphic:
     EMPTY_HANDS = (41, 1)
     APPLE = (33, 18)
     PEAR = (34, 18)
+    CARROT = (34, 20)
     BOTTLE = (33, 19)
     SEEDS = (14, 6)
     PICKAXE = (43, 5)
@@ -124,6 +129,7 @@ class Graphic:
     FISH = (33, 17)
     MEAT = (33, 16)
     EYE = (41, 3)
+    MEAT2 = (34, 19)
 
 
 str_2_tile = {
@@ -205,6 +211,9 @@ class MobID(Enum):
     FLAME_SKULL = 26
     SPIDER = 27
     HELL_SPIDER = 28
+    SHADE = 29
+    DUCK = 30
+    FAIRY = 31
 
 
 class MobTag(Enum):
@@ -215,9 +224,11 @@ class MobTag(Enum):
     AI_JUMP = auto()
     AI_WANDER = auto()
     AI_SPIDER = auto()
+    AI_FLEE = auto()
     DAMAGE = auto()
     NO_DESPAWN = auto()
     BED = auto()
+    SWAPPABLE = auto()
 
 
 class ItemID(Enum):
@@ -303,6 +314,18 @@ class ItemID(Enum):
     GOLD_FISH_SPEAR = 80
     GEM_FISH_SPEAR = 81
     SPIDER_EYE = 82
+    FUNGUS = 83
+    SHROOM_SAPLING = 84
+    TUBER = 85
+    COOKED_TUBER = 86
+    PASTRY = 87
+    ASH = 88
+    DUCK_EGG = 89
+    DUCK_MEAT = 90
+    COOKED_DUCK_MEAT = 91
+    BOILED_EGG = 92
+    FAIRY_DUST = 93
+    QUARTZ = 94
 
 
 class ItemTag(Enum):
@@ -355,6 +378,9 @@ class TileID(Enum):
     THORNS = 34
     FLOOR_FUNGUS = 35
     BIG_MUSHROOM = 36
+    SHROOM_SAPLING = 37
+    ASH = 38
+    QUARTZ_ORE = 39
 
 
 class TileTag(Enum):

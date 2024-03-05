@@ -33,9 +33,13 @@ recipies = {
     ),
     MobID.OVEN: (
         ((ItemID.BREAD, 1), (ItemID.WHEAT, 5), (ItemID.WOOD, 2)),
+        ((ItemID.COOKED_TUBER, 1), (ItemID.TUBER, 1), (ItemID.WOOD, 2)),
         ((ItemID.APPLE_PIE, 1), (ItemID.WHEAT, 5), (ItemID.APPLE, 5), (ItemID.WOOD, 2)),
+        ((ItemID.PASTRY, 1), (ItemID.COOKED_TUBER, 5), (ItemID.WHEAT, 5), (ItemID.WOOD, 2)),
         ((ItemID.COOKED_FISH, 1), (ItemID.FISH, 1), (ItemID.WOOD, 2)),
         ((ItemID.COOKED_DEEP_FISH, 1), (ItemID.DEEP_FISH, 1), (ItemID.WOOD, 2)),
+        ((ItemID.COOKED_DUCK_MEAT, 1), (ItemID.DUCK_MEAT, 1), (ItemID.WOOD, 2)),
+        ((ItemID.BOILED_EGG, 1), (ItemID.DUCK_EGG, 1), (ItemID.WOOD, 2)),
     ),
     MobID.FURNACE: (
         ((ItemID.GLASS, 1), (ItemID.SAND, 4), (ItemID.COAL, 1)),
@@ -85,6 +89,7 @@ mob_damage = {
     MobID.FLAME_SKULL: 2,
     MobID.SPIDER: 2,
     MobID.HELL_SPIDER: 3,
+    MobID.FAIRY: 3,
 }
 
 mob_ai_timer = defaultdict(lambda: 1)
@@ -103,9 +108,12 @@ mob_ai_timer.update({
     MobID.BLACK_SKELETON: 4,
     MobID.AIR_WIZARD: 2,
     MobID.BAT: 1,
-    MobID.FLAME_SKULL: 2,
+    MobID.FLAME_SKULL: 1,
     MobID.SPIDER: 1,
     MobID.HELL_SPIDER: 1,
+    MobID.SHADE: 1,
+    MobID.DUCK: 1,
+    MobID.FAIRY: 1,
 })
 
 
@@ -114,8 +122,13 @@ MobData = namedtuple("MobData", ("name", "graphic", "max_health", "tags",
 mob_data = {
     MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE), 10, (MobTag.NO_DESPAWN,), tuple(), 0),
     MobID.BAT: MobData("bat", (Graphic.BAT, Color.BROWN), 5, (MobTag.AI_WANDER,)),
-    MobID.FLAME_SKULL: MobData("fireskull", (Graphic.SKULL, Color.YELLOW), 5, (MobTag.AI_WANDER, MobTag.DAMAGE,)),
-    MobID.SPIDER: MobData("spider", (Graphic.SPIDER, Color.MED_GRAY), 5, (MobTag.AI_SPIDER, MobTag.DAMAGE, MobTag.NO_DESPAWN)),
+    MobID.DUCK: MobData("duck", (Graphic.DUCK, Color.YELLOW), 2, (MobTag.AI_FOLLOW, MobTag.SWAPPABLE)),
+    MobID.SHADE: MobData("shade", (Graphic.SHADE, Color.BLUE), 20, (MobTag.AI_FLEE, MobTag.NO_DESPAWN), tuple(), 1),
+    MobID.FLAME_SKULL: MobData("fireskull", (Graphic.SKULL, Color.YELLOW), 20, (MobTag.AI_WANDER, MobTag.DAMAGE,),
+                               tuple(), 1),
+    MobID.FAIRY: MobData("pixie", (Graphic.FAIRY, Color.PINK), 5, (MobTag.AI_WANDER, MobTag.DAMAGE),
+                               tuple(), 1),
+    MobID.SPIDER: MobData("spider", (Graphic.SPIDER, Color.MED_GRAY), 5, (MobTag.AI_SPIDER, MobTag.DAMAGE,)),
     MobID.HELL_SPIDER: MobData("hellspider", (Graphic.SPIDER, Color.RED), 5, (MobTag.AI_SPIDER, MobTag.DAMAGE)),
     MobID.GREEN_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_GREEN), 10, (MobTag.AI_FOLLOW, MobTag.DAMAGE)),
     MobID.GREEN_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_GREEN), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
@@ -170,6 +183,7 @@ class Mob:
         self.light = self.mob_data.light
         self.target_space = None
         self.last_dir = Point(0, -1)  # assume the last direction was up
+        self.state = 'wander'
         self.ai_tick = 0
         self.ai_timer = mob_ai_timer[self.id]
 

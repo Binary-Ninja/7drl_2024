@@ -37,11 +37,13 @@ NO_ITEM = Item(ItemID.EMPTY_HANDS)
 
 MOB_SIM_DISTANCE = 25
 MAX_VIEW_DIST = 25
-CHASE_DISTANCE = 10
-JUMP_DISTANCE = 8
+CHASE_DISTANCE = 10  # when zombies sense you
+JUMP_DISTANCE = 8  # when slimes sense you
 SKELETON_SHOOT_RADIUS = 5
-SKELETON_SIGHT_RADIUS = 12
-SPIDER_CHASE_RADIUS = 5
+SKELETON_SIGHT_RADIUS = 12  # when skeletons sense you
+SPIDER_CHASE_RADIUS = 10  # when spiders sense you
+SHADE_FLEE_RADIUS = 5  # when shades see you
+DOG_FOLLOW_RADIUS = 15
 
 player_vision = 17
 player_light_radius = 2.5
@@ -91,7 +93,7 @@ def main():
     night_time = False
     level_is_dark = False
     number_of_mobs = 0  # TODO: dont forget to update this to load on layer load when i add world layers
-    MOB_SPAWN_CHANCE = 0.1
+    MOB_SPAWN_CHANCE = 0.2
     MOB_DESPAWN_CHANCE = 0.05
 
     world_seed = random.getrandbits(64)
@@ -116,12 +118,12 @@ def main():
 
     current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.WORKBENCH), Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
-                             Item(ItemID.STONE_WALL, 30), Item(ItemID.SAND, 99),
+                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SAND, 99),
                              Item(ItemID.GEM_FISH_SPEAR, 1), Item(ItemID.BED, 1),
                              Item(ItemID.WOOD, 100), Item(ItemID.OVEN, 1),
                              # Item(ItemID.WINDOW, 100), Item(ItemID.STONE_WALL, 99),
                              # Item(ItemID.WOOD_DOOR, 100), Item(ItemID.WHEAT_SEEDS, 99),
-                             Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 100), Item(ItemID.GEM_LANTERN, 1),
+                             Item(ItemID.DUCK_EGG, 100), Item(ItemID.GEM_LANTERN, 1),
                              ]
 
     message_logs: deque[str] = deque(maxlen=10)
@@ -292,6 +294,7 @@ def main():
 
     def move_player(direction: tuple[int, int]) -> Point:
         global player_health, light_map, player_stamina, regen_stam, do_calc_light_map
+        swapped = False
         try_pos = Point(player_pos.x + direction[0], player_pos.y + direction[1])
         move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
         if move_mob:
@@ -326,10 +329,31 @@ def main():
                 else:
                     message_logs.appendleft("you bump into")
                     message_logs.appendleft(f"the {move_mob.name}")
+            elif move_mob.has_tag(MobTag.SWAPPABLE):
+                swapped = True
+                try_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                player_tile = get_array(player_pos, game_world.overworld_layer.tile_array)
+                set_array(try_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
+                message_logs.appendleft("you swap places")
+                message_logs.appendleft(f"with {move_mob.name}")
+                if try_tile.has_tag(TileTag.CRUSH):
+                    set_array(try_pos, game_world.overworld_layer.tile_array,
+                              Tile(tile_replace[try_tile.id]))
+                    message_logs.appendleft("you crush the")
+                    message_logs.appendleft(f"{try_tile.name}")
+                if player_tile.id != TileID.LAVA:
+                    set_array(player_pos, game_world.overworld_layer.mob_array, move_mob)
+                else:
+                    message_logs.appendleft(f"{move_mob.name} sinks")
+                    message_logs.appendleft("into the lava")
+                    set_array(player_pos, game_world.overworld_layer.mob_array, None)
             else:
                 message_logs.appendleft("you bump into")
                 message_logs.appendleft(f"the {move_mob.name}")
-            return player_pos
+            if not swapped:
+                return player_pos
+            else:
+                return try_pos
         move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
         if move_tile is None:
             message_logs.appendleft("you stare into")
@@ -827,9 +851,9 @@ def main():
                     if try_mob or try_tile.has_tag(TileTag.BLOCK_MOVE) or try_tile.has_tag(TileTag.LIQUID):
                         continue  # don't replace another mob or spawn in a wall
                     if try_tile.id == TileID.WEB:
-                        mob_id = MobID.SPIDER
+                        mob_id = MobID.HELL_SPIDER
                     else:
-                        mob_id = random.choice((MobID.BAT, MobID.FLAME_SKULL, MobID.SPIDER))
+                        mob_id = random.choice((MobID.FLAME_SKULL, MobID.SHADE))
                     game_world.overworld_layer.mob_array[sx][sy] = Mob(mob_id)
                     number_of_mobs += 1
                     print(f"Spawned {mob_id} at ({sx},{sy}) on {i}")
@@ -911,7 +935,8 @@ def main():
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
-                        if distance_within((x, y), player_pos, CHASE_DISTANCE):
+                        dist = DOG_FOLLOW_RADIUS if current_mob.has_tag(MobTag.SWAPPABLE) else CHASE_DISTANCE
+                        if distance_within((x, y), player_pos, dist):
                             # chase player
                             dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
                         else:
@@ -931,7 +956,9 @@ def main():
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
                         move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
-                                move_tile.has_tag(TileTag.LIQUID):
+                                (move_tile.id == TileID.LAVA):
+                            if move_tile.id == TileID.WATER and not current_mob.has_tag(MobTag.SWAPPABLE):
+                                continue
                             set_array((x, y), game_world.overworld_layer.mob_array, None)
                             set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
                             if move_tile.has_tag(TileTag.CRUSH):
@@ -1053,6 +1080,8 @@ def main():
                             if not move_tile.has_tag(TileTag.BLOCK_MOVE):
                                 set_array((x, y), game_world.overworld_layer.mob_array, None)
                                 set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                                if current_mob.light > 0:
+                                    do_calc_light_map = True
                                 if move_tile.has_tag(TileTag.CRUSH):
                                     set_array(try_pos, game_world.overworld_layer.tile_array,
                                               Tile(tile_replace[move_tile.id]))
@@ -1092,7 +1121,50 @@ def main():
                                 set_array(try_pos, game_world.overworld_layer.tile_array,
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
-
+                    elif current_mob.has_tag(MobTag.AI_FLEE):
+                        current_mob.ai_tick += 1
+                        if current_mob.ai_tick % current_mob.ai_timer != 0:
+                            continue  # only tick every ai_timer ticks
+                        if distance_within((x, y), player_pos, SHADE_FLEE_RADIUS):
+                            # flee player
+                            dir_vec = (pg.Vector2(x, y) - pg.Vector2(player_pos)).normalize()
+                            current_mob.state = 'flee'
+                        else:
+                            # wander randomly
+                            dir_vec = pg.Vector2(random.random(), random.random()).normalize()
+                            current_mob.state = 'wander'
+                        # make dir_vec only cardinal directions
+                        if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
+                            dir_vec = Point(int(math.copysign(1, dir_vec.x)), 0)
+                        else:
+                            dir_vec = Point(0, int(math.copysign(1, dir_vec.y)))
+                        # if it is moving in the opposite direction as last move
+                        if current_mob.state == 'wander' and \
+                                dir_vec == (-current_mob.last_dir.x, -current_mob.last_dir.y):
+                            # go the direction of last time
+                            # if a mob is going right, it cannot go left without going up or down first
+                            dir_vec = Point(-dir_vec.x, -dir_vec.y)
+                        current_mob.last_dir = dir_vec
+                        if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
+                            # mob wants to move horizontally
+                            try_pos = Point(x + dir_vec.x, y)
+                        else:
+                            # mob is diagonal or wants to move vertically
+                            try_pos = Point(x, y + dir_vec.y)
+                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        if move_tile and not move_mob:
+                            if not move_tile.has_tag(TileTag.BLOCK_MOVE):
+                                set_array((x, y), game_world.overworld_layer.mob_array, None)
+                                set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                                if current_mob.light > 0:
+                                    do_calc_light_map = True
+                                if move_tile.has_tag(TileTag.CRUSH):
+                                    set_array(try_pos, game_world.overworld_layer.tile_array,
+                                              Tile(tile_replace[move_tile.id]))
+                                already_mob_ticked.add(current_mob)
+                            else:
+                                current_mob.last_dir = Point(-dir_vec.x, -dir_vec.y)
         # Calculate the light map before drawing if needed.
         if do_calc_light_map:
             do_calc_light_map = False
