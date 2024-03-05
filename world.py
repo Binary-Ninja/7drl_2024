@@ -7,7 +7,7 @@ from tiles import Tile, TileID
 from data import PointType
 
 
-Layer = namedtuple("Layer", ("tile_array", "mob_array"))
+Layer = namedtuple("Layer", ("tile_array", "mob_array", "mem_array"))
 
 
 def make_2d_array(size: tuple[int, int], default) -> list[list]:
@@ -43,13 +43,15 @@ class World:
     def __init__(self, size: tuple[int, int], world_seed: int):
         self.size = size
         self.seed = world_seed
+        self.mob_cap = (self.size[0] * self.size[1]) // 50
         # World layers start out blank and are generated on demand.
-        self.overworld_layer = Layer(None, None)
+        self.overworld_layer = Layer(None, None, None)
 
     def generate_overworld_layer(self):
         tile_array = generate_overworld(self.size, self.seed)
         mob_array = make_2d_array(self.size, None)
-        self.overworld_layer = Layer(tile_array, mob_array)
+        mem_array = make_2d_array(self.size, False)
+        self.overworld_layer = Layer(tile_array, mob_array, mem_array)
 
 
 # World Gen functions below
