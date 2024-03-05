@@ -17,4 +17,10 @@
 - items can do things now
 
 ## Day 3
-- ???
+- added some stuff I don't remember
+
+## Day 4
+- added mob AI, spawning and despawning
+- added map memory
+- added some more items
+- made walking a litle less laggy
