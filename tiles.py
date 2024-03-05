@@ -28,6 +28,8 @@ tile_replace: dict[TileID, TileID] = {
     TileID.CLOUD: TileID.AIR,
     TileID.CLOUD_BANK: TileID.CLOUD,
     TileID.WHEAT_SEEDS: TileID.DIRT,
+    TileID.WEB: TileID.DIRT,
+    TileID.LAPIS_ORE: TileID.DIRT,
 }
 
 tile_damage = defaultdict(lambda: 0)
@@ -38,6 +40,12 @@ tile_damage.update({
     TileID.IRON_ORE: 3,
     TileID.GOLD_ORE: 3,
     TileID.GEM_ORE: 3,
+    TileID.LAPIS_ORE: 5,
+})
+
+tile_drain = defaultdict(lambda: 0)
+tile_drain.update({
+    TileID.WEB: 1,
 })
 
 tile_grow = defaultdict(tuple)
@@ -57,6 +65,7 @@ tile_spread.update({
 
 tile_light = {
     TileID.LAVA: 1,
+    TileID.LAPIS_ORE: 3,
 }
 
 
@@ -107,6 +116,8 @@ tile_data = {
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
     TileID.GEM_ORE: TileData("gem ore", (Graphic.ORE, Color.GEM), 20,
                             (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE)),
+    TileID.LAPIS_ORE: TileData("lapis ore", (Graphic.ORE, Color.BLUE), 30,
+                              (TileTag.BLOCK_MOVE, TileTag.BLOCK_SIGHT, TileTag.DAMAGE, TileTag.LIGHT)),
     TileID.WHEAT_SEEDS: TileData("wheat seeds", (Graphic.SEEDS, Color.GREEN), 10,
                              (TileTag.GROW, TileTag.CRUSH)),
     TileID.TREE_SAPLING: TileData("sapling", (Graphic.SMALL_TREE, Color.GREEN), 5,
@@ -119,6 +130,7 @@ tile_data = {
     TileID.AIR: TileData("air", (Graphic.AIR, Color.LIGHT_BLUE), 5,
                                     (TileTag.BLOCK_MOVE,)),
     TileID.CLOUD: TileData("cloud", (Graphic.CLOUD, Color.WHITE), 10, ),
+    TileID.WEB: TileData("web", (Graphic.WEB, Color.WHITE), 10, (TileTag.DRAIN,)),
 }
 
 
@@ -128,7 +140,8 @@ class Tile:
         self.tile_data = tile_data[self.id]
         self.name = self.tile_data.name
         self.graphic = self.tile_data.graphic
-        self.health = self.tile_data.max_health
+        self.max_health = self.tile_data.max_health
+        self.health = self.max_health
         self.tags = self.tile_data.tags
 
     def has_tag(self, tag: TileTag) -> bool:

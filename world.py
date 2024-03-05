@@ -46,12 +46,19 @@ class World:
         self.mob_cap = (self.size[0] * self.size[1]) // 50
         # World layers start out blank and are generated on demand.
         self.overworld_layer = Layer(None, None, None)
+        self.cave_layer = Layer(None, None, None)
 
     def generate_overworld_layer(self):
-        tile_array = generate_overworld(self.size, self.seed)
+        tile_array = generate_caves(self.size, self.seed)
         mob_array = make_2d_array(self.size, None)
         mem_array = make_2d_array(self.size, False)
         self.overworld_layer = Layer(tile_array, mob_array, mem_array)
+
+    def generate_caves(self):
+        tile_array = generate_caves(self.size, self.seed)
+        mob_array = make_2d_array(self.size, None)
+        mem_array = make_2d_array(self.size, False)
+        self.cave_layer = Layer(tile_array, mob_array, mem_array)
 
 
 # World Gen functions below
@@ -88,6 +95,41 @@ def generate_overworld(size: tuple[int, int], world_seed: int) -> list[list]:
                 elif humidity < 1:
                     if rng.random() + humidity > 1:
                         world_map[x][y] = Tile(TileID.TREE)
-            elif value < 0.9:
+            elif value < 1:
                 world_map[x][y] = Tile(TileID.STONE)
+    return world_map
+
+
+def generate_caves(size: tuple[int, int], world_seed: int) -> list[list]:
+    world_map = make_2d_array(size, Tile(TileID.DIRT))
+    opensimplex.seed(world_seed)
+    rng = random.Random(world_seed)
+    altitude_scale = 0.08
+    altitude_offset = (400, 400)
+    ore_scale = 0.2
+    ore_offset = (100, 100)
+    biome_scale = 0.1
+    biome_offset = (0, 0)
+    for x in range(size[0]):
+        for y in range(size[1]):
+            altitude = opensimplex.noise2((x + altitude_offset[0]) * altitude_scale,
+                                          (y + altitude_offset[1]) * altitude_scale)
+            ore = opensimplex.noise2((x + ore_offset[0]) * ore_scale,
+                                     (y + ore_offset[1]) * ore_scale)
+            biome = opensimplex.noise2((x + biome_offset[0]) * biome_scale,
+                                     (y + biome_offset[1]) * biome_scale)
+            if altitude < 0:
+                if biome < -0.3 and rng.random() + biome < 0.2:
+                    world_map[x][y] = Tile(TileID.WEB)
+                elif biome < 0.5:
+                    world_map[x][y] = Tile(TileID.DIRT)
+                else:
+                    world_map[x][y] = Tile(TileID.WHEAT_SEEDS)
+            elif altitude < 0.7:
+                if ore < -0.5:
+                    world_map[x][y] = Tile(TileID.IRON_ORE)
+                else:
+                    world_map[x][y] = Tile(TileID.STONE)
+            else:
+                world_map[x][y] = Tile(TileID.LAPIS_ORE)
     return world_map

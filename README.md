@@ -24,3 +24,5 @@
 - added map memory
 - added some more items
 - made walking a litle less laggy
+- fixed lanterns despawning
+- made crops lag out the whole game and it is really annoying

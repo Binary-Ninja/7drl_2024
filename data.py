@@ -53,6 +53,7 @@ class Graphic:
     SMALL_CACTUS = (7, 1)
     AIR = (8, 5)
     CLOUD = (7, 0)
+    WEB = (2, 15)
 
     WINDOW = (1, 4)
     PLANKS = (13, 16)
@@ -65,6 +66,8 @@ class Graphic:
     SLIME = (27, 8)
     SKELETON = (29, 6)
     AIR_WIZARD = (24, 1)
+    SPIDER = (28, 5)
+    BAT = (26, 8)
 
     HEART_FULL = (42, 10)
     HEART_EMPTY = (40, 10)
@@ -155,6 +158,7 @@ str_2_tile = {
     ".": (46, 17),
     ":": (45, 17),
     ">": (29, 20),
+    "/": (39, 20),
 
 }
 
@@ -192,6 +196,7 @@ class MobTag(Enum):
     AI_SHOOT = auto()
     AI_JUMP = auto()
     DAMAGE = auto()
+    NO_DESPAWN = auto()
 
 
 class ItemID(Enum):
@@ -264,6 +269,7 @@ class ItemID(Enum):
     GOLD_LANTERN = 67
     GEM_LANTERN = 68
     SPAWN_EGG_GREEN_ZOMBIE = 69
+    LAPIS = 70
 
 
 class ItemTag(Enum):
@@ -309,6 +315,8 @@ class TileID(Enum):
     AIR = 29
     CLOUD = 30
     CLOUD_BANK = 31
+    WEB = 32
+    LAPIS_ORE = 33
 
 
 class TileTag(Enum):
@@ -322,3 +330,4 @@ class TileTag(Enum):
     GROW = auto()
     CRUSH = auto()
     SPREAD = auto()
+    DRAIN = auto()

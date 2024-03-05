@@ -15,8 +15,8 @@ from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
 from items import Item, item_to_mob
 from mobs import Mob, mob_damage
-from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light
-from loots import tile_break_loot, resolve_loot
+from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light, tile_drain
+from loots import tile_break_loot, resolve_loot, mob_death_loot
 
 
 def distance_within(a: PointType, b: PointType, dist: int | float) -> bool:
@@ -93,7 +93,7 @@ def main():
     MOB_DESPAWN_CHANCE = 0.05
 
     world_seed = random.getrandbits(64)
-    world_seed = 1234
+    # world_seed = 1234
     print(world_seed)
     world_size = Point(100, 100)
     print(world_size)
@@ -112,13 +112,13 @@ def main():
     set_array(player_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
 
     current_item: Item | NO_ITEM = NO_ITEM
-    inventory: list[Item] = [Item(ItemID.WORKBENCH),
-                             # Item(ItemID.DIRT, 30), Item(ItemID.SAND, 9),
+    inventory: list[Item] = [Item(ItemID.WORKBENCH), Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
+                             Item(ItemID.STONE_WALL, 30), Item(ItemID.SAND, 99),
                              # Item(ItemID.WOOD, 1000), Item(ItemID.STONE, 100),
                              # Item(ItemID.COCONUT, 100), Item(ItemID.COAL, 99),
                              # Item(ItemID.WINDOW, 100), Item(ItemID.STONE_WALL, 99),
                              # Item(ItemID.WOOD_DOOR, 100), Item(ItemID.WHEAT_SEEDS, 99),
-                             # Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 100), Item(ItemID.GEM, 99),
+                             Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 100), Item(ItemID.GEM_LANTERN, 1),
                              ]
 
     message_logs: deque[str] = deque(maxlen=10)
@@ -143,37 +143,6 @@ def main():
     just_placed_a_tile = False
     displayed_no_use_message = False
     skelly_got_em = False
-
-    def calc_paths():
-        return
-        global path_to_player
-        frontier: deque[Point] = deque()
-        frontier.append(player_pos)
-        path_to_player = {player_pos: player_pos}
-
-        while len(frontier):
-            current = frontier.pop()
-            for x in (-1, 0, 1):
-                for y in (-1, 0, 1):
-                    if x == y == 0:
-                        continue  # same tile
-                    if math.fabs(x) == math.fabs(y) == 1:
-                        continue  # this is a diagonal
-                    next_point = (current[0] + x, current[1] + y)
-                    if not distance_within(player_pos, next_point, MOB_SIM_DISTANCE + 1):
-                        continue  # don't spread bfs beyond the simulation distance
-                    path_tile = get_array(next_point, game_world.overworld_layer.tile_array)
-                    if path_tile is None:
-                        continue  # out of bounds
-                    if (TileTag.BLOCK_MOVE, TileTag.LIQUID) in path_tile.tags:
-                        # this has the effect of removing these tiles from the path data entirely
-                        # this means if a mob is standing on a blocking tile or a liquid, it cannot path
-                        continue  # there is a liquid or blocker in the way
-                    if next_point not in path_to_player:
-                        frontier.append(next_point)
-                        path_to_player[next_point] = tuple(current)
-
-    calc_paths()
 
     def line_of_sight_path(start: PointType, end: PointType) -> list[Point]:
         path: list[Point] = []
@@ -228,7 +197,7 @@ def main():
                 if distance_within(start, real_pos, radius + 0.5):
                     if master is not None:
                         if line_of_sight(start, real_pos):
-                            master[real_pos.x][real_pos.y] = True
+                            set_array(real_pos, master, True)
                     else:
                         fov_field[x][y] = line_of_sight(start, real_pos)
         return fov_field
@@ -345,7 +314,6 @@ def main():
                                 message_logs.appendleft(f"{try_tile.name}")
                         if move_mob.light > 0:
                             calc_lightmap()
-                        calc_paths()
                     else:
                         message_logs.appendleft("you bump into")
                         message_logs.appendleft(f"the {move_mob.name}")
@@ -362,6 +330,7 @@ def main():
             message_logs.appendleft("the abyss")
             return player_pos
         damage = tile_damage[move_tile.id]
+        drain = tile_drain[move_tile.id]
         if move_tile.has_tag(TileTag.BLOCK_MOVE):
             message_logs.appendleft("you bump into")
             message_logs.appendleft(f"the {move_tile.name}")
@@ -370,12 +339,24 @@ def main():
                 message_logs.appendleft(f"for -{damage}H")
                 player_health -= damage
                 player_health = max(0, player_health)
+            if move_tile.has_tag(TileTag.DRAIN):
+                message_logs.appendleft("it drains your")
+                message_logs.appendleft(f"stamina -{drain}S")
+                player_stamina -= drain
+                player_stamina = max(0, player_stamina)
+                regen_stam = False
             return player_pos
         if move_tile.has_tag(TileTag.DAMAGE):
             message_logs.appendleft(f"the {move_tile.name}")
             message_logs.appendleft(f"hurts you -{damage}H")
             player_health -= damage
             player_health = max(0, player_health)
+        if move_tile.has_tag(TileTag.DRAIN):
+            message_logs.appendleft(f"the {move_tile.name}")
+            message_logs.appendleft(f"slows you -{drain}S")
+            player_stamina -= drain
+            player_stamina = max(0, player_stamina)
+            regen_stam = False
         if move_tile.has_tag(TileTag.LIQUID):
             player_stamina -= 1
             if player_stamina <= 0:
@@ -393,7 +374,6 @@ def main():
                 message_logs.appendleft(f"{move_tile.name}")
         set_array(player_pos, game_world.overworld_layer.mob_array, None)
         set_array(try_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
-        calc_paths()
         return try_pos
 
     while True:
@@ -420,7 +400,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((0, -1))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_paths()
                         else:
                             player_dir = Point(0, -1)
                     elif game_mode is GameMode.INVENTORY:
@@ -436,7 +415,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((0, 1))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_paths()
                         else:
                             player_dir = Point(0, 1)
                     elif game_mode is GameMode.INVENTORY:
@@ -452,7 +430,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((-1, 0))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_paths()
                         else:
                             player_dir = Point(-1, 0)
                     elif game_mode is GameMode.INVENTORY:
@@ -468,7 +445,6 @@ def main():
                             do_a_game_tick = True
                             player_pos = move_player((1, 0))
                             fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            calc_paths()
                         else:
                             player_dir = Point(1, 0)
                     elif game_mode is GameMode.INVENTORY:
@@ -510,7 +486,6 @@ def main():
                                         displayed_empty_hands_message = True
                                     message_logs.appendleft("you place the")
                                     message_logs.appendleft(f"{mob.name}")
-                                    calc_paths()
                                     if mob.light > 0:
                                         calc_lightmap()
                                 else:
@@ -532,7 +507,6 @@ def main():
                                                   None)
                                         message_logs.appendleft("you pick up the")
                                         message_logs.appendleft(f"{item.name}")
-                                        calc_paths()
                                         if target_mob.light > 0:
                                             calc_lightmap()
                                     else:
@@ -585,9 +559,9 @@ def main():
                                     set_array(target_pos,
                                               game_world.overworld_layer.tile_array, tile)
                                     fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                                    calc_paths()
-                                    if tile.has_tag(TileTag.LIGHT):
+                                    if tile.has_tag(TileTag.BLOCK_SIGHT) ^ target_tile.has_tag(TileTag.BLOCK_SIGHT):
                                         calc_lightmap()
+                                        print("place diff")
                                     if not current_item.has_tag(ItemTag.STACKABLE):
                                         message_logs.appendleft("you use the")
                                         message_logs.appendleft(f"{current_item.name}")
@@ -630,7 +604,8 @@ def main():
                                             if target_tile.health > 0:
                                                 message_logs.appendleft("you strike the")
                                                 message_logs.appendleft(f"{target_tile.name} "
-                                                                        f"-{damage}H")
+                                                                        f"{target_tile.health}/"
+                                                                        f"{target_tile.max_health}")
                                             else:
                                                 tile = Tile(tile_replace[target_tile.id])
                                                 loot = resolve_loot(
@@ -638,9 +613,10 @@ def main():
                                                 set_array(target_pos,
                                                           game_world.overworld_layer.tile_array, tile)
                                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                                                calc_paths()
-                                                if tile.has_tag(TileTag.LIGHT):
+                                                if tile.has_tag(TileTag.BLOCK_SIGHT) ^ \
+                                                        target_tile.has_tag(TileTag.BLOCK_SIGHT):
                                                     calc_lightmap()
+                                                    print("broken diff")
                                                 for item in loot:
                                                     add_to_inventory(item, inventory)
                                                 message_logs.appendleft("you remove the")
@@ -649,7 +625,8 @@ def main():
                                         else:
                                             message_logs.appendleft("you do not have")
                                             message_logs.appendleft("the stamina")
-                                    elif displayed_empty_hands_message is False:
+                                    elif displayed_empty_hands_message is False and not \
+                                            current_item.has_tag(ItemTag.DAMAGE_MOBS):
                                         message_logs.appendleft("you cannot use")
                                         message_logs.appendleft(f"{current_item.name}")
                                 else:
@@ -657,23 +634,26 @@ def main():
                                     message_logs.appendleft("void mocks you")
                         if current_item.has_tag(ItemTag.DAMAGE_MOBS):
                             if not just_broken_a_tile:
-                                if target_mob is not None:
+                                if target_mob is not None and not target_mob.has_tag(MobTag.CRAFTING):
                                     stam_cost = current_item.data["stamina_cost"]
                                     if reduce_stamina(stam_cost):
                                         damage = current_item.data["mob_damage"]
                                         target_mob.health -= damage
-                                        message_logs.appendleft("you strike the")
-                                        message_logs.appendleft(f"{target_mob.name}"
-                                                                f"-{damage}H")
                                         if target_mob.health <= 0:
                                             set_array(target_pos,
                                                       game_world.overworld_layer.mob_array,
                                                       None)
                                             if target_mob.light > 0:
                                                 calc_lightmap()
-                                            calc_paths()
+                                            loot = resolve_loot(mob_death_loot[target_mob.id])
+                                            for item in loot:
+                                                add_to_inventory(item, inventory)
                                             message_logs.appendleft("you kill the")
                                             message_logs.appendleft(f"{target_mob.name}")
+                                        else:
+                                            message_logs.appendleft("you strike the")
+                                            message_logs.appendleft(f"{target_mob.name} "
+                                                                    f"{target_mob.health}/{target_mob.max_health}")
                                     else:
                                         message_logs.appendleft("you do not have")
                                         message_logs.appendleft("the stamina")
@@ -839,12 +819,12 @@ def main():
                                     already_spread.add((x + nx, y + ny))
                                     set_array((x + nx, y + ny),
                                               game_world.overworld_layer.tile_array, Tile(current_tile.id))
-                                    if neighbor.has_tag(TileTag.BLOCK_SIGHT) ^ \
-                                            current_tile.has_tag(TileTag.BLOCK_SIGHT):
+                                    if (neighbor.has_tag(TileTag.BLOCK_SIGHT) ^
+                                            current_tile.has_tag(TileTag.BLOCK_SIGHT)) or \
+                                            neighbor.has_tag(TileTag.LIGHT) or current_tile.has_tag(TileTag.LIGHT):
                                         # if we are changing a vision blocker to clear or vice versa
                                         # if they are both clear or vision blockers we don't need to update
                                         fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                                    if neighbor.has_tag(TileTag.LIGHT) or current_tile.has_tag(TileTag.LIGHT):
                                         calc_lightmap()
                     # Grow the tiles.
                     if current_tile.has_tag(TileTag.GROW):
@@ -853,8 +833,9 @@ def main():
                             tile = Tile(grow_tile)
                             set_array((x, y),
                                       game_world.overworld_layer.tile_array, tile)
-                            fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
-                            if current_tile.has_tag(TileTag.LIGHT) or tile.has_tag(TileTag.LIGHT):
+                            if current_tile.has_tag(TileTag.LIGHT) or tile.has_tag(TileTag.LIGHT) or\
+                                    current_tile.has_tag(TileTag.BLOCK_SIGHT) ^ tile.has_tag(TileTag.BLOCK_SIGHT):
+                                fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                 calc_lightmap()
                             if line_of_sight(player_pos, (x, y)):
                                 message_logs.appendleft(f"{current_tile.name}")
@@ -870,7 +851,7 @@ def main():
                                     message_logs.appendleft("from the sand")
                     # Tick the mobs.
                     current_mob = game_world.overworld_layer.mob_array[x][y]
-                    if current_mob is None or current_mob.id is MobID.PLAYER:
+                    if current_mob is None or current_mob.has_tag(MobTag.NO_DESPAWN):
                         continue
                     if current_mob in already_mob_ticked:
                         continue
@@ -1014,13 +995,9 @@ def main():
                         if tile:
                             screen.blit(tile, (dx * tile_size.x, dy * tile_size.y))
                 elif get_array(real_pos, game_world.overworld_layer.mem_array):
-                    mob = get_array_tile(real_pos, game_world.overworld_layer.mob_array, True)
-                    if mob:
-                        screen.blit(mob, (dx * tile_size.x, dy * tile_size.y))
-                    else:
-                        tile = get_array_tile(real_pos, game_world.overworld_layer.tile_array, True)
-                        if tile:
-                            screen.blit(tile, (dx * tile_size.x, dy * tile_size.y))
+                    tile = get_array_tile(real_pos, game_world.overworld_layer.tile_array, True)
+                    if tile:
+                        screen.blit(tile, (dx * tile_size.x, dy * tile_size.y))
                 dy += 1
             dx += 1
 

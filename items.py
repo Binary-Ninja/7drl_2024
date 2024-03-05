@@ -72,9 +72,10 @@ item_data = {
                                    "stamina_cost": 5,
                                }),
     ItemID.WOOD_SWORD: ItemData("wood sword", (Graphic.SWORD, Color.BROWN),
-                                (ItemTag.DAMAGE_MOBS,), {
+                                (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
             "mob_damage": 2,
                                     "stamina_cost": 5,
+                                    "breakable": (TileID.WEB,), "tile_damage": 2,
                                 }),
     ItemID.EMPTY_HANDS: ItemData("empty hands", (Graphic.EMPTY_HANDS, Color.YELLOW),
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE, ItemTag.PICKUP), {
@@ -109,6 +110,8 @@ item_data = {
     ItemID.WHEAT: ItemData("wheat", (Graphic.WHEAT, Color.YELLOW),
                            (ItemTag.STACKABLE,), ),
     ItemID.IRON_ORE: ItemData("iron ore", (Graphic.STONE_ITEM, Color.IRON),
+                              (ItemTag.STACKABLE,), ),
+    ItemID.LAPIS: ItemData("lapis", (Graphic.INGOT, Color.BLUE),
                               (ItemTag.STACKABLE,), ),
     ItemID.GOLD_ORE: ItemData("gold ore", (Graphic.STONE_ITEM, Color.GOLD),
                            (ItemTag.STACKABLE,), ),
@@ -207,9 +210,10 @@ item_data = {
     ItemID.BOTTLE: ItemData("bottle", (Graphic.EMPTY_BOTTLE, Color.WHITE),
                            (ItemTag.STACKABLE,), ),
     ItemID.STONE_SWORD: ItemData("stone sword", (Graphic.SWORD, Color.STONE),
-                                (ItemTag.DAMAGE_MOBS,), {
+                                (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                     "mob_damage": 3,
                                     "stamina_cost": 4,
+                                     "breakable": (TileID.WEB,), "tile_damage": 3,
                                 }),
     ItemID.STONE_PICK: ItemData("stone pick", (Graphic.PICKAXE, Color.STONE),
                                (ItemTag.BREAK_TILE,), {
@@ -243,9 +247,10 @@ item_data = {
                                   "stamina_cost": 4,
                               }),
     ItemID.IRON_SWORD: ItemData("iron sword", (Graphic.SWORD, Color.IRON),
-                                 (ItemTag.DAMAGE_MOBS,), {
+                                 (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                      "mob_damage": 4,
                                      "stamina_cost": 3,
+                                    "breakable": (TileID.WEB,), "tile_damage": 4,
                                  }),
     ItemID.IRON_PICK: ItemData("iron pick", (Graphic.PICKAXE, Color.IRON),
                                 (ItemTag.BREAK_TILE,), {
@@ -279,14 +284,16 @@ item_data = {
                                    "stamina_cost": 3,
                                }),
     ItemID.GOLD_SWORD: ItemData("gold sword", (Graphic.SWORD, Color.GOLD),
-                                 (ItemTag.DAMAGE_MOBS,), {
+                                 (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                      "mob_damage": 5,
                                      "stamina_cost": 2,
+                                    "breakable": (TileID.WEB,), "tile_damage": 5,
                                  }),
     ItemID.GOLD_PICK: ItemData("gold pick", (Graphic.PICKAXE, Color.GOLD),
                                 (ItemTag.BREAK_TILE,), {
                                     "breakable": (TileID.STONE, TileID.STONE_WALL, TileID.WINDOW, TileID.IRON_ORE,
-                                                  TileID.GOLD_ORE, TileID.GEM_ORE, TileID.CLOUD_BANK),
+                                                  TileID.GOLD_ORE, TileID.GEM_ORE, TileID.CLOUD_BANK,
+                                                  TileID.LAPIS_ORE),
                                     "tile_damage": 5,
                                     "stamina_cost": 2,
                                 }),
@@ -315,15 +322,16 @@ item_data = {
                                    "stamina_cost": 2,
                                }),
     ItemID.GEM_SWORD: ItemData("gem sword", (Graphic.SWORD, Color.GEM),
-                                 (ItemTag.DAMAGE_MOBS,), {
+                                 (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                      "mob_damage": 10,
                                      "stamina_cost": 1,
+            "breakable": (TileID.WEB,), "tile_damage": 10,
                                  }),
     ItemID.GEM_PICK: ItemData("gem pick", (Graphic.PICKAXE, Color.GEM),
                                 (ItemTag.BREAK_TILE,), {
                                     "breakable": (TileID.STONE, TileID.STONE_WALL, TileID.WINDOW, TileID.IRON_ORE,
                                                   TileID.GOLD_ORE, TileID.GEM_ORE, TileID.OBSIDIAN_BRICKS,
-                                                  TileID.CLOUD_BANK),
+                                                  TileID.CLOUD_BANK, TileID.LAPIS_ORE),
                                     "tile_damage": 10,
                                     "stamina_cost": 1,
                                 }),

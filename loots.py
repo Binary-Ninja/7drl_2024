@@ -2,7 +2,7 @@ from collections import namedtuple, defaultdict
 import random
 from typing import Sequence
 
-from data import ItemID, TileID
+from data import ItemID, TileID, MobID
 from items import Item
 
 LootItem = namedtuple("LootItem", ("id", "prob", "min", "max"),
@@ -21,8 +21,8 @@ tile_break_loot.update({
     TileID.WHEAT: (LootItem(ItemID.WHEAT, 1.0, 3, 4), ),
     TileID.PALM_TREE: (LootItem(ItemID.WOOD, 1.0, 1, 3), LootItem(ItemID.COCONUT, 0.8, 1, 3),
                        LootItem(ItemID.PALM_TREE_SAPLING, 0.8, 1, 2)),
-    TileID.IRON_ORE: (LootItem(ItemID.IRON_ORE, 1.0, 3, 6), ),
-    TileID.GOLD_ORE: (LootItem(ItemID.GOLD_ORE, 1.0, 3, 6), ),
+    TileID.IRON_ORE: (LootItem(ItemID.IRON_ORE, 1.0, 2, 4), ),
+    TileID.GOLD_ORE: (LootItem(ItemID.GOLD_ORE, 1.0, 2, 4), ),
     TileID.GEM_ORE: (LootItem(ItemID.GEM, 1.0, 3, 6), ),
     TileID.DESERT_BONES: (LootItem(ItemID.BONE, 1.0, 2, 4), ),
     TileID.WINDOW: (LootItem(ItemID.WINDOW, 1.0, 1, 1), ),
@@ -36,6 +36,23 @@ tile_break_loot.update({
     TileID.CLOUD: (LootItem(ItemID.CLOUD),),
     TileID.CLOUD_BANK: (LootItem(ItemID.CLOUD, 1.0, 2, 4),),
     TileID.WHEAT_SEEDS: (LootItem(ItemID.WHEAT_SEEDS),),
+    TileID.LAPIS_ORE: (LootItem(ItemID.LAPIS, 1.0, 2, 3),),
+})
+
+mob_death_loot = defaultdict(tuple)
+mob_death_loot.update({
+    MobID.GREEN_ZOMBIE: (LootItem(ItemID.CLOTH, 1.0, 1, 3), LootItem(ItemID.WHEAT, 0.05, 1, 1)),
+    MobID.GREEN_SLIME: (LootItem(ItemID.SLIME, 1.0, 2, 4),),
+    MobID.GREEN_SKELETON: (LootItem(ItemID.BONE, 1.0, 2, 3),),
+    MobID.RED_ZOMBIE: (LootItem(ItemID.CLOTH, 1.0, 1, 3), LootItem(ItemID.WHEAT, 0.05, 1, 1)),
+    MobID.RED_SLIME: (LootItem(ItemID.SLIME, 1.0, 2, 4),),
+    MobID.RED_SKELETON: (LootItem(ItemID.BONE, 1.0, 2, 3),),
+    MobID.WHITE_ZOMBIE: (LootItem(ItemID.CLOTH, 1.0, 1, 3), LootItem(ItemID.WHEAT, 0.05, 1, 1)),
+    MobID.WHITE_SLIME: (LootItem(ItemID.SLIME, 1.0, 2, 4),),
+    MobID.WHITE_SKELETON: (LootItem(ItemID.BONE, 1.0, 2, 3),),
+    MobID.BLACK_ZOMBIE: (LootItem(ItemID.CLOTH, 1.0, 1, 3), LootItem(ItemID.WHEAT, 0.05, 1, 1)),
+    MobID.BLACK_SLIME: (LootItem(ItemID.SLIME, 1.0, 2, 4),),
+    MobID.BLACK_SKELETON: (LootItem(ItemID.BONE, 1.0, 2, 3), LootItem(ItemID.GOLD_APPLE, 0.02, 1, 1)),
 })
 
 

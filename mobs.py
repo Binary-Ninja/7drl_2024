@@ -99,7 +99,7 @@ mob_ai_timer.update({
 MobData = namedtuple("MobData", ("name", "graphic", "max_health", "tags",
                                  "recipies", "light"), defaults=(10, tuple(), None, 0))
 mob_data = {
-    MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE), 10, tuple(), tuple(), 0),
+    MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE), 10, (MobTag.NO_DESPAWN,), tuple(), 0),
     MobID.GREEN_ZOMBIE: MobData("zombie", (Graphic.ZOMBIE, Color.MOB_GREEN), 10, (MobTag.AI_FOLLOW, MobTag.DAMAGE)),
     MobID.GREEN_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_GREEN), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
     MobID.GREEN_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_GREEN), 10,
@@ -116,25 +116,25 @@ mob_data = {
     MobID.BLACK_SLIME: MobData("slime", (Graphic.SLIME, Color.MOB_BLACK), 5, (MobTag.AI_JUMP, MobTag.DAMAGE)),
     MobID.BLACK_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_BLACK), 10,
                                   (MobTag.PUSHABLE, MobTag.AI_SHOOT, MobTag.DAMAGE)),
-    MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100, (MobTag.DAMAGE,)),
+    MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100, (MobTag.DAMAGE, MobTag.NO_DESPAWN)),
     MobID.WORKBENCH: MobData("workbench", (Graphic.WORKBENCH, Color.BROWN), 10,
-                             (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.WORKBENCH]),
+                             (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.WORKBENCH]),
     MobID.OVEN: MobData("oven", (Graphic.OVEN, Color.LIGHT_BROWN), 10,
-                             (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.OVEN]),
+                             (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.OVEN]),
     MobID.FURNACE: MobData("furnace", (Graphic.FURNACE, Color.LIGHT_GRAY), 10,
-                             (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.FURNACE]),
+                             (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.FURNACE]),
     MobID.ANVIL: MobData("anvil", (Graphic.ANVIL, Color.LIGHT_GRAY), 10,
-                             (MobTag.PUSHABLE, MobTag.CRAFTING), recipies[MobID.ANVIL]),
+                             (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.ANVIL]),
     MobID.WOOD_LANTERN: MobData("wood lantern", (Graphic.LANTERN, Color.BROWN), 10,
-                             (MobTag.PUSHABLE, ), tuple(), 6),
+                             (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 6),
     MobID.TORCH: MobData("torch", (Graphic.TORCH, Color.YELLOW), 8,
-                             (MobTag.PUSHABLE, ), tuple(), 3),
+                             (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 3),
     MobID.IRON_LANTERN: MobData("iron lantern", (Graphic.LANTERN, Color.IRON), 10,
-                                (MobTag.PUSHABLE,), tuple(), 10),
+                                (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 10),
     MobID.GOLD_LANTERN: MobData("gold lantern", (Graphic.LANTERN, Color.GOLD), 10,
-                                (MobTag.PUSHABLE,), tuple(), 14),
+                                (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 14),
     MobID.GEM_LANTERN: MobData("gem lantern", (Graphic.LANTERN, Color.GEM), 10,
-                                (MobTag.PUSHABLE,), tuple(), 18),
+                                (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 18),
 }
 
 
@@ -144,7 +144,8 @@ class Mob:
         self.mob_data = mob_data[self.id]
         self.name = self.mob_data.name
         self.graphic = self.mob_data.graphic
-        self.health = self.mob_data.max_health
+        self.max_health = self.mob_data.max_health
+        self.health = self.max_health
         self.tags = self.mob_data.tags
         self.recipies = self.mob_data.recipies
         self.light = self.mob_data.light
