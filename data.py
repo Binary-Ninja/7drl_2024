@@ -224,6 +224,7 @@ class MobID(Enum):
     DOG = 33
     CAT = 34
     PIG = 35
+    CLOUD_SPIDER = 36
 
 
 class MobTag(Enum):

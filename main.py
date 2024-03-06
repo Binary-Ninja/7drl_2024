@@ -131,7 +131,7 @@ def main_menu(screen) -> dict:
         write_text((0, 0), f"{'outlast 7drl 2024':^50}", Color.WHITE)
         write_text((0, 2), f"{'up and down arrow to select setting':^50}", Color.WHITE)
         write_text((0, 3), f"{'left and right arrow to cycle setting':^50}", Color.WHITE)
-        write_text((0, 4), f"{'press c to start':^50}", Color.WHITE)
+        write_text((0, 4), f"{'press c to generate new world':^50}", Color.WHITE)
 
         write_text((0, 22), f"{'credits':^50}", Color.WHITE)
         write_text((0, 23), f"{'sprites by kenney.nl':^50}", Color.LIGHT_GRAY)
@@ -158,7 +158,6 @@ def main_menu(screen) -> dict:
 
         # Flip display.
         pg.display.flip()
-
     return options
 
 
@@ -198,11 +197,71 @@ def main(screen, settings):
     MOB_SPAWN_CHANCE = settings["mob_spawn"]
     MOB_DESPAWN_CHANCE = 0.05
 
+    def write_text(pos: PointType, text: str, color: tuple[int, int, int]):
+        for index, char in enumerate(text):
+            char_tile = tile_loader.get_tile(str_2_tile[char], color)
+            screen.blit(char_tile, ((pos[0] + index) * tile_size.x,
+                                    pos[1] * tile_size.y))
+
     world_seed = random.getrandbits(64)
     # world_seed = 1234
     world_size = Point(*settings["size"])
     game_world = World(world_size, world_seed)
-    game_world.generate_overworld_layer()
+
+    for loading_text in game_world.generate_layers():
+        # Make sure the player knows the game hasn't frozen.
+        screen.fill((0, 0, 0))
+        write_text((0, 35 // 2), f"{loading_text:^50}", Color.WHITE)
+        # Call the events so the OS doesn't think we froze.
+        pg.event.get()
+        # Update display so changes are seen before mext world gen.
+        pg.display.flip()
+
+    current_layer_index = 1
+    current_layer_key = {
+        0: game_world.sky_layer,
+        1: game_world.overworld_layer,
+        2: game_world.cave_layer,
+        3: game_world.cavern_layer,
+        4: game_world.hell_layer,
+    }
+    current_layer = current_layer_key[current_layer_index]
+
+    mob_spawn_per_layer = {
+        0: (MobID.FAIRY, MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON),
+        1: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON),
+        2: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON,
+            MobID.RED_ZOMBIE, MobID.RED_SLIME, MobID.RED_SKELETON, MobID.BAT,
+            ),
+        3: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON,
+            MobID.RED_ZOMBIE, MobID.RED_SLIME, MobID.RED_SKELETON, MobID.BAT,
+            MobID.WHITE_ZOMBIE, MobID.WHITE_SLIME, MobID.WHITE_SKELETON, MobID.SHADE,
+            ),
+        4: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON,
+            MobID.RED_ZOMBIE, MobID.RED_SLIME, MobID.RED_SKELETON, MobID.BAT,
+            MobID.WHITE_ZOMBIE, MobID.WHITE_SLIME, MobID.WHITE_SKELETON, MobID.SHADE,
+            MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON, MobID.FLAME_SKULL,
+            MobID.BAT, MobID.SHADE, MobID.FLAME_SKULL,
+            ),
+    }
+
+    def count_mobs(given_array: list[list]) -> int:
+        # this might actually be (y, x), but I don't care
+        count = 0
+        for x in range(len(given_array)):
+            for y in range(len(given_array[0])):
+                mob = given_array[x][y]
+                if mob is None:
+                    continue
+                # Only count the hostile mobs.
+                if mob.id in (MobID.BAT, MobID.SHADE, MobID.FLAME_SKULL, MobID.FAIRY, MobID.SPIDER, MobID.HELL_SPIDER,
+                              MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON,
+                              MobID.RED_ZOMBIE, MobID.RED_SLIME, MobID.RED_SKELETON,
+                              MobID.WHITE_ZOMBIE, MobID.WHITE_SLIME, MobID.WHITE_SKELETON,
+                              MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON,
+                              ):
+                    count += 1
+        return count
 
     global do_calc_light_map
     global player_vision
@@ -228,7 +287,7 @@ def main(screen, settings):
     player_is_dead = False
     current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.WORKBENCH),
-                             # Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
+                             Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
                              # Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SAND, 99),
                              # Item(ItemID.GEM_FISH_SPEAR, 1), Item(ItemID.BED, 1),
                              # Item(ItemID.WOOD, 100), Item(ItemID.OVEN, 1),
@@ -238,7 +297,7 @@ def main(screen, settings):
                              ]
 
     message_logs: deque[str] = deque(maxlen=10)
-    message_logs.appendleft("esc to quit")
+    message_logs.appendleft("escape to quit")
     message_logs.appendleft("arrow keys to")
     message_logs.appendleft("navigate")
     message_logs.appendleft("c key to use")
@@ -260,7 +319,6 @@ def main(screen, settings):
     displayed_no_use_message = False
     skelly_got_em = False
 
-
     def line_of_sight(start: PointType, end: PointType) -> bool:
         start, end = Point(*start), Point(*end)
         dx, dy = end.x - start.x, end.y - start.y
@@ -277,7 +335,7 @@ def main(screen, settings):
             else:
                 p.y += sign_y
                 iy += 1
-            tile = get_array((int(p.x), int(p.y)), game_world.overworld_layer.tile_array)
+            tile = get_array((int(p.x), int(p.y)), current_layer.tile_array)
             if tile is None or tile.has_tag(TileTag.BLOCK_SIGHT):
                 return False
         return True
@@ -307,10 +365,10 @@ def main(screen, settings):
         light_map = make_2d_array(world_size, False)
         for x in range(world_size.x):
             for y in range(world_size.y):
-                light_mob = game_world.overworld_layer.mob_array[x][y]
+                light_mob = current_layer.mob_array[x][y]
                 if light_mob and light_mob.light > 0:
                     calc_fov(Point(x, y), light_mob.light, light_map)
-                light_tile = game_world.overworld_layer.tile_array[x][y]
+                light_tile = current_layer.tile_array[x][y]
                 if light_tile.has_tag(TileTag.LIGHT):
                     calc_fov(Point(x, y), tile_light[light_tile.id], light_map)
 
@@ -355,23 +413,6 @@ def main(screen, settings):
                 return False
         return True
 
-    def spawn_mob(pos: PointType, mob_id: MobID):
-        set_array(pos, game_world.overworld_layer.mob_array, Mob(mob_id))
-
-    # add some test mobs
-    # spawn_mob((48, 48), MobID.WORKBENCH)
-    # spawn_mob((49, 49), MobID.WOOD_LANTERN)
-    # spawn_mob((60, 50), MobID.GREEN_SKELETON)
-    # spawn_mob((50, 52), MobID.GREEN_ZOMBIE)
-    # spawn_mob((50, 60), MobID.GREEN_SKELETON)
-    # spawn_mob((50, 62), MobID.GREEN_ZOMBIE)
-
-    def write_text(pos: PointType, text: str, color: tuple[int, int, int]):
-        for index, char in enumerate(text):
-            char_tile = tile_loader.get_tile(str_2_tile[char], color)
-            screen.blit(char_tile, ((pos[0] + index) * tile_size.x,
-                                    pos[1] * tile_size.y))
-
     def get_array_tile(pos: PointType, array: list[list], dark: bool = False) -> pg.Surface | None:
         value = get_array(pos, array)
         if value:
@@ -384,28 +425,28 @@ def main(screen, settings):
         global player_health, light_map, player_stamina, regen_stam, do_calc_light_map
         swapped = False
         try_pos = Point(player_pos.x + direction[0], player_pos.y + direction[1])
-        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+        move_mob = get_array(try_pos, current_layer.mob_array)
         if move_mob:
             if move_mob.has_tag(MobTag.PUSHABLE):
                 try_space = Point(try_pos.x + direction[0], try_pos.y + direction[1])
                 # check for mob collisions, then tile collisions
-                try_mob = get_array(try_space, game_world.overworld_layer.mob_array)
+                try_mob = get_array(try_space, current_layer.mob_array)
                 # there is no mob or we are out of bounds
                 if not try_mob:
-                    try_tile = get_array(try_space, game_world.overworld_layer.tile_array)
+                    try_tile = get_array(try_space, current_layer.tile_array)
                     # If it isn't the void and doesn't block movement.
                     if try_tile is not None and not try_tile.has_tag(TileTag.BLOCK_MOVE):
                         message_logs.appendleft("you push the")
                         message_logs.appendleft(f"{move_mob.name}")
-                        set_array(try_pos, game_world.overworld_layer.mob_array, None)
+                        set_array(try_pos, current_layer.mob_array, None)
                         if try_tile.has_tag(TileTag.LIQUID):
                             message_logs.appendleft("it sinks into")
                             message_logs.appendleft(f"the {try_tile.name}")
                         else:
                             set_array(try_space,
-                                      game_world.overworld_layer.mob_array, move_mob)
+                                      current_layer.mob_array, move_mob)
                             if try_tile.has_tag(TileTag.CRUSH):
-                                set_array(try_space, game_world.overworld_layer.tile_array,
+                                set_array(try_space, current_layer.tile_array,
                                           Tile(tile_replace[try_tile.id]))
                                 message_logs.appendleft("it crushes the")
                                 message_logs.appendleft(f"{try_tile.name}")
@@ -419,22 +460,22 @@ def main(screen, settings):
                     message_logs.appendleft(f"the {move_mob.name}")
             elif move_mob.has_tag(MobTag.SWAPPABLE):
                 swapped = True
-                try_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
-                player_tile = get_array(player_pos, game_world.overworld_layer.tile_array)
-                set_array(try_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
+                try_tile = get_array(try_pos, current_layer.tile_array)
+                player_tile = get_array(player_pos, current_layer.tile_array)
+                set_array(try_pos, current_layer.mob_array, Mob(MobID.PLAYER))
                 message_logs.appendleft("you swap places")
                 message_logs.appendleft(f"with {move_mob.name}")
                 if try_tile.has_tag(TileTag.CRUSH):
-                    set_array(try_pos, game_world.overworld_layer.tile_array,
+                    set_array(try_pos, current_layer.tile_array,
                               Tile(tile_replace[try_tile.id]))
                     message_logs.appendleft("you crush the")
                     message_logs.appendleft(f"{try_tile.name}")
                 if player_tile.id != TileID.LAVA:
-                    set_array(player_pos, game_world.overworld_layer.mob_array, move_mob)
+                    set_array(player_pos, current_layer.mob_array, move_mob)
                 else:
                     message_logs.appendleft(f"{move_mob.name} sinks")
                     message_logs.appendleft("into the lava")
-                    set_array(player_pos, game_world.overworld_layer.mob_array, None)
+                    set_array(player_pos, current_layer.mob_array, None)
             else:
                 message_logs.appendleft("you bump into")
                 message_logs.appendleft(f"the {move_mob.name}")
@@ -442,10 +483,14 @@ def main(screen, settings):
                 return player_pos
             else:
                 return try_pos
-        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+        move_tile = get_array(try_pos, current_layer.tile_array)
         if move_tile is None:
             message_logs.appendleft("you stare into")
             message_logs.appendleft("the abyss")
+            return player_pos
+        if move_tile.id == TileID.AIR:
+            message_logs.appendleft("you teeter on")
+            message_logs.appendleft("the clouds edge")
             return player_pos
         damage = tile_damage[move_tile.id]
         drain = tile_drain[move_tile.id]
@@ -485,13 +530,13 @@ def main(screen, settings):
             player_stamina = max(0, player_stamina)
             regen_stam = False
         if move_tile.has_tag(TileTag.CRUSH):
-            set_array(try_pos, game_world.overworld_layer.tile_array, Tile(tile_replace[move_tile.id]))
+            set_array(try_pos, current_layer.tile_array, Tile(tile_replace[move_tile.id]))
             for item in resolve_loot(tile_break_loot[move_tile.id]):
                 add_to_inventory(item, inventory)
                 message_logs.appendleft("you crush the")
                 message_logs.appendleft(f"{move_tile.name}")
-        set_array(player_pos, game_world.overworld_layer.mob_array, None)
-        set_array(try_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
+        set_array(player_pos, current_layer.mob_array, None)
+        set_array(try_pos, current_layer.mob_array, Mob(MobID.PLAYER))
         return try_pos
 
     while game_is_going:
@@ -587,9 +632,9 @@ def main(screen, settings):
                         target_pos = Point(player_pos.x + player_dir.x,
                                            player_pos.y + player_dir.y)
                         target_mob = get_array(target_pos,
-                                               game_world.overworld_layer.mob_array)
+                                               current_layer.mob_array)
                         target_tile = get_array(target_pos,
-                                                game_world.overworld_layer.tile_array)
+                                                current_layer.tile_array)
                         if current_item.tags == (ItemTag.STACKABLE,):
                             message_logs.appendleft("you cannot use")
                             message_logs.appendleft(f"the {current_item.name}")
@@ -606,7 +651,7 @@ def main(screen, settings):
                                     not target_tile.has_tag(TileTag.LIQUID):
                                 if reduce_stamina(1):
                                     set_array(target_pos,
-                                              game_world.overworld_layer.mob_array, mob)
+                                              current_layer.mob_array, mob)
                                     current_item.count -= 1
                                     if current_item.count <= 0:
                                         current_item = NO_ITEM
@@ -631,7 +676,7 @@ def main(screen, settings):
                                         add_to_inventory(current_item, inventory)
                                         current_item = item
                                         set_array(target_pos,
-                                                  game_world.overworld_layer.mob_array,
+                                                  current_layer.mob_array,
                                                   None)
                                         message_logs.appendleft("you pick up the")
                                         message_logs.appendleft(f"{item.name}")
@@ -689,7 +734,7 @@ def main(screen, settings):
                                     just_placed_a_tile = True
                                     tile = Tile(current_item.data["place"])
                                     set_array(target_pos,
-                                              game_world.overworld_layer.tile_array, tile)
+                                              current_layer.tile_array, tile)
                                     fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                     if tile.has_tag(TileTag.BLOCK_SIGHT) ^ target_tile.has_tag(TileTag.BLOCK_SIGHT):
                                         do_calc_light_map = True
@@ -742,7 +787,7 @@ def main(screen, settings):
                                                 loot = resolve_loot(
                                                     tile_break_loot[target_tile.id])
                                                 set_array(target_pos,
-                                                          game_world.overworld_layer.tile_array, tile)
+                                                          current_layer.tile_array, tile)
                                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                                 if tile.has_tag(TileTag.BLOCK_SIGHT) ^ \
                                                         target_tile.has_tag(TileTag.BLOCK_SIGHT):
@@ -771,7 +816,7 @@ def main(screen, settings):
                                         target_mob.health -= damage
                                         if target_mob.health <= 0:
                                             set_array(target_pos,
-                                                      game_world.overworld_layer.mob_array,
+                                                      current_layer.mob_array,
                                                       None)
                                             if target_mob.light > 0:
                                                 do_calc_light_map = True
@@ -844,9 +889,9 @@ def main(screen, settings):
                         target_pos = Point(player_pos.x + player_dir.x,
                                            player_pos.y + player_dir.y)
                         target_mob = get_array(target_pos,
-                                               game_world.overworld_layer.mob_array)
+                                               current_layer.mob_array)
                         target_tile = get_array(target_pos,
-                                                game_world.overworld_layer.tile_array)
+                                                current_layer.tile_array)
                         if target_mob and target_mob.has_tag(MobTag.CRAFTING):
                             game_mode = GameMode.CRAFT
                             current_crafter = target_mob
@@ -867,13 +912,13 @@ def main(screen, settings):
                                                                 TileID.CLOSED_WOOD_DOOR):
                             if target_tile.id is TileID.CLOSED_WOOD_DOOR:
                                 set_array(target_pos,
-                                          game_world.overworld_layer.tile_array,
+                                          current_layer.tile_array,
                                           Tile(TileID.OPEN_WOOD_DOOR))
                                 message_logs.appendleft("you open the")
                                 message_logs.appendleft(f"{target_tile.name}")
                             else:
                                 set_array(target_pos,
-                                          game_world.overworld_layer.tile_array,
+                                          current_layer.tile_array,
                                           Tile(TileID.CLOSED_WOOD_DOOR))
                                 message_logs.appendleft("you close the")
                                 message_logs.appendleft(f"{target_tile.name}")
@@ -884,7 +929,33 @@ def main(screen, settings):
                     if player_is_dead:
                         continue
                     if game_mode is GameMode.MOVE:
-                        do_a_game_tick = True
+                        current_tile = get_array(player_pos, current_layer.tile_array)
+                        if current_tile.has_tag(TileTag.DOWN_STAIRS):
+                            current_layer_index += 1
+                            assert current_layer_index < 5
+                            set_array(player_pos, current_layer.mob_array, None)
+                            current_layer = current_layer_key[current_layer_index]
+                            set_array(player_pos, current_layer.mob_array, Mob(MobID.PLAYER))
+                            fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
+                            do_calc_light_map = True
+                            level_is_dark = night_time if current_layer_index < 2 else True
+                            number_of_mobs = count_mobs(current_layer.mob_array)
+                            message_logs.appendleft("you go down the")
+                            message_logs.appendleft("staircase")
+                        elif current_tile.has_tag(TileTag.UP_STAIRS):
+                            current_layer_index -= 1
+                            assert current_layer_index > -1
+                            set_array(player_pos, current_layer.mob_array, None)
+                            current_layer = current_layer_key[current_layer_index]
+                            set_array(player_pos, current_layer.mob_array, Mob(MobID.PLAYER))
+                            fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
+                            do_calc_light_map = True
+                            level_is_dark = night_time if current_layer_index < 2 else True
+                            number_of_mobs = count_mobs(current_layer.mob_array)
+                            message_logs.appendleft("you go up the")
+                            message_logs.appendleft("staircase")
+                        else:
+                            do_a_game_tick = True
                     else:
                         cursor_index = 0  # reset cursor
 
@@ -911,30 +982,30 @@ def main(screen, settings):
             if world_time - day_cycle_timer >= DAY_CYCLE_LENGTH:
                 day_cycle_timer = world_time
                 night_time = not night_time
-                level_is_dark = night_time
-                if night_time:
+                level_is_dark = night_time if current_layer_index < 2 else True
+                if night_time and current_layer_index < 2:
                     message_logs.appendleft("darkness falls")
                     message_logs.appendleft("over the land")
                 else:
                     message_logs.appendleft("the darkness")
                     message_logs.appendleft("is dispelled")
             elif DAY_CYCLE_LENGTH - (world_time - day_cycle_timer) == 20:
-                if night_time:
+                if night_time and current_layer_index < 2:
                     message_logs.appendleft("the sun shines")
                     message_logs.appendleft("ever brighter")
                 else:
                     message_logs.appendleft("the sun is")
                     message_logs.appendleft("almost gone")
             elif DAY_CYCLE_LENGTH - (world_time - day_cycle_timer) == 100:
-                if night_time:
+                if night_time and current_layer_index < 2:
                     message_logs.appendleft("the horizon")
                     message_logs.appendleft("shines faintly")
                 else:
                     message_logs.appendleft("the sun is")
                     message_logs.appendleft("starting to set")
-            print(f"tick {world_time} - {'night' if night_time else 'day'}")
+            print(f"tick {world_time} layer {current_layer_index} - {'night' if night_time else 'day'}")
 
-            if regen_stam and not get_array(player_pos, game_world.overworld_layer.tile_array).has_tag(TileTag.LIQUID):
+            if regen_stam and not get_array(player_pos, current_layer.tile_array).has_tag(TileTag.LIQUID):
                 player_stamina += 1
                 player_stamina = min(player_stamina, 10)
             regen_stam = True
@@ -946,15 +1017,20 @@ def main(screen, settings):
                     sx, sy = random.randrange(world_size[0]), random.randrange(world_size[1])
                     if light_map[sx][sy] or distance_within((sx, sy), player_pos, light_radius + 1):
                         continue  # don't spawn if the tile is lit
-                    try_tile = game_world.overworld_layer.tile_array[sx][sy]
-                    try_mob = game_world.overworld_layer.mob_array[sx][sy]
+                    try_tile = current_layer.tile_array[sx][sy]
+                    try_mob = current_layer.mob_array[sx][sy]
                     if try_mob or try_tile.has_tag(TileTag.BLOCK_MOVE) or try_tile.has_tag(TileTag.LIQUID):
                         continue  # don't replace another mob or spawn in a wall
                     if try_tile.id == TileID.WEB:
-                        mob_id = MobID.HELL_SPIDER
+                        if current_layer_index == 0:
+                            mob_id = MobID.CLOUD_SPIDER
+                        elif current_layer_index < 4:
+                            mob_id = MobID.SPIDER
+                        else:
+                            mob_id = MobID.HELL_SPIDER
                     else:
-                        mob_id = random.choice((MobID.FLAME_SKULL, MobID.SHADE))
-                    game_world.overworld_layer.mob_array[sx][sy] = Mob(mob_id)
+                        mob_id = random.choice(mob_spawn_per_layer[current_layer_index])
+                    current_layer.mob_array[sx][sy] = Mob(mob_id)
                     number_of_mobs += 1
                     print(f"Spawned {mob_id} at ({sx},{sy}) on {i}")
                     break
@@ -968,7 +1044,7 @@ def main(screen, settings):
             for x in range(world_size.x):
                 for y in range(world_size.y):
                     # Tick the tiles first.
-                    current_tile = game_world.overworld_layer.tile_array[x][y]
+                    current_tile = current_layer.tile_array[x][y]
                     # Spread the tiles.
                     if current_tile.has_tag(TileTag.SPREAD) and (x, y) not in already_spread:
                         spread_onto, spread_chance = tile_spread[current_tile.id]
@@ -979,13 +1055,13 @@ def main(screen, settings):
                                 if math.fabs(nx) == math.fabs(ny) == 1:
                                     continue  # this is a diagonal
                                 neighbor = get_array((x + nx, y + ny),
-                                                     game_world.overworld_layer.tile_array)
+                                                     current_layer.tile_array)
                                 if neighbor is None:
                                     continue
                                 elif neighbor.id == spread_onto and random.random() < spread_chance:
                                     already_spread.add((x + nx, y + ny))
                                     set_array((x + nx, y + ny),
-                                              game_world.overworld_layer.tile_array, Tile(current_tile.id))
+                                              current_layer.tile_array, Tile(current_tile.id))
                                     if (neighbor.has_tag(TileTag.BLOCK_SIGHT) ^
                                             current_tile.has_tag(TileTag.BLOCK_SIGHT)) or \
                                             neighbor.has_tag(TileTag.LIGHT) or current_tile.has_tag(TileTag.LIGHT):
@@ -999,7 +1075,7 @@ def main(screen, settings):
                         if random.random() < grow_chance:
                             tile = Tile(grow_tile)
                             set_array((x, y),
-                                      game_world.overworld_layer.tile_array, tile)
+                                      current_layer.tile_array, tile)
                             if current_tile.has_tag(TileTag.LIGHT) or tile.has_tag(TileTag.LIGHT) or\
                                     current_tile.has_tag(TileTag.BLOCK_SIGHT) ^ tile.has_tag(TileTag.BLOCK_SIGHT):
                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
@@ -1010,14 +1086,14 @@ def main(screen, settings):
                     # Spawn skeletons from desert bones.
                     if current_tile.id is TileID.DESERT_BONES and night_time and random.random() < 0.1:
                         if distance_within(player_pos, (x, y), 5.5):
-                            if get_array((x, y), game_world.overworld_layer.mob_array) is None:
-                                set_array((x, y), game_world.overworld_layer.tile_array, Tile(TileID.SAND))
-                                set_array((x, y), game_world.overworld_layer.mob_array, Mob(MobID.GREEN_SKELETON))
+                            if get_array((x, y), current_layer.mob_array) is None:
+                                set_array((x, y), current_layer.tile_array, Tile(TileID.SAND))
+                                set_array((x, y), current_layer.mob_array, Mob(MobID.GREEN_SKELETON))
                                 if light_map[x][y] and line_of_sight(player_pos, (x, y)):
                                     message_logs.appendleft("the bones rise")
                                     message_logs.appendleft("from the sand")
                     # Tick the mobs.
-                    current_mob = game_world.overworld_layer.mob_array[x][y]
+                    current_mob = current_layer.mob_array[x][y]
                     if current_mob is None or current_mob.id == MobID.PLAYER:
                         continue
                     if current_mob in already_mob_ticked:
@@ -1025,7 +1101,7 @@ def main(screen, settings):
                     if not level_is_dark and random.random() < MOB_DESPAWN_CHANCE:
                         if not current_mob.has_tag(MobTag.NO_DESPAWN) and not \
                                 distance_within((x, y), player_pos, light_radius + 1):
-                            game_world.overworld_layer.mob_array[x][y] = None
+                            current_layer.mob_array[x][y] = None
                             number_of_mobs -= 1
                             print(f"Despawned mob. Mobs: {number_of_mobs}")
                             continue
@@ -1048,21 +1124,21 @@ def main(screen, settings):
                         else:
                             # mob is diagonal or wants to move vertically
                             try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
-                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                             player_health -= mob_damage[current_mob.id]
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
-                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
                                 (move_tile.id == TileID.LAVA):
                             if move_tile.id == TileID.WATER and not current_mob.has_tag(MobTag.SWAPPABLE):
                                 continue
-                            set_array((x, y), game_world.overworld_layer.mob_array, None)
-                            set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                            set_array((x, y), current_layer.mob_array, None)
+                            set_array(try_pos, current_layer.mob_array, current_mob)
                             if move_tile.has_tag(TileTag.CRUSH):
-                                set_array(try_pos, game_world.overworld_layer.tile_array,
+                                set_array(try_pos, current_layer.tile_array,
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_JUMP):
@@ -1077,19 +1153,19 @@ def main(screen, settings):
                             dir_vec = pg.Vector2(random.random(), random.random()).normalize()
                         try_pos = Point(x + int(math.copysign(1, dir_vec.x)),
                                         y + int(math.copysign(1, dir_vec.y)))
-                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                             player_health -= mob_damage[current_mob.id]
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
-                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
                                 move_tile.has_tag(TileTag.LIQUID):
-                            set_array((x, y), game_world.overworld_layer.mob_array, None)
-                            set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                            set_array((x, y), current_layer.mob_array, None)
+                            set_array(try_pos, current_layer.mob_array, current_mob)
                             if move_tile.has_tag(TileTag.CRUSH):
-                                set_array(try_pos, game_world.overworld_layer.tile_array,
+                                set_array(try_pos, current_layer.tile_array,
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_SHOOT):
@@ -1117,8 +1193,8 @@ def main(screen, settings):
                             # go to nearest target space
                             target_spaces.sort(key=lambda p: distance_squared(p, (x, y)))
                             for target_space in target_spaces:
-                                move_tile = get_array(target_space, game_world.overworld_layer.tile_array)
-                                move_mob = get_array(target_space, game_world.overworld_layer.mob_array)
+                                move_tile = get_array(target_space, current_layer.tile_array)
+                                move_mob = get_array(target_space, current_layer.mob_array)
                                 if move_mob or move_tile is None or move_tile.has_tag(TileTag.BLOCK_MOVE):
                                     continue
                                 else:
@@ -1136,14 +1212,14 @@ def main(screen, settings):
                         else:
                             # mob is diagonal or wants to move vertically
                             try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
-                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
-                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        move_mob = get_array(try_pos, current_layer.mob_array)
+                        move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
                                 move_tile.has_tag(TileTag.LIQUID):
-                            set_array((x, y), game_world.overworld_layer.mob_array, None)
-                            set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                            set_array((x, y), current_layer.mob_array, None)
+                            set_array(try_pos, current_layer.mob_array, current_mob)
                             if move_tile.has_tag(TileTag.CRUSH):
-                                set_array(try_pos, game_world.overworld_layer.tile_array,
+                                set_array(try_pos, current_layer.tile_array,
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_WANDER):
@@ -1169,21 +1245,21 @@ def main(screen, settings):
                         else:
                             # mob is diagonal or wants to move vertically
                             try_pos = Point(x, y + dir_vec.y)
-                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                             player_health -= mob_damage[current_mob.id]
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
-                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob:
                             if not move_tile.has_tag(TileTag.BLOCK_MOVE):
-                                set_array((x, y), game_world.overworld_layer.mob_array, None)
-                                set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                                set_array((x, y), current_layer.mob_array, None)
+                                set_array(try_pos, current_layer.mob_array, current_mob)
                                 if current_mob.light > 0:
                                     do_calc_light_map = True
                                 if move_tile.has_tag(TileTag.CRUSH):
-                                    set_array(try_pos, game_world.overworld_layer.tile_array,
+                                    set_array(try_pos, current_layer.tile_array,
                                               Tile(tile_replace[move_tile.id]))
                                 already_mob_ticked.add(current_mob)
                             else:
@@ -1192,7 +1268,7 @@ def main(screen, settings):
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
-                        player_tile = get_array(player_pos, game_world.overworld_layer.tile_array)
+                        player_tile = get_array(player_pos, current_layer.tile_array)
                         if player_tile.id != TileID.WEB:
                             continue  # don't do anything if player isn't on a web
                         if distance_within((x, y), player_pos, SPIDER_CHASE_RADIUS):
@@ -1206,19 +1282,19 @@ def main(screen, settings):
                         else:
                             # mob is diagonal or wants to move vertically
                             try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
-                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
+                        move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                             player_health -= mob_damage[current_mob.id]
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
-                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
                                 move_tile.has_tag(TileTag.LIQUID):
-                            set_array((x, y), game_world.overworld_layer.mob_array, None)
-                            set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                            set_array((x, y), current_layer.mob_array, None)
+                            set_array(try_pos, current_layer.mob_array, current_mob)
                             if move_tile.has_tag(TileTag.CRUSH):
-                                set_array(try_pos, game_world.overworld_layer.tile_array,
+                                set_array(try_pos, current_layer.tile_array,
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_FLEE):
@@ -1251,16 +1327,16 @@ def main(screen, settings):
                         else:
                             # mob is diagonal or wants to move vertically
                             try_pos = Point(x, y + dir_vec.y)
-                        move_mob = get_array(try_pos, game_world.overworld_layer.mob_array)
-                        move_tile = get_array(try_pos, game_world.overworld_layer.tile_array)
+                        move_mob = get_array(try_pos, current_layer.mob_array)
+                        move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob:
                             if not move_tile.has_tag(TileTag.BLOCK_MOVE):
-                                set_array((x, y), game_world.overworld_layer.mob_array, None)
-                                set_array(try_pos, game_world.overworld_layer.mob_array, current_mob)
+                                set_array((x, y), current_layer.mob_array, None)
+                                set_array(try_pos, current_layer.mob_array, current_mob)
                                 if current_mob.light > 0:
                                     do_calc_light_map = True
                                 if move_tile.has_tag(TileTag.CRUSH):
-                                    set_array(try_pos, game_world.overworld_layer.tile_array,
+                                    set_array(try_pos, current_layer.tile_array,
                                               Tile(tile_replace[move_tile.id]))
                                 already_mob_ticked.add(current_mob)
                             else:
@@ -1287,17 +1363,17 @@ def main(screen, settings):
                 real_pos = Point(player_pos.x + x, player_pos.y + y)
                 if (not do_fov or fov_field[x][y]) and (not level_is_dark or get_array(real_pos, light_map) or
                                                         distance_within(player_pos, real_pos, light_radius)):
-                    tile_mem = get_array(real_pos, game_world.overworld_layer.tile_array)
+                    tile_mem = get_array(real_pos, current_layer.tile_array)
                     if tile_mem:
-                        set_array(real_pos, game_world.overworld_layer.mem_array, tile_mem.id)
-                    mob = get_array_tile(real_pos, game_world.overworld_layer.mob_array)
+                        set_array(real_pos, current_layer.mem_array, tile_mem.id)
+                    mob = get_array_tile(real_pos, current_layer.mob_array)
                     if mob:
                         screen.blit(mob, (dx * tile_size.x, dy * tile_size.y))
                     else:
-                        tile = get_array_tile(real_pos, game_world.overworld_layer.tile_array)
+                        tile = get_array_tile(real_pos, current_layer.tile_array)
                         if tile:
                             screen.blit(tile, (dx * tile_size.x, dy * tile_size.y))
-                elif tile_id := get_array(real_pos, game_world.overworld_layer.mem_array):
+                elif tile_id := get_array(real_pos, current_layer.mem_array):
                     tile_pos, color = Tile(tile_id).graphic
                     color = tuple(pg.Color(color).lerp((0, 0, 0), 0.75))
                     tile_image = tile_loader.get_tile(tile_pos, color)

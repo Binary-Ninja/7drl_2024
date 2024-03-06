@@ -1,5 +1,6 @@
 import random
 from collections import namedtuple
+from typing import Callable
 
 import opensimplex
 
@@ -8,6 +9,20 @@ from data import PointType
 
 
 Layer = namedtuple("Layer", ("tile_array", "mob_array", "mem_array"))
+
+STAIR_BORDER_PAD = 5
+STAIR_STAIR_PAD = 5
+
+
+def distance_within(a: PointType, b: PointType, dist: int | float) -> bool:
+    return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 <= dist ** 2
+
+
+def distance_within_any(a: PointType, b: list[PointType], dist: float | int) -> bool:
+    for p in b:
+        if distance_within(a, p, dist):
+            return True
+    return False
 
 
 def make_2d_array(size: tuple[int, int], default) -> list[list]:
@@ -42,33 +57,45 @@ class World:
     """Container of layers."""
     def __init__(self, size: tuple[int, int], world_seed: int):
         self.size = size
+        assert (size[0] >= 50 and size[1] >= 50), "Minimum world size is 50x50"
         self.seed = world_seed
         self.mob_cap = (self.size[0] * self.size[1]) // 50
-        # World layers start out blank and are generated on demand.
-        self.overworld_layer = Layer(None, None, None)
-        self.cave_layer = Layer(None, None, None)
+        # Layers are generated when called.
+        self.overworld_layer = None
+        self.cave_layer = None
+        self.cavern_layer = None
+        self.hell_layer = None
+        self.sky_layer = None
 
-    def generate_overworld_layer(self):
-        tile_array = generate_overworld(self.size, self.seed)
+    def generate_layers(self):
+        yield "generating paradise..."
+        self.sky_layer, sky_stairs = self.generate_layer(generate_sky, [])
+        yield "generating overworld..."
+        self.overworld_layer, over_stairs = self.generate_layer(generate_overworld, sky_stairs)
+        yield "generating caves..."
+        self.cave_layer, cave_stairs = self.generate_layer(generate_caves, over_stairs)
+        yield "generating caverns..."
+        self.cavern_layer, cavern_stairs = self.generate_layer(generate_caverns, cave_stairs)
+        yield "generating underworld..."
+        self.hell_layer, _ = self.generate_layer(generate_hell, cavern_stairs)
+
+    def generate_layer(self, gen_func: Callable, upstairs: list) -> tuple[Layer, list]:
+        tile_array, stairs = gen_func(self.size, self.seed, upstairs)
         mob_array = make_2d_array(self.size, None)
         mem_array = make_2d_array(self.size, None)
-        self.overworld_layer = Layer(tile_array, mob_array, mem_array)
-
-    def generate_caves(self):
-        tile_array = generate_caves(self.size, self.seed)
-        mob_array = make_2d_array(self.size, None)
-        mem_array = make_2d_array(self.size, None)
-        self.cave_layer = Layer(tile_array, mob_array, mem_array)
+        return Layer(tile_array, mob_array, mem_array), stairs
 
 
 # World Gen functions below
-def generate_overworld(size: tuple[int, int], world_seed: int) -> list[list]:
+def generate_overworld(size: tuple[int, int], world_seed: int, upstairs: list) -> tuple[list[list], list]:
     world_map = make_2d_array(size, Tile(TileID.GRASS))
     opensimplex.seed(world_seed)
     rng = random.Random(world_seed)
     altitude_scale = 0.08
     humidity_scale = 0.07
     humidity_offset = (300, 300)
+    number_of_stairs = round((size[0] * size[1]) // 1500)
+    down_stairs: list[tuple[int, int]] = []
     for x in range(size[0]):
         for y in range(size[1]):
             value = opensimplex.noise2(x * altitude_scale, y * altitude_scale)
@@ -97,10 +124,35 @@ def generate_overworld(size: tuple[int, int], world_seed: int) -> list[list]:
                         world_map[x][y] = Tile(TileID.TREE)
             elif value < 1:
                 world_map[x][y] = Tile(TileID.STONE)
-    return world_map
+    for point in upstairs:
+        for x in (-1, 0, 1):
+            for y in (-1, 0, 1):
+                if x == y == 0:
+                    world_map[point[0]][point[1]] = Tile(TileID.UP_STAIRS)
+                else:
+                    world_map[point[0] + x][point[1] + y] = Tile(TileID.OBSIDIAN_BRICKS)
+    for _ in range(number_of_stairs):
+        stair_not_done = True
+        while stair_not_done:
+            point = (random.randint(STAIR_BORDER_PAD, size[0] - STAIR_BORDER_PAD - 1),
+                     random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
+            if distance_within_any(point, upstairs, STAIR_STAIR_PAD):
+                continue
+            stone_count = 0
+            for x in (-1, 0, 1):
+                for y in (-1, 0, 1):
+                    if x == y == 0:
+                        continue
+                    if world_map[point[0] + x][point[1] + y].id == TileID.STONE:
+                        stone_count += 1
+            if 3 < stone_count < 7:
+                world_map[point[0]][point[1]] = Tile(TileID.DOWN_STAIRS)
+                down_stairs.append(point)
+                stair_not_done = False
+    return world_map, down_stairs
 
 
-def generate_caves(size: tuple[int, int], world_seed: int) -> list[list]:
+def generate_caves(size: tuple[int, int], world_seed: int, upstairs: list) -> tuple[list[list], list]:
     world_map = make_2d_array(size, Tile(TileID.DIRT))
     opensimplex.seed(world_seed)
     rng = random.Random(world_seed)
@@ -110,6 +162,8 @@ def generate_caves(size: tuple[int, int], world_seed: int) -> list[list]:
     ore_offset = (100, 100)
     biome_scale = 0.1
     biome_offset = (0, 0)
+    number_of_stairs = round((size[0] * size[1]) // 1500)
+    down_stairs: list[tuple[int, int]] = []
     for x in range(size[0]):
         for y in range(size[1]):
             altitude = opensimplex.noise2((x + altitude_offset[0]) * altitude_scale,
@@ -135,10 +189,35 @@ def generate_caves(size: tuple[int, int], world_seed: int) -> list[list]:
                     world_map[x][y] = Tile(TileID.STONE)
             else:
                 world_map[x][y] = Tile(TileID.LAPIS_ORE)
-    return world_map
+    for point in upstairs:
+        for x in (-1, 0, 1):
+            for y in (-1, 0, 1):
+                if x == y == 0:
+                    world_map[point[0]][point[1]] = Tile(TileID.UP_STAIRS)
+                else:
+                    world_map[point[0] + x][point[1] + y] = Tile(TileID.DIRT)
+    for _ in range(number_of_stairs):
+        stair_not_done = True
+        while stair_not_done:
+            point = (random.randint(STAIR_BORDER_PAD, size[0] - STAIR_BORDER_PAD - 1),
+                     random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
+            if distance_within_any(point, upstairs, STAIR_STAIR_PAD):
+                continue
+            stone_count = 0
+            for x in (-1, 0, 1):
+                for y in (-1, 0, 1):
+                    if x == y == 0:
+                        continue
+                    if world_map[point[0] + x][point[1] + y].id in (TileID.STONE, TileID.IRON_ORE, TileID.LAPIS_ORE):
+                        stone_count += 1
+            if 3 < stone_count < 7:
+                world_map[point[0]][point[1]] = Tile(TileID.DOWN_STAIRS)
+                down_stairs.append(point)
+                stair_not_done = False
+    return world_map, down_stairs
 
 
-def generate_caverns(size: tuple[int, int], world_seed: int) -> list[list]:
+def generate_caverns(size: tuple[int, int], world_seed: int, upstairs: list) -> tuple[list[list], list]:
     world_map = make_2d_array(size, Tile(TileID.DIRT))
     opensimplex.seed(world_seed)
     rng = random.Random(world_seed)
@@ -150,6 +229,8 @@ def generate_caverns(size: tuple[int, int], world_seed: int) -> list[list]:
     biome_offset = (0, 0)
     water_scale = 0.08
     water_offset = (300, 300)
+    number_of_stairs = round((size[0] * size[1]) // 1500)
+    down_stairs: list[tuple[int, int]] = []
     for x in range(size[0]):
         for y in range(size[1]):
             altitude = opensimplex.noise2((x + altitude_offset[0]) * altitude_scale,
@@ -182,10 +263,35 @@ def generate_caverns(size: tuple[int, int], world_seed: int) -> list[list]:
                 world_map[x][y] = Tile(TileID.LAPIS_ORE)
             if water < -0.2:
                 world_map[x][y] = Tile(TileID.WATER)
-    return world_map
+    for point in upstairs:
+        for x in (-1, 0, 1):
+            for y in (-1, 0, 1):
+                if x == y == 0:
+                    world_map[point[0]][point[1]] = Tile(TileID.UP_STAIRS)
+                else:
+                    world_map[point[0] + x][point[1] + y] = Tile(TileID.DIRT)
+    for _ in range(number_of_stairs):
+        stair_not_done = True
+        while stair_not_done:
+            point = (random.randint(STAIR_BORDER_PAD, size[0] - STAIR_BORDER_PAD - 1),
+                     random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
+            if distance_within_any(point, upstairs, STAIR_STAIR_PAD):
+                continue
+            stone_count = 0
+            for x in (-1, 0, 1):
+                for y in (-1, 0, 1):
+                    if x == y == 0:
+                        continue
+                    if world_map[point[0] + x][point[1] + y].id in (TileID.STONE, TileID.GOLD_ORE, TileID.LAPIS_ORE):
+                        stone_count += 1
+            if 3 < stone_count < 7:
+                world_map[point[0]][point[1]] = Tile(TileID.DOWN_STAIRS)
+                down_stairs.append(point)
+                stair_not_done = False
+    return world_map, down_stairs
 
 
-def generate_hell(size: tuple[int, int], world_seed: int) -> list[list]:
+def generate_hell(size: tuple[int, int], world_seed: int, upstairs: list) -> tuple[list[list], list]:
     world_map = make_2d_array(size, Tile(TileID.DIRT))
     opensimplex.seed(world_seed)
     rng = random.Random(world_seed)
@@ -227,16 +333,25 @@ def generate_hell(size: tuple[int, int], world_seed: int) -> list[list]:
                 world_map[x][y] = Tile(TileID.LAPIS_ORE)
             if water < -0.2:
                 world_map[x][y] = Tile(TileID.LAVA)
-    return world_map
+    for point in upstairs:
+        for x in (-1, 0, 1):
+            for y in (-1, 0, 1):
+                if x == y == 0:
+                    world_map[point[0]][point[1]] = Tile(TileID.UP_STAIRS)
+                else:
+                    world_map[point[0] + x][point[1] + y] = Tile(TileID.DIRT)
+    return world_map, []  # hell doesn't go down any further
 
 
-def generate_sky(size: tuple[int, int], world_seed: int) -> list[list]:
+def generate_sky(size: tuple[int, int], world_seed: int, upstairs: list) -> tuple[list[list], list]:
     world_map = make_2d_array(size, Tile(TileID.CLOUD))
     opensimplex.seed(world_seed)
     rng = random.Random(world_seed)
     altitude_scale = 0.08
     humidity_scale = 0.07
     humidity_offset = (300, 300)
+    number_of_stairs = round((size[0] * size[1]) // 1500)
+    down_stairs: list[tuple[int, int]] = []
     for x in range(size[0]):
         for y in range(size[1]):
             value = opensimplex.noise2(x * altitude_scale, y * altitude_scale)
@@ -257,4 +372,14 @@ def generate_sky(size: tuple[int, int], world_seed: int) -> list[list]:
                         world_map[x][y] = Tile(TileID.AIR)
             elif value < 1:
                 world_map[x][y] = Tile(TileID.CLOUD_BANK)
-    return world_map
+    for _ in range(number_of_stairs):
+        point = (random.randint(STAIR_BORDER_PAD, size[0] - STAIR_BORDER_PAD - 1),
+                 random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
+        for x in (-1, 0, 1):
+            for y in (-1, 0, 1):
+                if x == y == 0:
+                    world_map[point[0]][point[1]] = Tile(TileID.DOWN_STAIRS)
+                else:
+                    world_map[point[0] + x][point[1] + y] = Tile(TileID.CLOUD)
+        down_stairs.append(point)
+    return world_map, down_stairs

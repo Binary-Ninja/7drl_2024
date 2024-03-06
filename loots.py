@@ -63,6 +63,7 @@ mob_death_loot.update({
     MobID.FLAME_SKULL: (LootItem(ItemID.BONE, 1.0, 3, 4), LootItem(ItemID.COAL, 1.0, 1, 2)),
     MobID.SPIDER: (LootItem(ItemID.STRING, 1.0, 1, 4), LootItem(ItemID.SPIDER_EYE, 0.2, 1, 8)),
     MobID.HELL_SPIDER: (LootItem(ItemID.STRING, 1.0, 1, 4), LootItem(ItemID.SPIDER_EYE, 0.2, 1, 8)),
+    MobID.CLOUD_SPIDER: (LootItem(ItemID.STRING, 1.0, 1, 4), LootItem(ItemID.SPIDER_EYE, 0.2, 1, 8)),
     MobID.SHADE: (LootItem(ItemID.WORKBENCH, 0.2, 1, 1), LootItem(ItemID.ASH, 0.2, 1, 3),
                   LootItem(ItemID.PASTRY, 0.1, 1, 1), LootItem(ItemID.IRON_LANTERN, 0.1, 1, 1),
                   LootItem(ItemID.FISH_SPEAR, 0.1, 1, 1), LootItem(ItemID.FUNGUS, 0.1, 1, 3),
