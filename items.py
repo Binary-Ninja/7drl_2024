@@ -37,10 +37,26 @@ item_data = {
                                (ItemTag.SPAWN_MOB,), {
                                    "mobid": MobID.GREEN_ZOMBIE,
                                }),
-    ItemID.DUCK_EGG: ItemData("duck egg", (Graphic.EGG, Color.LIGHT_BROWN),
+    ItemID.DUCK_EGG: ItemData("spawn egg", (Graphic.EGG, Color.LIGHT_BROWN),
                                             (ItemTag.SPAWN_MOB,), {
                                                 "mobid": MobID.DUCK,
                                             }),
+    ItemID.CHICKEN_EGG: ItemData("spawn egg", (Graphic.EGG, Color.LIGHT_BROWN),
+                              (ItemTag.SPAWN_MOB,), {
+                                  "mobid": MobID.CHICKEN,
+                              }),
+    ItemID.DOG_EGG: ItemData("spawn egg", (Graphic.EGG, Color.LIGHT_BROWN),
+                              (ItemTag.SPAWN_MOB,), {
+                                  "mobid": MobID.DOG,
+                              }),
+    ItemID.CAT_EGG: ItemData("spawn egg", (Graphic.EGG, Color.LIGHT_BROWN),
+                              (ItemTag.SPAWN_MOB,), {
+                                  "mobid": MobID.CAT,
+                              }),
+    ItemID.PIG_EGG: ItemData("spawn egg", (Graphic.EGG, Color.LIGHT_BROWN),
+                              (ItemTag.SPAWN_MOB,), {
+                                  "mobid": MobID.PIG,
+                              }),
     ItemID.DIRT: ItemData("dirt", (Graphic.DIRT, Color.BROWN),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.DIRT, "base": (TileID.HOLE, TileID.WATER)
@@ -107,7 +123,7 @@ item_data = {
                                "heal": 4,
                                "stamina_cost": 2,
                            }),
-    ItemID.DUCK_MEAT: ItemData("duckmeat", (Graphic.MEAT2, Color.LIGHT_BROWN),
+    ItemID.DUCK_MEAT: ItemData("pet meat", (Graphic.MEAT2, Color.LIGHT_BROWN),
                            (ItemTag.STACKABLE, ItemTag.HEAL), {
                                "heal": -3,
                                "stamina_cost": 0,
@@ -118,7 +134,7 @@ item_data = {
                                       "stamina_cost": 0,
             "stamina": 2,
                                   }),
-    ItemID.COOKED_DUCK_MEAT: ItemData("duck roast", (Graphic.MEAT2, Color.BROWN),
+    ItemID.COOKED_DUCK_MEAT: ItemData("pet steak", (Graphic.MEAT2, Color.BROWN),
                             (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
                                 "heal": 6,
                                 "stamina_cost": 0,

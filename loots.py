@@ -68,9 +68,15 @@ mob_death_loot.update({
                   LootItem(ItemID.FISH_SPEAR, 0.1, 1, 1), LootItem(ItemID.FUNGUS, 0.1, 1, 3),
                   LootItem(ItemID.LAPIS, 0.01, 1, 5), LootItem(ItemID.SAND, 0.2, 1, 3),
                   LootItem(ItemID.WINDOW, 0.1, 1, 1), LootItem(ItemID.COCONUT, 0.2, 1, 2),
-                  LootItem(ItemID.COCKTAIL, 0.05, 1, 1), LootItem(ItemID.DUCK_EGG, 0.2, 1, 1),
+                  LootItem(ItemID.COCKTAIL, 0.05, 1, 1), LootItem(ItemID.DUCK_EGG, 0.1, 1, 1),
+                  LootItem(ItemID.CAT_EGG, 0.1, 1, 1), LootItem(ItemID.DOG_EGG, 0.1, 1, 1),
+                  LootItem(ItemID.CHICKEN_EGG, 0.1, 1, 1), LootItem(ItemID.PIG_EGG, 0.1, 1, 1),
                   ),
     MobID.DUCK: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
+    MobID.DOG: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
+    MobID.CAT: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
+    MobID.PIG: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
+    MobID.CHICKEN: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
     MobID.FAIRY: (LootItem(ItemID.GEM_HOE), ),
 })
 

@@ -76,6 +76,10 @@ class Graphic:
     SHADE = (24, 7)
     DUCK = (25, 7)
     FAIRY = (31, 5)
+    CHICKEN = (26, 7)
+    DOG = (31, 7)
+    CAT = (30, 7)
+    PIG = (29, 7)
 
     HEART_FULL = (42, 10)
     HEART_EMPTY = (40, 10)
@@ -172,6 +176,8 @@ str_2_tile = {
     " ": (0, 0),
     "+": (36, 20),
     "-": (37, 20),
+    "*": (38, 20),
+    "#": (35, 20),
     "H": (42, 10),
     "S": (42, 12),
     ".": (46, 17),
@@ -214,6 +220,10 @@ class MobID(Enum):
     SHADE = 29
     DUCK = 30
     FAIRY = 31
+    CHICKEN = 32
+    DOG = 33
+    CAT = 34
+    PIG = 35
 
 
 class MobTag(Enum):
@@ -326,6 +336,10 @@ class ItemID(Enum):
     BOILED_EGG = 92
     FAIRY_DUST = 93
     QUARTZ = 94
+    CAT_EGG = 95
+    DOG_EGG = 96
+    PIG_EGG = 97
+    CHICKEN_EGG = 98
 
 
 class ItemTag(Enum):

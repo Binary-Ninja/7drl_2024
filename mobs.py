@@ -112,7 +112,6 @@ mob_ai_timer.update({
     MobID.SPIDER: 1,
     MobID.HELL_SPIDER: 1,
     MobID.SHADE: 1,
-    MobID.DUCK: 1,
     MobID.FAIRY: 1,
 })
 
@@ -123,6 +122,10 @@ mob_data = {
     MobID.PLAYER: MobData("player", (Graphic.PLAYER, Color.WHITE), 10, (MobTag.NO_DESPAWN,), tuple(), 0),
     MobID.BAT: MobData("bat", (Graphic.BAT, Color.BROWN), 5, (MobTag.AI_WANDER,)),
     MobID.DUCK: MobData("duck", (Graphic.DUCK, Color.YELLOW), 2, (MobTag.AI_FOLLOW, MobTag.SWAPPABLE)),
+    MobID.DOG: MobData("dog", (Graphic.DOG, Color.BROWN), 2, (MobTag.AI_FOLLOW, MobTag.SWAPPABLE)),
+    MobID.CAT: MobData("cat", (Graphic.CAT, Color.ORANGE), 2, (MobTag.AI_FOLLOW, MobTag.SWAPPABLE)),
+    MobID.PIG: MobData("pig", (Graphic.PIG, Color.PINK), 2, (MobTag.AI_FOLLOW, MobTag.SWAPPABLE)),
+    MobID.CHICKEN: MobData("chicken", (Graphic.CHICKEN, Color.WHITE), 2, (MobTag.AI_FOLLOW, MobTag.SWAPPABLE)),
     MobID.SHADE: MobData("shade", (Graphic.SHADE, Color.BLUE), 20, (MobTag.AI_FLEE, MobTag.NO_DESPAWN), tuple(), 1),
     MobID.FLAME_SKULL: MobData("fireskull", (Graphic.SKULL, Color.YELLOW), 20, (MobTag.AI_WANDER, MobTag.DAMAGE,),
                                tuple(), 1),

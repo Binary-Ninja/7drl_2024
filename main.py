@@ -43,7 +43,9 @@ SKELETON_SHOOT_RADIUS = 5
 SKELETON_SIGHT_RADIUS = 12  # when skeletons sense you
 SPIDER_CHASE_RADIUS = 10  # when spiders sense you
 SHADE_FLEE_RADIUS = 5  # when shades see you
-DOG_FOLLOW_RADIUS = 15
+DOG_FOLLOW_RADIUS = 12
+CURSOR_FLASH_FREQ = 500
+STAM_FLASH_FREQ = 200
 
 player_vision = 17
 player_light_radius = 2.5
@@ -54,33 +56,133 @@ do_calc_light_map = True
 light_map: list[list[bool]] = []
 path_to_player: dict[tuple, tuple] = {}
 
+tile_size = Point(16, 16)
+tile_loader = TileLoader(Path() / "kenney_tileset.png", tile_size)
 
-def main():
-    pg.init()
 
-    screen = pg.display.set_mode((800, 560))  # 50x35 tiles
-    pg.display.set_caption("Outlast 7DRL 2024")
+def main_menu(screen) -> dict:
+    options = {"size": (100, 100), "day_cycle_len": 500, "mob_spawn": 0.2}
+    start_game = False
+    clock = pg.time.Clock()
+
+    cursor_img = tile_loader.get_tile(Graphic.CURSOR2, Color.WHITE)
+    cursor_flash_timer = pg.time.get_ticks()
+    global CURSOR_FLASH_FREQ
+    cursor_show = True
+    cursor_index = 0
+
+    menu_options = (
+        (("world size - 75*75", (75, 75)), ("world size - 100*100", (100, 100)),
+         ("world size - 150*150", (150, 150)), ("world size - 200*200", (200, 200))),
+        (("day length - 200", 200), ("day length - 350", 350), ("day length - 500", 500), ("day length - 650", 650)),
+        (("# of mob spawns - few", 0.05), ("# of mob spawns - some", 0.1),
+         ("# of mob spawns - many", 0.2), ("# of mob spawns - annoying", 0.4)),
+    )
+
+    choice_index = [1, 2, 2]
+
+    index_2_option = {0: "size", 1: "day_cycle_len", 2: "mob_spawn"}
+
+    def write_text(pos: PointType, text: str, color: tuple[int, int, int]):
+        for index, char in enumerate(text):
+            char_tile = tile_loader.get_tile(str_2_tile[char], color)
+            screen.blit(char_tile, ((pos[0] + index) * tile_size.x,
+                                    pos[1] * tile_size.y))
+
+    while not start_game:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    pg.quit()
+                    sys.exit()
+                elif event.key == pg.K_UP:
+                    cursor_index -= 1
+                    cursor_index %= len(menu_options)
+                    cursor_show = True
+                elif event.key == pg.K_DOWN:
+                    cursor_index += 1
+                    cursor_index %= len(menu_options)
+                    cursor_show = True
+                elif event.key == pg.K_LEFT:
+                    choice_index[cursor_index] -= 1
+                    choice_index[cursor_index] %= len(menu_options[cursor_index])
+                    options[index_2_option[cursor_index]] = menu_options[cursor_index][choice_index[cursor_index]][1]
+                elif event.key == pg.K_RIGHT:
+                    choice_index[cursor_index] += 1
+                    choice_index[cursor_index] %= len(menu_options[cursor_index])
+                    options[index_2_option[cursor_index]] = menu_options[cursor_index][choice_index[cursor_index]][1]
+                elif event.key == pg.K_c:
+                    start_game = True
+        # Update.
+        clock.tick()
+
+        # Cursor flash.
+        if pg.time.get_ticks() - cursor_flash_timer >= CURSOR_FLASH_FREQ:
+            cursor_flash_timer = pg.time.get_ticks()
+            cursor_show = not cursor_show
+
+        # Draw.
+        screen.fill((0, 0, 0))
+
+        # Draw the static text.
+        write_text((0, 0), f"{'outlast 7drl 2024':^50}", Color.WHITE)
+        write_text((0, 2), f"{'up and down arrow to select setting':^50}", Color.WHITE)
+        write_text((0, 3), f"{'left and right arrow to cycle setting':^50}", Color.WHITE)
+        write_text((0, 4), f"{'press c to start':^50}", Color.WHITE)
+
+        write_text((0, 22), f"{'credits':^50}", Color.WHITE)
+        write_text((0, 23), f"{'sprites by kenney.nl':^50}", Color.LIGHT_GRAY)
+        write_text((0, 24), f"{'sound effects by sfxr.me':^50}", Color.LIGHT_GRAY)
+        write_text((0, 25), f"{'music':^50}", Color.LIGHT_GRAY)
+        write_text((0, 26), f"{'inspired by minicraft by markus persson':^50}", Color.LIGHT_GRAY)
+        write_text((0, 27), f"{'code by binary-ninja.itch.io':^50}", Color.LIGHT_GRAY)
+
+        write_text((0, 29), f"{'controls':^50}", Color.WHITE)
+        write_text((0, 30), f"{'arrow keys to navigate menus and move player':^50}", Color.LIGHT_GRAY)
+        write_text((0, 31), f"{'c key to use current item or select menu option':^50}", Color.LIGHT_GRAY)
+        write_text((0, 32), f"{'x key to open inventory or interact':^50}", Color.LIGHT_GRAY)
+        write_text((0, 33), f"{'z key to advance the world time or use staircases':^50}", Color.LIGHT_GRAY)
+        write_text((0, 34), f"{'escape key to quit the game and go to main menu':^50}", Color.LIGHT_GRAY)
+
+        # Draw settings.
+        for index, setting in enumerate(menu_options):
+            color = Color.WHITE if index == cursor_index else Color.LIGHT_GRAY
+            write_text((15, 8 + (index * 2)), setting[choice_index[index]][0], color)
+
+        # Draw cursor.
+        if cursor_show:
+            screen.blit(cursor_img, (14 * tile_size.x, (8 + (cursor_index * 2)) * tile_size.y))
+
+        # Flip display.
+        pg.display.flip()
+
+    return options
+
+
+def main(screen, settings):
+
     clock = pg.time.Clock()
     font = pg.font.Font(None, 20)
+    game_is_going = True
 
-    tile_size = Point(16, 16)
-    tile_loader = TileLoader(Path() / "kenney_tileset.png", tile_size)
+    global tile_size
+    global tile_loader
     heart_full_img = tile_loader.get_tile(Graphic.HEART_FULL, Color.RED)
     heart_empty_img = tile_loader.get_tile(Graphic.HEART_EMPTY, Color.DARK_RED)
     stam_full_img = tile_loader.get_tile(Graphic.STAM_FULL, Color.YELLOW)
     stam_empty_img = tile_loader.get_tile(Graphic.STAM_EMPTY, Color.DARK_YELLOW)
     cursor_img = tile_loader.get_tile(Graphic.CURSOR, Color.WHITE)
     cursor_img2 = tile_loader.get_tile(Graphic.CURSOR2, Color.WHITE)
-    icon_image = tile_loader.get_tile(Graphic.AIR_WIZARD, Color.RED)
-
-    pg.display.set_icon(icon_image)
 
     cursor_flash_timer = pg.time.get_ticks()
-    CURSOR_FLASH_FREQ = 500
+    global CURSOR_FLASH_FREQ
     cursor_show = True
 
     stam_flash_timer = pg.time.get_ticks()
-    STAM_FLASH_FREQ = 200
+    global STAM_FLASH_FREQ
     stam_flash = True
 
     cursor_index = 0  # what inventory item it is on
@@ -89,18 +191,16 @@ def main():
     do_a_game_tick = False
 
     day_cycle_timer = world_time
-    DAY_CYCLE_LENGTH = 500
+    DAY_CYCLE_LENGTH = settings["day_cycle_len"]
     night_time = False
     level_is_dark = False
     number_of_mobs = 0  # TODO: dont forget to update this to load on layer load when i add world layers
-    MOB_SPAWN_CHANCE = 0.2
+    MOB_SPAWN_CHANCE = settings["mob_spawn"]
     MOB_DESPAWN_CHANCE = 0.05
 
     world_seed = random.getrandbits(64)
     # world_seed = 1234
-    print(world_seed)
-    world_size = Point(100, 100)
-    print(world_size)
+    world_size = Point(*settings["size"])
     game_world = World(world_size, world_seed)
     game_world.generate_overworld_layer()
 
@@ -113,23 +213,34 @@ def main():
     global player_stamina
     global regen_stam
     player_dir = Point(0, -1)
-    player_pos = Point(game_world.size[0] // 2, game_world.size[1] // 2)
-    set_array(player_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
+    player_pos = (0, 0)
+    while player_pos == (0, 0):
+        x_range = (18, world_size.x - 19)
+        y_range = (18, world_size.y - 19)
+        try_spawn = Point(random.randint(*x_range), random.randint(*y_range))
+        try_tile = get_array(try_spawn, game_world.overworld_layer.tile_array)
+        if try_tile.has_tag(TileTag.BLOCK_MOVE) or try_tile.has_tag(TileTag.LIQUID):
+            continue
+        player_pos = try_spawn
+        set_array(player_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
+        break
 
+    player_is_dead = False
     current_item: Item | NO_ITEM = NO_ITEM
-    inventory: list[Item] = [Item(ItemID.WORKBENCH), Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
-                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SAND, 99),
-                             Item(ItemID.GEM_FISH_SPEAR, 1), Item(ItemID.BED, 1),
-                             Item(ItemID.WOOD, 100), Item(ItemID.OVEN, 1),
-                             # Item(ItemID.WINDOW, 100), Item(ItemID.STONE_WALL, 99),
-                             # Item(ItemID.WOOD_DOOR, 100), Item(ItemID.WHEAT_SEEDS, 99),
-                             Item(ItemID.DUCK_EGG, 100), Item(ItemID.GEM_LANTERN, 1),
+    inventory: list[Item] = [Item(ItemID.WORKBENCH),
+                             # Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
+                             # Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SAND, 99),
+                             # Item(ItemID.GEM_FISH_SPEAR, 1), Item(ItemID.BED, 1),
+                             # Item(ItemID.WOOD, 100), Item(ItemID.OVEN, 1),
+                             # # Item(ItemID.WINDOW, 100), Item(ItemID.STONE_WALL, 99),
+                             # # Item(ItemID.WOOD_DOOR, 100), Item(ItemID.WHEAT_SEEDS, 99),
+                             # Item(ItemID.PIG_EGG, 100), Item(ItemID.GEM_LANTERN, 1),
                              ]
 
     message_logs: deque[str] = deque(maxlen=10)
+    message_logs.appendleft("esc to quit")
     message_logs.appendleft("arrow keys to")
-    message_logs.appendleft("move player or")
-    message_logs.appendleft("cursor")
+    message_logs.appendleft("navigate")
     message_logs.appendleft("c key to use")
     message_logs.appendleft("item or select")
     message_logs.appendleft("x key to open")
@@ -149,29 +260,6 @@ def main():
     displayed_no_use_message = False
     skelly_got_em = False
 
-    def line_of_sight_path(start: PointType, end: PointType) -> list[Point]:
-        path: list[Point] = []
-        start, end = Point(*start), Point(*end)
-        dx, dy = end.x - start.x, end.y - start.y
-        nx, ny = math.fabs(dx), math.fabs(dy)
-        sign_x, sign_y = 1 if dx > 0 else -1, 1 if dy > 0 else -1
-
-        p = pg.Vector2(*start)
-        ix = iy = 0
-
-        while ix < nx - 1 or iy < ny - 1:
-            if (1 + 2 * ix) * ny < (1 + 2 * iy) * nx:
-                p.x += sign_x
-                ix += 1
-            else:
-                p.y += sign_y
-                iy += 1
-            tile = get_array((int(p.x), int(p.y)), game_world.overworld_layer.tile_array)
-            if tile is None or tile.has_tag(TileTag.BLOCK_SIGHT):
-                return []
-            else:
-                path.append(Point(int(p.x), int(p.y)))
-        return path
 
     def line_of_sight(start: PointType, end: PointType) -> bool:
         start, end = Point(*start), Point(*end)
@@ -281,7 +369,7 @@ def main():
     def write_text(pos: PointType, text: str, color: tuple[int, int, int]):
         for index, char in enumerate(text):
             char_tile = tile_loader.get_tile(str_2_tile[char], color)
-            screen.blit(char_tile, ((pos[0] + index) * tile_size[0],
+            screen.blit(char_tile, ((pos[0] + index) * tile_size.x,
                                     pos[1] * tile_size.y))
 
     def get_array_tile(pos: PointType, array: list[list], dark: bool = False) -> pg.Surface | None:
@@ -406,7 +494,7 @@ def main():
         set_array(try_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
         return try_pos
 
-    while True:
+    while game_is_going:
         # Handle events.
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -414,8 +502,7 @@ def main():
                 sys.exit()
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
-                    pg.quit()
-                    sys.exit()
+                    game_is_going = False
                 elif event.key == pg.K_SPACE:
                     level_is_dark = not level_is_dark
                 elif event.key == pg.K_f:
@@ -424,6 +511,8 @@ def main():
                     player_health = 10
                     player_stamina = 10
                 elif event.key == pg.K_UP:
+                    if player_is_dead:
+                        continue
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (0, -1):
@@ -439,6 +528,8 @@ def main():
                         cursor_index -= 1
                         cursor_index %= len(crafting_list)
                 elif event.key == pg.K_DOWN:
+                    if player_is_dead:
+                        continue
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (0, 1):
@@ -454,6 +545,8 @@ def main():
                         cursor_index += 1
                         cursor_index %= len(crafting_list)
                 elif event.key == pg.K_LEFT:
+                    if player_is_dead:
+                        continue
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (-1, 0):
@@ -469,6 +562,8 @@ def main():
                         cursor_index -= 1
                         cursor_index %= len(crafting_list)
                 elif event.key == pg.K_RIGHT:
+                    if player_is_dead:
+                        continue
                     cursor_show = True
                     if game_mode is GameMode.MOVE:
                         if player_dir == (1, 0):
@@ -484,6 +579,9 @@ def main():
                         cursor_index += 1
                         cursor_index %= len(crafting_list)
                 elif event.key == pg.K_c:
+                    if player_is_dead:
+                        game_is_going = False
+                        continue
                     if game_mode is GameMode.MOVE:
                         do_a_game_tick = True
                         target_pos = Point(player_pos.x + player_dir.x,
@@ -595,7 +693,6 @@ def main():
                                     fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                     if tile.has_tag(TileTag.BLOCK_SIGHT) ^ target_tile.has_tag(TileTag.BLOCK_SIGHT):
                                         do_calc_light_map = True
-                                        print("place diff")
                                     if not current_item.has_tag(ItemTag.STACKABLE):
                                         message_logs.appendleft("you use the")
                                         message_logs.appendleft(f"{current_item.name}")
@@ -650,7 +747,6 @@ def main():
                                                 if tile.has_tag(TileTag.BLOCK_SIGHT) ^ \
                                                         target_tile.has_tag(TileTag.BLOCK_SIGHT):
                                                     do_calc_light_map = True
-                                                    print("broken diff")
                                                 for item in loot:
                                                     add_to_inventory(item, inventory)
                                                 message_logs.appendleft("you remove the")
@@ -735,6 +831,8 @@ def main():
                             message_logs.appendleft("you crafted")
                             message_logs.appendleft(f"{item}")
                 elif event.key == pg.K_x:
+                    if player_is_dead:
+                        continue
                     if game_mode is GameMode.INVENTORY or game_mode is GameMode.CRAFT:
                         # Cancel crafting or inventory.
                         current_crafter = None
@@ -783,6 +881,8 @@ def main():
                         else:
                             game_mode = GameMode.INVENTORY
                 elif event.key == pg.K_z:
+                    if player_is_dead:
+                        continue
                     if game_mode is GameMode.MOVE:
                         do_a_game_tick = True
                     else:
@@ -834,7 +934,7 @@ def main():
                     message_logs.appendleft("starting to set")
             print(f"tick {world_time} - {'night' if night_time else 'day'}")
 
-            if regen_stam:
+            if regen_stam and not get_array(player_pos, game_world.overworld_layer.tile_array).has_tag(TileTag.LIQUID):
                 player_stamina += 1
                 player_stamina = min(player_stamina, 10)
             regen_stam = True
@@ -1165,10 +1265,16 @@ def main():
                                 already_mob_ticked.add(current_mob)
                             else:
                                 current_mob.last_dir = Point(-dir_vec.x, -dir_vec.y)
+
+        # Check for player death.
+        if not player_is_dead and player_health <= 0:
+            player_is_dead = True
+            message_logs.appendleft("you have died")
+            message_logs.appendleft("press c or esc")
+
         # Calculate the light map before drawing if needed.
         if do_calc_light_map:
             do_calc_light_map = False
-            print("recalc lightmap")
             calc_lightmap()
 
         # Draw.
@@ -1289,4 +1395,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    pg.init()
+    main_screen = pg.display.set_mode((800, 560))  # 50x35 tiles
+    pg.display.set_caption("Outlast 7DRL 2024")
+    icon_image = tile_loader.get_tile(Graphic.AIR_WIZARD, Color.RED)
+    pg.display.set_icon(icon_image)
+    things = main_menu(main_screen)
+    while True:
+        main(main_screen, things)
+        things = main_menu(main_screen)

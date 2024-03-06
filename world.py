@@ -49,7 +49,7 @@ class World:
         self.cave_layer = Layer(None, None, None)
 
     def generate_overworld_layer(self):
-        tile_array = generate_sky(self.size, self.seed)
+        tile_array = generate_overworld(self.size, self.seed)
         mob_array = make_2d_array(self.size, None)
         mem_array = make_2d_array(self.size, None)
         self.overworld_layer = Layer(tile_array, mob_array, mem_array)
