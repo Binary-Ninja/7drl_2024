@@ -54,14 +54,12 @@ player_stamina = 10
 regen_stam = True
 do_calc_light_map = True
 light_map: list[list[bool]] = []
-path_to_player: dict[tuple, tuple] = {}
-
 tile_size = Point(16, 16)
 tile_loader = TileLoader(Path() / "kenney_tileset.png", tile_size)
 
 
 def main_menu(screen) -> dict:
-    options = {"size": (100, 100), "day_cycle_len": 500, "mob_spawn": 0.2}
+    options = {"size": (100, 100), "day_cycle_len": 500, "mob_spawn": 0.2, "wizard": False}
     start_game = False
     clock = pg.time.Clock()
 
@@ -75,8 +73,8 @@ def main_menu(screen) -> dict:
         (("world size - 75*75", (75, 75)), ("world size - 100*100", (100, 100)),
          ("world size - 150*150", (150, 150)), ("world size - 200*200", (200, 200))),
         (("day length - 200", 200), ("day length - 350", 350), ("day length - 500", 500), ("day length - 650", 650)),
-        (("# of mob spawns - few", 0.05), ("# of mob spawns - some", 0.1),
-         ("# of mob spawns - many", 0.2), ("# of mob spawns - annoying", 0.4)),
+        (("mob spawn rate - low", 0.05), ("mob spawn rate - medium", 0.1),
+         ("mob spawn rate - high", 0.2), ("mob spawn rate - annoying", 0.4)),
     )
 
     choice_index = [1, 2, 2]
@@ -116,6 +114,9 @@ def main_menu(screen) -> dict:
                     options[index_2_option[cursor_index]] = menu_options[cursor_index][choice_index[cursor_index]][1]
                 elif event.key == pg.K_c:
                     start_game = True
+                elif event.key == pg.K_w:
+                    if event.mod & pg.KMOD_SHIFT:
+                        options["wizard"] = not options["wizard"]
         # Update.
         clock.tick()
 
@@ -146,6 +147,10 @@ def main_menu(screen) -> dict:
         write_text((0, 32), f"{'x key to open inventory or interact':^50}", Color.LIGHT_GRAY)
         write_text((0, 33), f"{'z key to advance the world time or use staircases':^50}", Color.LIGHT_GRAY)
         write_text((0, 34), f"{'escape key to quit the game and go to main menu':^50}", Color.LIGHT_GRAY)
+
+        # Draw wizard mode indicator.
+        if options["wizard"]:
+            write_text((0, 20), f"{'wizard mode enabled':^50}", Color.RED)
 
         # Draw settings.
         for index, setting in enumerate(menu_options):
@@ -284,17 +289,25 @@ def main(screen, settings):
         set_array(player_pos, game_world.overworld_layer.mob_array, Mob(MobID.PLAYER))
         break
 
+    wizard_mode = settings["wizard"]
     player_is_dead = False
+    never_been_to_sky = True
+    air_wizard_defeated = False
     current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.WORKBENCH),
                              Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
-                             # Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SAND, 99),
-                             # Item(ItemID.GEM_FISH_SPEAR, 1), Item(ItemID.BED, 1),
-                             # Item(ItemID.WOOD, 100), Item(ItemID.OVEN, 1),
-                             # # Item(ItemID.WINDOW, 100), Item(ItemID.STONE_WALL, 99),
-                             # # Item(ItemID.WOOD_DOOR, 100), Item(ItemID.WHEAT_SEEDS, 99),
-                             # Item(ItemID.PIG_EGG, 100), Item(ItemID.GEM_LANTERN, 1),
+                             Item(ItemID.GEM_AXE, 1), Item(ItemID.STONE_FLOOR, 99),
+                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.BUCKET, 1),
+                             Item(ItemID.WOOD, 100), Item(ItemID.WOOD_FLOOR, 99),
+                             Item(ItemID.OVEN, 1), Item(ItemID.FURNACE, 1),
+                             Item(ItemID.IRON_BAR, 100), Item(ItemID.OBSIDIAN, 99),
+                             Item(ItemID.ANVIL, 1), Item(ItemID.LOOM, 1),
                              ]
+
+    if wizard_mode:
+        inventory: list[Item] = []
+        for item_id in ItemID:
+            inventory.append(Item(item_id, 999))
 
     message_logs: deque[str] = deque(maxlen=10)
     message_logs.appendleft("escape to quit")
@@ -402,6 +415,13 @@ def main(screen, settings):
                     if invent_item.count <= 0:
                         return invent.pop(index)
                     return
+
+    def inventory_count(item_id: ItemID, invent: list[Item]) -> int:
+        count = 0
+        for item in invent:
+            if item.id == item_id:
+                count += item.count
+        return count
 
     def craftable(needed: Sequence[tuple[ItemID, int]],
                   have: list[Item]) -> bool:
@@ -625,7 +645,6 @@ def main(screen, settings):
                         cursor_index %= len(crafting_list)
                 elif event.key == pg.K_c:
                     if player_is_dead:
-                        game_is_going = False
                         continue
                     if game_mode is GameMode.MOVE:
                         do_a_game_tick = True
@@ -698,7 +717,7 @@ def main(screen, settings):
                                         message_logs.appendleft(f"{current_item.name} "
                                                                 f"+{player_health - prev_ph}H")
                                     else:
-                                        message_logs.appendleft(f"{current_item.name} -{player_health - prev_ph}H")
+                                        message_logs.appendleft(f"{current_item.name} {player_health - prev_ph}H")
                                     if current_item.count <= 0:
                                         current_item = NO_ITEM
                                         inventory.remove(NO_ITEM)
@@ -738,6 +757,8 @@ def main(screen, settings):
                                     fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                     if tile.has_tag(TileTag.BLOCK_SIGHT) ^ target_tile.has_tag(TileTag.BLOCK_SIGHT):
                                         do_calc_light_map = True
+                                    if tile.has_tag(TileTag.LIGHT) or target_tile.has_tag(TileTag.LIGHT):
+                                        do_calc_light_map = True
                                     if not current_item.has_tag(ItemTag.STACKABLE):
                                         message_logs.appendleft("you use the")
                                         message_logs.appendleft(f"{current_item.name}")
@@ -751,6 +772,8 @@ def main(screen, settings):
                                         current_item = NO_ITEM
                                         inventory.remove(NO_ITEM)
                                         displayed_empty_hands_message = True
+                                    if current_item.id in (ItemID.WATER_BUCKET, ItemID.LAVA_BUCKET):
+                                        current_item = Item(ItemID.BUCKET)
                                 else:
                                     displayed_no_use_message = True
                                     message_logs.appendleft("you do not have")
@@ -792,10 +815,19 @@ def main(screen, settings):
                                                 if tile.has_tag(TileTag.BLOCK_SIGHT) ^ \
                                                         target_tile.has_tag(TileTag.BLOCK_SIGHT):
                                                     do_calc_light_map = True
+                                                if tile.has_tag(TileTag.LIGHT) or target_tile.has_tag(TileTag.LIGHT):
+                                                    do_calc_light_map = True
                                                 for item in loot:
                                                     add_to_inventory(item, inventory)
                                                 message_logs.appendleft("you remove the")
                                                 message_logs.appendleft(f"{target_tile.name}")
+                                                if current_item.id == ItemID.BUCKET:
+                                                    if target_tile.id == TileID.WATER:
+                                                        current_item = Item(ItemID.WATER_BUCKET)
+                                                    elif target_tile.id == TileID.LAVA:
+                                                        current_item = Item(ItemID.LAVA_BUCKET)
+                                                    else:
+                                                        raise ValueError("bucket was just used on a non-liquid")
                                             just_broken_a_tile = True
                                         else:
                                             message_logs.appendleft("you do not have")
@@ -825,6 +857,14 @@ def main(screen, settings):
                                                 add_to_inventory(item, inventory)
                                             message_logs.appendleft("you kill the")
                                             message_logs.appendleft(f"{target_mob.name}")
+                                            if target_mob.id == MobID.AIR_WIZARD:
+                                                air_wizard_defeated = True
+                                                message_logs.appendleft("you have won")
+                                                message_logs.appendleft("the game")
+                                                message_logs.appendleft("there is more")
+                                                message_logs.appendleft("to discover")
+                                                message_logs.appendleft("keep playing to")
+                                                message_logs.appendleft("find everything")
                                         else:
                                             message_logs.appendleft("you strike the")
                                             message_logs.appendleft(f"{target_mob.name} "
@@ -910,19 +950,24 @@ def main(screen, settings):
                                 message_logs.appendleft("during the day")
                         elif target_tile and target_tile.id in (TileID.OPEN_WOOD_DOOR,
                                                                 TileID.CLOSED_WOOD_DOOR):
-                            if target_tile.id is TileID.CLOSED_WOOD_DOOR:
-                                set_array(target_pos,
-                                          current_layer.tile_array,
-                                          Tile(TileID.OPEN_WOOD_DOOR))
-                                message_logs.appendleft("you open the")
-                                message_logs.appendleft(f"{target_tile.name}")
+                            if target_mob:
+                                message_logs.appendleft("door is blocked")
+                                message_logs.appendleft(f"by {target_mob.name}")
                             else:
-                                set_array(target_pos,
-                                          current_layer.tile_array,
-                                          Tile(TileID.CLOSED_WOOD_DOOR))
-                                message_logs.appendleft("you close the")
-                                message_logs.appendleft(f"{target_tile.name}")
-                            fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
+                                if target_tile.id is TileID.CLOSED_WOOD_DOOR:
+                                    set_array(target_pos,
+                                              current_layer.tile_array,
+                                              Tile(TileID.OPEN_WOOD_DOOR))
+                                    message_logs.appendleft("you open the")
+                                    message_logs.appendleft(f"{target_tile.name}")
+                                else:
+                                    set_array(target_pos,
+                                              current_layer.tile_array,
+                                              Tile(TileID.CLOSED_WOOD_DOOR))
+                                    message_logs.appendleft("you close the")
+                                    message_logs.appendleft(f"{target_tile.name}")
+                                fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
+                                do_calc_light_map = True
                         else:
                             game_mode = GameMode.INVENTORY
                 elif event.key == pg.K_z:
@@ -954,6 +999,23 @@ def main(screen, settings):
                             number_of_mobs = count_mobs(current_layer.mob_array)
                             message_logs.appendleft("you go up the")
                             message_logs.appendleft("staircase")
+                            if never_been_to_sky and current_layer_index == 0:
+                                never_been_to_sky = False
+                                spawn_point = (0, 0)
+                                while spawn_point == (0, 0):
+                                    x_range = (5, world_size.x - 6)
+                                    y_range = (5, world_size.y - 6)
+                                    try_spawn = Point(random.randint(*x_range), random.randint(*y_range))
+                                    if distance_within(try_spawn, player_pos, 15.5):
+                                        continue
+                                    spawn_point = try_spawn
+                                    wizard = Mob(MobID.AIR_WIZARD)
+                                    wizard.state = 'attack'
+                                    set_array(spawn_point, current_layer.mob_array, wizard)
+                                    message_logs.appendleft("the air wizard")
+                                    message_logs.appendleft("is here...")
+                                    print(spawn_point)
+                                    break
                         else:
                             do_a_game_tick = True
                     else:
@@ -986,21 +1048,21 @@ def main(screen, settings):
                 if night_time and current_layer_index < 2:
                     message_logs.appendleft("darkness falls")
                     message_logs.appendleft("over the land")
-                else:
+                elif current_layer_index < 2:
                     message_logs.appendleft("the darkness")
                     message_logs.appendleft("is dispelled")
             elif DAY_CYCLE_LENGTH - (world_time - day_cycle_timer) == 20:
                 if night_time and current_layer_index < 2:
                     message_logs.appendleft("the sun shines")
                     message_logs.appendleft("ever brighter")
-                else:
+                elif current_layer_index < 2:
                     message_logs.appendleft("the sun is")
                     message_logs.appendleft("almost gone")
             elif DAY_CYCLE_LENGTH - (world_time - day_cycle_timer) == 100:
                 if night_time and current_layer_index < 2:
                     message_logs.appendleft("the horizon")
                     message_logs.appendleft("shines faintly")
-                else:
+                elif current_layer_index < 2:
                     message_logs.appendleft("the sun is")
                     message_logs.appendleft("starting to set")
             print(f"tick {world_time} layer {current_layer_index} - {'night' if night_time else 'day'}")
@@ -1010,7 +1072,8 @@ def main(screen, settings):
                 player_stamina = min(player_stamina, 10)
             regen_stam = True
             # Check for darkness; it can still be daytime in caves.
-            if level_is_dark and random.random() < MOB_SPAWN_CHANCE and number_of_mobs < game_world.mob_cap:
+            if (level_is_dark or current_layer_index == 0) and random.random() < MOB_SPAWN_CHANCE and \
+                    number_of_mobs < game_world.mob_cap:
                 # Spawn a mob.
                 for i in range(100):
                     # Attempt to place 100 times before giving up
@@ -1069,6 +1132,10 @@ def main(screen, settings):
                                         # if they are both clear or vision blockers we don't need to update
                                         fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                         do_calc_light_map = True
+                                elif current_tile.id == TileID.WATER and neighbor.id == TileID.LAVA:
+                                    set_array((x + nx, y + ny), current_layer.tile_array, Tile(TileID.OBSIDIAN))
+                                elif current_tile.id == TileID.LAVA and neighbor.id == TileID.WATER:
+                                    set_array((x + nx, y + ny), current_layer.tile_array, Tile(TileID.OBSIDIAN))
                     # Grow the tiles.
                     if current_tile.has_tag(TileTag.GROW):
                         grow_tile, grow_chance = tile_grow[current_tile.id]
@@ -1092,6 +1159,14 @@ def main(screen, settings):
                                 if light_map[x][y] and line_of_sight(player_pos, (x, y)):
                                     message_logs.appendleft("the bones rise")
                                     message_logs.appendleft("from the sand")
+                    if current_tile.id is TileID.ASH_BONES and random.random() < 0.1:
+                        if distance_within(player_pos, (x, y), 5.5):
+                            if get_array((x, y), current_layer.mob_array) is None:
+                                set_array((x, y), current_layer.tile_array, Tile(TileID.ASH))
+                                set_array((x, y), current_layer.mob_array, Mob(MobID.BLACK_SKELETON))
+                                if light_map[x][y] and line_of_sight(player_pos, (x, y)):
+                                    message_logs.appendleft("the bones rise")
+                                    message_logs.appendleft("from the ash")
                     # Tick the mobs.
                     current_mob = current_layer.mob_array[x][y]
                     if current_mob is None or current_mob.id == MobID.PLAYER:
@@ -1105,13 +1180,16 @@ def main(screen, settings):
                             number_of_mobs -= 1
                             print(f"Despawned mob. Mobs: {number_of_mobs}")
                             continue
-                    if not distance_within(player_pos, (x, y), MOB_SIM_DISTANCE):
-                        continue  # mobs outside this radius won't be ticked
+                    if not distance_within(player_pos, (x, y), MOB_SIM_DISTANCE) and not \
+                            current_mob.has_tag(MobTag.AI_AIR_WIZARD):
+                        continue  # mobs outside this radius won't be ticked except air wizard
                     if current_mob.has_tag(MobTag.AI_FOLLOW):
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
                         dist = DOG_FOLLOW_RADIUS if current_mob.has_tag(MobTag.SWAPPABLE) else CHASE_DISTANCE
+                        if current_mob.id == MobID.SPRITE:
+                            dist = 20
                         if distance_within((x, y), player_pos, dist):
                             # chase player
                             dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
@@ -1253,7 +1331,7 @@ def main(screen, settings):
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob:
-                            if not move_tile.has_tag(TileTag.BLOCK_MOVE):
+                            if not move_tile.has_tag(TileTag.BLOCK_MOVE) or move_tile.id == TileID.AIR:
                                 set_array((x, y), current_layer.mob_array, None)
                                 set_array(try_pos, current_layer.mob_array, current_mob)
                                 if current_mob.light > 0:
@@ -1341,12 +1419,69 @@ def main(screen, settings):
                                 already_mob_ticked.add(current_mob)
                             else:
                                 current_mob.last_dir = Point(-dir_vec.x, -dir_vec.y)
+                    elif current_mob.has_tag(MobTag.AI_AIR_WIZARD):
+                        current_mob.ai_tick += 1
+                        if current_mob.ai_tick % current_mob.ai_timer != 0:
+                            continue  # only tick every ai_timer ticks
+                        if current_mob.ai_tick - current_mob.ai_state_timer >= current_mob.ai_state_freq:
+                            current_mob.ai_state_timer = current_mob.ai_tick
+                            if current_mob.state == "attack":
+                                current_mob.state = "flee"
+                            elif current_mob.state == "flee":
+                                current_mob.state = "spawn"
+                            else:
+                                current_mob.state = "attack"
+                            message_logs.appendleft(f'aw - {current_mob.state}')
+                        if current_mob.state == "attack":
+                            dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
+                        elif current_mob.state == "flee":
+                            dir_vec = (pg.Vector2(x, y) - pg.Vector2(player_pos)).normalize()
+                        else:
+                            dir_vec = pg.Vector2(0, 0)
+                        if dir_vec == (0, 0):
+                            sx, sy = random.randint(-1, 1), random.randint(-1, 1)
+                            try_pos = (x + sx, y + sy)
+                            move_mob = get_array(try_pos, current_layer.mob_array)
+                            move_tile = get_array(try_pos, current_layer.tile_array)
+                            if move_tile and not move_mob:
+                                set_array(try_pos, current_layer.mob_array, Mob(MobID.SPRITE))
+                                if move_tile.has_tag(TileTag.CRUSH):
+                                    set_array(try_pos, current_layer.tile_array,
+                                              Tile(tile_replace[move_tile.id]))
+                                already_mob_ticked.add(current_mob)
+                        else:
+                            if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
+                                # mob wants to move horizontally
+                                try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                            else:
+                                # mob is diagonal or wants to move vertically
+                                try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
+                            move_mob = get_array(try_pos, current_layer.mob_array)
+                            if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
+                                player_health -= mob_damage[current_mob.id]
+                                player_health = max(0, player_health)
+                                message_logs.appendleft(f"the {current_mob.name}")
+                                message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            move_tile = get_array(try_pos, current_layer.tile_array)
+                            if move_tile and not move_mob:
+                                set_array((x, y), current_layer.mob_array, None)
+                                set_array(try_pos, current_layer.mob_array, current_mob)
+                                if move_tile.has_tag(TileTag.CRUSH):
+                                    set_array(try_pos, current_layer.tile_array,
+                                              Tile(tile_replace[move_tile.id]))
+                                already_mob_ticked.add(current_mob)
+
+        # Wizard mode.
+        if wizard_mode:
+            player_stamina = 10
+            player_health = 10
+            do_fov = False
 
         # Check for player death.
         if not player_is_dead and player_health <= 0:
             player_is_dead = True
             message_logs.appendleft("you have died")
-            message_logs.appendleft("press c or esc")
+            message_logs.appendleft("press escape")
 
         # Calculate the light map before drawing if needed.
         if do_calc_light_map:
@@ -1415,8 +1550,8 @@ def main(screen, settings):
         if game_mode is not GameMode.CRAFT:
             write_text((35, 3), "current item", Color.WHITE)
             tile = tile_loader.get_tile(*current_item.graphic)
-            screen.blit(tile, (36 * tile_size.x, 4 * tile_size.y))
-            write_text((38, 4), str(current_item), Color.LIGHT_GRAY)
+            screen.blit(tile, (35 * tile_size.x, 4 * tile_size.y))
+            write_text((37, 4), str(current_item), Color.LIGHT_GRAY)
         else:
             write_text((35, 3), "current recipie", Color.WHITE)
             ingredients = crafting_list[cursor_index]
@@ -1426,8 +1561,9 @@ def main(screen, settings):
                 color = Color.WHITE if craftable((ingredient,), inventory) else Color.LIGHT_GRAY
                 item = Item(*ingredient)
                 tile = tile_loader.get_tile(*item.graphic)
-                screen.blit(tile, (36 * tile_size.x, (3 + index) * tile_size.y))
-                write_text((38, 3 + index), str(item), color)
+                screen.blit(tile, (35 * tile_size.x, (3 + index) * tile_size.y))
+                write_text((37, 3 + index),
+                           f"{item.name} {item.count}/{inventory_count(item.id, inventory)}", color)
 
         if game_mode is not GameMode.CRAFT:
             write_text((35, 6), f"inventory {len(inventory)}", Color.WHITE)

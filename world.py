@@ -138,6 +138,8 @@ def generate_overworld(size: tuple[int, int], world_seed: int, upstairs: list) -
                      random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
             if distance_within_any(point, upstairs, STAIR_STAIR_PAD):
                 continue
+            if distance_within_any(point, down_stairs, STAIR_STAIR_PAD):
+                continue
             stone_count = 0
             for x in (-1, 0, 1):
                 for y in (-1, 0, 1):
@@ -318,7 +320,10 @@ def generate_hell(size: tuple[int, int], world_seed: int, upstairs: list) -> tup
                     if rng.random() + biome < 0.2:
                         world_map[x][y] = Tile(TileID.WEB)
                 elif biome < 0.2:
-                    pass  # dirt
+                    if rng.random() > 0.98:
+                        world_map[x][y] = Tile(TileID.ASH_BONES)
+                    else:
+                        pass  # dirt
                 else:
                     if rng.random() > 0.9:
                         world_map[x][y] = Tile(TileID.LAVA)
@@ -375,11 +380,13 @@ def generate_sky(size: tuple[int, int], world_seed: int, upstairs: list) -> tupl
     for _ in range(number_of_stairs):
         point = (random.randint(STAIR_BORDER_PAD, size[0] - STAIR_BORDER_PAD - 1),
                  random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
+        if distance_within_any(point, down_stairs, STAIR_STAIR_PAD):
+            continue  # don't spawn too near any other staircases
         for x in (-1, 0, 1):
             for y in (-1, 0, 1):
                 if x == y == 0:
                     world_map[point[0]][point[1]] = Tile(TileID.DOWN_STAIRS)
-                else:
+                elif distance_within((0, 0), (x, y), 11.5):
                     world_map[point[0] + x][point[1] + y] = Tile(TileID.CLOUD)
         down_stairs.append(point)
     return world_map, down_stairs

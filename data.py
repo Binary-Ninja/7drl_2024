@@ -24,14 +24,16 @@ class Color:
     MOB_BLACK = (64, 64, 64)
     BROWN = (170, 85, 0)
     DARK_BROWN = (32, 16, 0)
+    FLOOR_BROWN = (64, 32, 0)
     ORANGE = (255, 128, 0)
     IRON = (230, 230, 230)
     GOLD = (255, 215, 0)
-    GEM = (200, 0, 255)
+    GEM = (255, 0, 255)
     DARK_GRAY = (64, 64, 64)
     LIGHT_BROWN = (200, 200, 170)
     LIGHT_BLUE = (100, 100, 255)
     OBSIDIAN = (150, 0, 210)
+    DARK_OBSIDIAN = (75, 0, 100)
     PINK = (255, 100, 255)
 
 
@@ -47,6 +49,7 @@ class Graphic:
     DOWN_STAIRS = (3, 6)
     UP_STAIRS = (2, 6)
     WHEAT = (17, 6)
+    CROP2 = (16, 6)
     PALM_TREE = (7, 2)
     ORE = (1, 2)
     DESERT_BONES = (0, 15)
@@ -58,12 +61,15 @@ class Graphic:
     GRASS2 = (1, 0)
     TREE2 = (4, 1)
     THORNS = (6, 2)
+    OBSIDIAN = (4, 0)
 
     WINDOW = (1, 4)
     PLANKS = (13, 16)
     BRICKS = (10, 17)
     DOOR_CLOSED = (8, 9)
     DOOR_OPEN = (9, 9)
+    FLOOR1 = (16, 0)
+    FLOOR2 = (17, 0)
 
     PLAYER = (25, 0)
     ZOMBIE = (24, 9)
@@ -99,7 +105,10 @@ class Graphic:
     BED = (5, 8)
     CAULDRON = (5, 14)
     SKULL_BOOKS = (4, 7)
+    LOOM = (44, 9)
+    BOMB = (45, 9)
 
+    BUCKET = (47, 3)
     DIRT = (6, 0)
     STONE_ITEM = (5, 2)
     TORCH_ITEM = (43, 3)
@@ -111,6 +120,7 @@ class Graphic:
     CARROT = (34, 20)
     BOTTLE = (33, 19)
     SEEDS = (14, 6)
+    SEEDS2 = (13, 6)
     PICKAXE = (43, 5)
     SWORD = (32, 8)
     SHOVEL = (42, 5)
@@ -134,6 +144,7 @@ class Graphic:
     MEAT = (33, 16)
     EYE = (41, 3)
     MEAT2 = (34, 19)
+    ALIEN_TECH = (21, 12)
 
 
 str_2_tile = {
@@ -225,6 +236,8 @@ class MobID(Enum):
     CAT = 34
     PIG = 35
     CLOUD_SPIDER = 36
+    LOOM = 37
+    SPRITE = 38
 
 
 class MobTag(Enum):
@@ -240,6 +253,7 @@ class MobTag(Enum):
     NO_DESPAWN = auto()
     BED = auto()
     SWAPPABLE = auto()
+    AI_AIR_WIZARD = auto()
 
 
 class ItemID(Enum):
@@ -341,6 +355,16 @@ class ItemID(Enum):
     DOG_EGG = 96
     PIG_EGG = 97
     CHICKEN_EGG = 98
+    WOOD_FLOOR = 99
+    STONE_FLOOR = 100
+    TUBER_SEEDS = 101
+    BUCKET = 102
+    WATER_BUCKET = 103
+    LAVA_BUCKET = 104
+    OBSIDIAN = 105
+    OBSIDIAN_FLOOR = 106
+    OBSIDIAN_WALL = 108
+    LOOM = 109
 
 
 class ItemTag(Enum):
@@ -396,6 +420,13 @@ class TileID(Enum):
     SHROOM_SAPLING = 37
     ASH = 38
     QUARTZ_ORE = 39
+    ASH_BONES = 40
+    WOOD_FLOOR = 41
+    STONE_FLOOR = 42
+    TUBER_SEEDS = 43
+    TUBER_CROP = 44
+    OBSIDIAN = 45
+    OBSIDIAN_FLOOR = 46
 
 
 class TileTag(Enum):

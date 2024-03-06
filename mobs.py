@@ -11,8 +11,9 @@ recipies = {
         ((ItemID.OVEN, 1), (ItemID.STONE, 10)),
         ((ItemID.FURNACE, 1), (ItemID.STONE, 20)),
         ((ItemID.ANVIL, 1), (ItemID.IRON_BAR, 5)),
-        ((ItemID.WOOD_LANTERN, 1), (ItemID.WOOD, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.LOOM, 2), (ItemID.WOOD, 10), (ItemID.STRING, 5)),
         ((ItemID.TORCH, 2), (ItemID.WOOD, 2), (ItemID.COAL, 1)),
+        ((ItemID.WOOD_LANTERN, 1), (ItemID.WOOD, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
         ((ItemID.WOOD_SWORD, 1), (ItemID.WOOD, 5)),
         ((ItemID.WOOD_PICK, 1), (ItemID.WOOD, 5)),
         ((ItemID.WOOD_AXE, 1), (ItemID.WOOD, 5)),
@@ -23,12 +24,12 @@ recipies = {
         ((ItemID.STONE_AXE, 1), (ItemID.WOOD, 5), (ItemID.STONE, 5)),
         ((ItemID.STONE_SHOVEL, 1), (ItemID.WOOD, 5), (ItemID.STONE, 5)),
         ((ItemID.STONE_HOE, 1), (ItemID.WOOD, 5), (ItemID.STONE, 5)),
-        ((ItemID.STRING, 4), (ItemID.CLOTH, 1), ),
-        ((ItemID.CLOTH, 1), (ItemID.STRING, 4)),
-        ((ItemID.BED, 1), (ItemID.WOOD, 10), (ItemID.CLOTH, 10)),
-        ((ItemID.WOOD_WALL, 1), (ItemID.WOOD, 4)),
+        ((ItemID.FISH_SPEAR, 1), (ItemID.WOOD, 5), (ItemID.STRING, 5)),
+        ((ItemID.WOOD_FLOOR, 1), (ItemID.WOOD, 4)),
+        ((ItemID.WOOD_WALL, 1), (ItemID.WOOD, 8)),
         ((ItemID.WOOD_DOOR, 1), (ItemID.WOOD, 8)),
-        ((ItemID.STONE_WALL, 1), (ItemID.STONE, 4)),
+        ((ItemID.STONE_FLOOR, 1), (ItemID.STONE, 4)),
+        ((ItemID.STONE_WALL, 1), (ItemID.STONE, 8)),
         ((ItemID.COCKTAIL, 1), (ItemID.BOTTLE, 1), (ItemID.APPLE, 1), (ItemID.COCONUT, 1), (ItemID.POKE_PEAR, 1)),
     ),
     MobID.OVEN: (
@@ -50,24 +51,35 @@ recipies = {
         ((ItemID.GOLD_APPLE, 1), (ItemID.APPLE, 1), (ItemID.GOLD_BAR, 15), (ItemID.COAL, 2)),
     ),
     MobID.ANVIL: (
+        ((ItemID.IRON_LANTERN, 1), (ItemID.IRON_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.GOLD_LANTERN, 1), (ItemID.GOLD_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.GEM_LANTERN, 1), (ItemID.GEM, 25), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.BUCKET, 1), (ItemID.IRON_BAR, 5), ),
         ((ItemID.IRON_SWORD, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
         ((ItemID.IRON_PICK, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
         ((ItemID.IRON_AXE, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
         ((ItemID.IRON_SHOVEL, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
         ((ItemID.IRON_HOE, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
+        ((ItemID.IRON_FISH_SPEAR, 1), (ItemID.IRON_BAR, 5), (ItemID.STRING, 5)),
         ((ItemID.GOLD_SWORD, 1), (ItemID.WOOD, 5), (ItemID.GOLD_BAR, 5)),
         ((ItemID.GOLD_PICK, 1), (ItemID.WOOD, 5), (ItemID.GOLD_BAR, 5)),
         ((ItemID.GOLD_AXE, 1), (ItemID.WOOD, 5), (ItemID.GOLD_BAR, 5)),
         ((ItemID.GOLD_SHOVEL, 1), (ItemID.WOOD, 5), (ItemID.GOLD_BAR, 5)),
         ((ItemID.GOLD_HOE, 1), (ItemID.WOOD, 5), (ItemID.GOLD_BAR, 5)),
+        ((ItemID.GOLD_FISH_SPEAR, 1), (ItemID.GOLD_BAR, 5), (ItemID.STRING, 5)),
         ((ItemID.GEM_SWORD, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
         ((ItemID.GEM_PICK, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
         ((ItemID.GEM_AXE, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
         ((ItemID.GEM_SHOVEL, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
         ((ItemID.GEM_HOE, 1), (ItemID.WOOD, 5), (ItemID.GEM, 50)),
-        ((ItemID.IRON_LANTERN, 1), (ItemID.IRON_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
-        ((ItemID.GOLD_LANTERN, 1), (ItemID.GOLD_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
-        ((ItemID.GEM_LANTERN, 1), (ItemID.GEM, 25), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.GEM_FISH_SPEAR, 1), (ItemID.GEM, 50), (ItemID.STRING, 5)),
+        ((ItemID.OBSIDIAN_FLOOR, 1), (ItemID.OBSIDIAN, 4)),
+        ((ItemID.OBSIDIAN_WALL, 1), (ItemID.OBSIDIAN, 8)),
+    ),
+    MobID.LOOM: (
+        ((ItemID.STRING, 4), (ItemID.CLOTH, 1),),
+        ((ItemID.CLOTH, 1), (ItemID.STRING, 4)),
+        ((ItemID.BED, 1), (ItemID.WOOD, 10), (ItemID.CLOTH, 10)),
     ),
 }
 
@@ -91,9 +103,10 @@ mob_damage = {
     MobID.HELL_SPIDER: 3,
     MobID.CLOUD_SPIDER: 4,
     MobID.FAIRY: 3,
+    MobID.SPRITE: 1,
 }
 
-mob_ai_timer = defaultdict(lambda: 1)
+mob_ai_timer = defaultdict(lambda: 2)
 mob_ai_timer.update({
     MobID.GREEN_ZOMBIE: 3,
     MobID.GREEN_SLIME: 3,
@@ -114,6 +127,7 @@ mob_ai_timer.update({
     MobID.HELL_SPIDER: 1,
     MobID.SHADE: 1,
     MobID.FAIRY: 1,
+    MobID.SPRITE: 2,
 })
 
 
@@ -132,6 +146,8 @@ mob_data = {
                                tuple(), 1),
     MobID.FAIRY: MobData("pixie", (Graphic.FAIRY, Color.PINK), 5, (MobTag.AI_WANDER, MobTag.DAMAGE, MobTag.NO_DESPAWN),
                                tuple(), 1),
+    MobID.SPRITE: MobData("sprite", (Graphic.FAIRY, Color.RED), 5, (MobTag.AI_FOLLOW, MobTag.DAMAGE, MobTag.NO_DESPAWN),
+                         tuple(), 1),
     MobID.SPIDER: MobData("spider", (Graphic.SPIDER, Color.MED_GRAY), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE,)),
     MobID.HELL_SPIDER: MobData("hellspider", (Graphic.SPIDER, Color.RED), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE)),
     MobID.CLOUD_SPIDER: MobData("skyspider", (Graphic.SPIDER, Color.LIGHT_BLUE), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE,
@@ -154,9 +170,12 @@ mob_data = {
                                                                               MobTag.NO_DESPAWN)),
     MobID.BLACK_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_BLACK), 10,
                                   (MobTag.PUSHABLE, MobTag.AI_SHOOT, MobTag.DAMAGE, MobTag.NO_DESPAWN)),
-    MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100, (MobTag.DAMAGE, MobTag.NO_DESPAWN)),
+    MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100, (MobTag.DAMAGE, MobTag.NO_DESPAWN,
+                                                                                   MobTag.AI_AIR_WIZARD)),
     MobID.WORKBENCH: MobData("workbench", (Graphic.WORKBENCH, Color.BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.WORKBENCH]),
+    MobID.LOOM: MobData("loom", (Graphic.LOOM, Color.LIGHT_BROWN), 10,
+                             (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.LOOM]),
     MobID.OVEN: MobData("oven", (Graphic.OVEN, Color.LIGHT_BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.OVEN]),
     MobID.FURNACE: MobData("furnace", (Graphic.FURNACE, Color.LIGHT_GRAY), 10,
@@ -194,6 +213,8 @@ class Mob:
         self.state = 'wander'
         self.ai_tick = 0
         self.ai_timer = mob_ai_timer[self.id]
+        self.ai_state_timer = self.ai_tick
+        self.ai_state_freq = 50
 
     def has_tag(self, tag: MobTag) -> bool:
         return tag in self.tags

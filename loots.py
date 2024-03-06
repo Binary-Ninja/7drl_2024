@@ -19,15 +19,20 @@ tile_break_loot.update({
                     LootItem(ItemID.CACTUS_SAPLING, 0.8, 1, 2)),
     TileID.DIRT: (LootItem(ItemID.DIRT), ),
     TileID.WHEAT: (LootItem(ItemID.WHEAT, 1.0, 3, 4), ),
+    TileID.TUBER_CROP: (LootItem(ItemID.TUBER, 1.0, 3, 4),),
     TileID.PALM_TREE: (LootItem(ItemID.WOOD, 1.0, 1, 3), LootItem(ItemID.COCONUT, 0.8, 1, 3),
                        LootItem(ItemID.PALM_TREE_SAPLING, 0.8, 1, 2)),
     TileID.IRON_ORE: (LootItem(ItemID.IRON_ORE, 1.0, 2, 4), ),
     TileID.GOLD_ORE: (LootItem(ItemID.GOLD_ORE, 1.0, 2, 4), ),
     TileID.GEM_ORE: (LootItem(ItemID.GEM, 1.0, 3, 6), ),
     TileID.DESERT_BONES: (LootItem(ItemID.BONE, 1.0, 2, 4), ),
+    TileID.ASH_BONES: (LootItem(ItemID.BONE, 1.0, 2, 4), LootItem(ItemID.COAL, 1.0, 1, 2),
+                       LootItem(ItemID.ASH, 1.0, 2, 4)),
     TileID.WINDOW: (LootItem(ItemID.WINDOW, 1.0, 1, 1), ),
     TileID.WOOD_WALL: (LootItem(ItemID.WOOD_WALL),),
     TileID.STONE_WALL: (LootItem(ItemID.STONE_WALL),),
+    TileID.WOOD_FLOOR: (LootItem(ItemID.WOOD_FLOOR),),
+    TileID.STONE_FLOOR: (LootItem(ItemID.STONE_FLOOR),),
     TileID.CLOSED_WOOD_DOOR: (LootItem(ItemID.WOOD_DOOR),),
     TileID.OPEN_WOOD_DOOR: (LootItem(ItemID.WOOD_DOOR),),
     TileID.TREE_SAPLING: (LootItem(ItemID.TREE_SAPLING),),
@@ -42,8 +47,12 @@ tile_break_loot.update({
     TileID.THORNS: (LootItem(ItemID.WOOD, 0.5),),
     TileID.FLOOR_FUNGUS: (LootItem(ItemID.FUNGUS, 1.0, 1, 2),),
     TileID.BIG_MUSHROOM: (LootItem(ItemID.SHROOM_SAPLING, 0.8, 1, 2), LootItem(ItemID.FUNGUS, 1.0, 2, 4),
-                          LootItem(ItemID.TUBER, 1.0, 2, 3)),
+                          LootItem(ItemID.TUBER_SEEDS, 1.0, 2, 3)),
     TileID.QUARTZ_ORE: (LootItem(ItemID.QUARTZ, 1.0, 1, 3),),
+    TileID.TUBER_SEEDS: (LootItem(ItemID.TUBER_SEEDS),),
+    TileID.OBSIDIAN_BRICKS: (LootItem(ItemID.OBSIDIAN_WALL),),
+    TileID.OBSIDIAN_FLOOR: (LootItem(ItemID.OBSIDIAN_FLOOR),),
+    TileID.OBSIDIAN: (LootItem(ItemID.OBSIDIAN, 1.0, 2, 4),),
 })
 
 mob_death_loot = defaultdict(tuple)
@@ -78,7 +87,8 @@ mob_death_loot.update({
     MobID.CAT: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
     MobID.PIG: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
     MobID.CHICKEN: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
-    MobID.FAIRY: (LootItem(ItemID.GEM_HOE), ),
+    MobID.FAIRY: (LootItem(ItemID.FAIRY_DUST, 1.0, 1, 3), ),
+    MobID.SPRITE: (LootItem(ItemID.FAIRY_DUST, 1.0, 1, 3),),
 })
 
 fishing_loot = defaultdict(tuple)
