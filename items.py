@@ -39,7 +39,7 @@ item_data = {
                                }),
     ItemID.SPAWN_EGG_GREEN_ZOMBIE: ItemData("spawn egg", (Graphic.EGG, Color.MOB_GREEN),
                                (ItemTag.SPAWN_MOB,), {
-                                   "mobid": MobID.GREEN_ZOMBIE,
+                                   "mobid": MobID.SPRITE,
                                }),
     ItemID.DUCK_EGG: ItemData("spawn egg", (Graphic.EGG, Color.LIGHT_BROWN),
                                             (ItemTag.SPAWN_MOB,), {
@@ -187,7 +187,7 @@ item_data = {
                                 "stamina_cost": 0,
                                 "stamina": 3,
                             }),
-    ItemID.SPIDER_EYE: ItemData("spidereye", (Graphic.EYE, Color.RED),
+    ItemID.SPIDER_EYE: ItemData("eye", (Graphic.EYE, Color.RED),
                            (ItemTag.STACKABLE, ItemTag.HEAL), {
                                "heal": -3,
                                "stamina_cost": 1,
@@ -206,7 +206,7 @@ item_data = {
                            (ItemTag.STACKABLE, ItemTag.STAMINA, ItemTag.HEAL), {
                                "heal": -2,
                                "stamina_cost": 0,
-            "stamina": 5,
+            "stamina": 8,
                            }),
     ItemID.COOKED_FISH: ItemData("fish meat", (Graphic.MEAT, Color.LIGHT_BLUE),
                           (ItemTag.STACKABLE, ItemTag.HEAL), {
@@ -313,7 +313,7 @@ item_data = {
                               (ItemTag.STACKABLE,), ),
     ItemID.LAPIS: ItemData("lapis", (Graphic.STONE_ITEM, Color.BLUE),
                               (ItemTag.STACKABLE,), ),
-    ItemID.QUARTZ: ItemData("quartz", (Graphic.INGOT, Color.WHITE),
+    ItemID.QUARTZ: ItemData("quartz", (Graphic.CRYSTAL, Color.WHITE),
                            (ItemTag.STACKABLE,), ),
     ItemID.GOLD_ORE: ItemData("g. ore", (Graphic.STONE_ITEM, Color.GOLD),
                            (ItemTag.STACKABLE,), ),

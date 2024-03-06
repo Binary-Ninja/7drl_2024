@@ -205,6 +205,8 @@ def generate_caves(size: tuple[int, int], world_seed: int, upstairs: list) -> tu
                      random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
             if distance_within_any(point, upstairs, STAIR_STAIR_PAD):
                 continue
+            if distance_within_any(point, down_stairs, STAIR_STAIR_PAD):
+                continue
             stone_count = 0
             for x in (-1, 0, 1):
                 for y in (-1, 0, 1):
@@ -278,6 +280,8 @@ def generate_caverns(size: tuple[int, int], world_seed: int, upstairs: list) -> 
             point = (random.randint(STAIR_BORDER_PAD, size[0] - STAIR_BORDER_PAD - 1),
                      random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
             if distance_within_any(point, upstairs, STAIR_STAIR_PAD):
+                continue
+            if distance_within_any(point, down_stairs, STAIR_STAIR_PAD):
                 continue
             stone_count = 0
             for x in (-1, 0, 1):
@@ -382,11 +386,11 @@ def generate_sky(size: tuple[int, int], world_seed: int, upstairs: list) -> tupl
                  random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
         if distance_within_any(point, down_stairs, STAIR_STAIR_PAD):
             continue  # don't spawn too near any other staircases
-        for x in (-1, 0, 1):
-            for y in (-1, 0, 1):
+        for x in range(-3, 4):
+            for y in range(-3, 4):
                 if x == y == 0:
                     world_map[point[0]][point[1]] = Tile(TileID.DOWN_STAIRS)
-                elif distance_within((0, 0), (x, y), 11.5):
+                elif distance_within((0, 0), (x, y), 3.5):
                     world_map[point[0] + x][point[1] + y] = Tile(TileID.CLOUD)
         down_stairs.append(point)
     return world_map, down_stairs

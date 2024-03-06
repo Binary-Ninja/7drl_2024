@@ -4,12 +4,13 @@ import sys
 from pathlib import Path
 import random
 from collections import deque
-from enum import Enum, auto
+from enum import Enum, auto, StrEnum
 from typing import Sequence
 
 import pygame as pg
 
 from tileloader import TileLoader
+from soundloader import SoundLoader
 from world import World, set_array, get_array, make_2d_array
 from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
@@ -31,6 +32,16 @@ class GameMode(Enum):
     MOVE = auto()
     INVENTORY = auto()
     CRAFT = auto()
+
+
+class Sound(StrEnum):
+    HURT = "hurt"
+    HEAL = "heal"
+    FAILURE = "failure"
+    SUCCESS = "success"
+    USE_ITEM = "use_item"
+    INDICATOR = "indicator"
+    HURT_ENEMY = "hurt_enemy"
 
 
 NO_ITEM = Item(ItemID.EMPTY_HANDS)
@@ -59,7 +70,8 @@ tile_loader = TileLoader(Path() / "kenney_tileset.png", tile_size)
 
 
 def main_menu(screen) -> dict:
-    options = {"size": (100, 100), "day_cycle_len": 500, "mob_spawn": 0.2, "wizard": False}
+    options = {"size": (100, 100), "day_cycle_len": 500, "mob_spawn": 0.2, "sound": True, "music": True,
+               "wizard": False}
     start_game = False
     clock = pg.time.Clock()
 
@@ -75,11 +87,13 @@ def main_menu(screen) -> dict:
         (("day length - 200", 200), ("day length - 350", 350), ("day length - 500", 500), ("day length - 650", 650)),
         (("mob spawn rate - low", 0.05), ("mob spawn rate - medium", 0.1),
          ("mob spawn rate - high", 0.2), ("mob spawn rate - annoying", 0.4)),
+        (("sounds - on", True), ("sounds - off", False)),
+        (("music - on", True), ("music - off", False)),
     )
 
-    choice_index = [1, 2, 2]
+    choice_index = [1, 2, 2, 0, 0]
 
-    index_2_option = {0: "size", 1: "day_cycle_len", 2: "mob_spawn"}
+    index_2_option = {0: "size", 1: "day_cycle_len", 2: "mob_spawn", 3: "sound", 4: "music"}
 
     def write_text(pos: PointType, text: str, color: tuple[int, int, int]):
         for index, char in enumerate(text):
@@ -133,6 +147,8 @@ def main_menu(screen) -> dict:
         write_text((0, 2), f"{'up and down arrow to select setting':^50}", Color.WHITE)
         write_text((0, 3), f"{'left and right arrow to cycle setting':^50}", Color.WHITE)
         write_text((0, 4), f"{'press c to generate new world':^50}", Color.WHITE)
+        if not mixer_available:
+            write_text((0, 5), f"{'sound playback is not available on this system':^50}", Color.RED)
 
         write_text((0, 22), f"{'credits':^50}", Color.WHITE)
         write_text((0, 23), f"{'sprites by kenney.nl':^50}", Color.LIGHT_GRAY)
@@ -171,6 +187,13 @@ def main(screen, settings):
     clock = pg.time.Clock()
     font = pg.font.Font(None, 20)
     game_is_going = True
+
+    if not mixer_available:
+        settings["sound"] = False
+        settings["music"] = False
+
+    sound_loader = SoundLoader(Path() / "sound", settings["sound"])
+    sounds_to_play: set[Sound] = set()
 
     global tile_size
     global tile_loader
@@ -297,10 +320,10 @@ def main(screen, settings):
     inventory: list[Item] = [Item(ItemID.WORKBENCH),
                              Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
                              Item(ItemID.GEM_AXE, 1), Item(ItemID.STONE_FLOOR, 99),
-                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.BUCKET, 1),
+                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 99),
                              Item(ItemID.WOOD, 100), Item(ItemID.WOOD_FLOOR, 99),
                              Item(ItemID.OVEN, 1), Item(ItemID.FURNACE, 1),
-                             Item(ItemID.IRON_BAR, 100), Item(ItemID.OBSIDIAN, 99),
+                             Item(ItemID.IRON_BAR, 100), Item(ItemID.PASTRY, 99),
                              Item(ItemID.ANVIL, 1), Item(ItemID.LOOM, 1),
                              ]
 
@@ -475,9 +498,11 @@ def main(screen, settings):
                     else:
                         message_logs.appendleft("you bump into")
                         message_logs.appendleft(f"the {move_mob.name}")
+                        sounds_to_play.add(Sound.FAILURE)
                 else:
                     message_logs.appendleft("you bump into")
                     message_logs.appendleft(f"the {move_mob.name}")
+                    sounds_to_play.add(Sound.FAILURE)
             elif move_mob.has_tag(MobTag.SWAPPABLE):
                 swapped = True
                 try_tile = get_array(try_pos, current_layer.tile_array)
@@ -499,6 +524,7 @@ def main(screen, settings):
             else:
                 message_logs.appendleft("you bump into")
                 message_logs.appendleft(f"the {move_mob.name}")
+                sounds_to_play.add(Sound.FAILURE)
             if not swapped:
                 return player_pos
             else:
@@ -507,10 +533,12 @@ def main(screen, settings):
         if move_tile is None:
             message_logs.appendleft("you stare into")
             message_logs.appendleft("the abyss")
+            sounds_to_play.add(Sound.FAILURE)
             return player_pos
         if move_tile.id == TileID.AIR:
             message_logs.appendleft("you teeter on")
             message_logs.appendleft("the clouds edge")
+            sounds_to_play.add(Sound.FAILURE)
             return player_pos
         damage = tile_damage[move_tile.id]
         drain = tile_drain[move_tile.id]
@@ -522,6 +550,7 @@ def main(screen, settings):
                 message_logs.appendleft(f"for -{damage}H")
                 player_health -= damage
                 player_health = max(0, player_health)
+                sounds_to_play.add(Sound.HURT)
             if move_tile.has_tag(TileTag.DRAIN):
                 message_logs.appendleft("it drains your")
                 message_logs.appendleft(f"stamina -{drain}S")
@@ -534,6 +563,7 @@ def main(screen, settings):
             message_logs.appendleft(f"hurts you -{damage}H")
             player_health -= damage
             player_health = max(0, player_health)
+            sounds_to_play.add(Sound.HURT)
         if move_tile.has_tag(TileTag.DRAIN):
             message_logs.appendleft(f"the {move_tile.name}")
             message_logs.appendleft(f"slows you -{drain}S")
@@ -547,6 +577,7 @@ def main(screen, settings):
                 player_health = max(0, player_health)
                 message_logs.appendleft("you are sinking")
                 message_logs.appendleft(f"in {move_tile.name} -1H")
+                sounds_to_play.add(Sound.HURT)
             player_stamina = max(0, player_stamina)
             regen_stam = False
         if move_tile.has_tag(TileTag.CRUSH):
@@ -589,9 +620,11 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index -= 1
                         cursor_index %= len(inventory)
+                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index -= 1
                         cursor_index %= len(crafting_list)
+                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_DOWN:
                     if player_is_dead:
                         continue
@@ -606,9 +639,11 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index += 1
                         cursor_index %= len(inventory)
+                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index += 1
                         cursor_index %= len(crafting_list)
+                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_LEFT:
                     if player_is_dead:
                         continue
@@ -623,9 +658,11 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index -= 1
                         cursor_index %= len(inventory)
+                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index -= 1
                         cursor_index %= len(crafting_list)
+                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_RIGHT:
                     if player_is_dead:
                         continue
@@ -640,9 +677,11 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index += 1
                         cursor_index %= len(inventory)
+                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index += 1
                         cursor_index %= len(crafting_list)
+                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_c:
                     if player_is_dead:
                         continue
@@ -657,11 +696,13 @@ def main(screen, settings):
                         if current_item.tags == (ItemTag.STACKABLE,):
                             message_logs.appendleft("you cannot use")
                             message_logs.appendleft(f"the {current_item.name}")
+                            sounds_to_play.add(Sound.FAILURE)
                         if current_item is NO_ITEM and target_mob is None and \
                                 target_tile.id not in current_item.data["breakable"]:
                             message_logs.appendleft("your hands are")
                             message_logs.appendleft("empty")
                             displayed_empty_hands_message = True
+                            sounds_to_play.add(Sound.FAILURE)
                         if current_item.has_tag(ItemTag.SPAWN_MOB):
                             # if there is no mob, spawn one in
                             mob = Mob(current_item.data["mobid"])
@@ -678,14 +719,17 @@ def main(screen, settings):
                                         displayed_empty_hands_message = True
                                     message_logs.appendleft("you place the")
                                     message_logs.appendleft(f"{mob.name}")
+                                    sounds_to_play.add(Sound.SUCCESS)
                                     if mob.light > 0:
                                         do_calc_light_map = True
                                 else:
                                     message_logs.appendleft("you do not have")
                                     message_logs.appendleft("the stamina")
+                                    sounds_to_play.add(Sound.FAILURE)
                             else:
                                 message_logs.appendleft("you cannot put")
                                 message_logs.appendleft(f"{mob.name} here")
+                                sounds_to_play.add(Sound.FAILURE)
                         if current_item.has_tag(ItemTag.PICKUP):
                             if target_mob is not None:
                                 item = item_to_mob[target_mob.id]
@@ -701,9 +745,11 @@ def main(screen, settings):
                                         message_logs.appendleft(f"{item.name}")
                                         if target_mob.light > 0:
                                             do_calc_light_map = True
+                                        sounds_to_play.add(Sound.SUCCESS)
                                     else:
                                         message_logs.appendleft("you do not have")
                                         message_logs.appendleft("the stamina")
+                                        sounds_to_play.add(Sound.FAILURE)
                         if current_item.has_tag(ItemTag.HEAL):
                             if player_health < 10:
                                 if reduce_stamina(current_item.data["stamina_cost"]):
@@ -716,8 +762,10 @@ def main(screen, settings):
                                     if player_health - prev_ph >= 0:
                                         message_logs.appendleft(f"{current_item.name} "
                                                                 f"+{player_health - prev_ph}H")
+                                        sounds_to_play.add(Sound.HEAL)
                                     else:
                                         message_logs.appendleft(f"{current_item.name} {player_health - prev_ph}H")
+                                        sounds_to_play.add(Sound.HURT)
                                     if current_item.count <= 0:
                                         current_item = NO_ITEM
                                         inventory.remove(NO_ITEM)
@@ -725,6 +773,7 @@ def main(screen, settings):
                                 else:
                                     message_logs.appendleft("you do not have")
                                     message_logs.appendleft("the stamina")
+                                    sounds_to_play.add(Sound.FAILURE)
                             else:
                                 message_logs.appendleft("you have full")
                                 message_logs.appendleft("health points")
@@ -737,6 +786,7 @@ def main(screen, settings):
                                 message_logs.appendleft("you eat the")
                                 message_logs.appendleft(f"{current_item.name} "
                                                         f"+{player_stamina - prev_ps}S")
+                                sounds_to_play.add(Sound.HEAL)
                                 if current_item.count <= 0:
                                     current_item = NO_ITEM
                                     inventory.remove(NO_ITEM)
@@ -774,10 +824,12 @@ def main(screen, settings):
                                         displayed_empty_hands_message = True
                                     if current_item.id in (ItemID.WATER_BUCKET, ItemID.LAVA_BUCKET):
                                         current_item = Item(ItemID.BUCKET)
+                                    sounds_to_play.add(Sound.USE_ITEM)
                                 else:
                                     displayed_no_use_message = True
                                     message_logs.appendleft("you do not have")
                                     message_logs.appendleft("the stamina")
+                                    sounds_to_play.add(Sound.FAILURE)
                             else:
                                 displayed_no_use_message = True
                                 if current_item.has_tag(ItemTag.STACKABLE):
@@ -786,11 +838,13 @@ def main(screen, settings):
                                 else:
                                     message_logs.appendleft("you cannot use")
                                     message_logs.appendleft(f"{current_item.name} here")
+                                sounds_to_play.add(Sound.FAILURE)
                                 if current_item.has_tag(ItemTag.BREAK_TILE) and target_tile is not None and\
                                     target_tile.id in current_item.data["breakable"]:
                                     displayed_no_use_message = False
                                     message_logs.popleft()
                                     message_logs.popleft()
+                                    sounds_to_play.remove(Sound.FAILURE)
                         if current_item.has_tag(ItemTag.BREAK_TILE):
                             if not (current_item.has_tag(ItemTag.DAMAGE_MOBS) and target_mob) and \
                                     not just_placed_a_tile and not displayed_no_use_message:
@@ -800,6 +854,7 @@ def main(screen, settings):
                                         if reduce_stamina(stam_cost):
                                             damage = current_item.data["tile_damage"]
                                             target_tile.health -= damage
+                                            sounds_to_play.add(Sound.USE_ITEM)
                                             if target_tile.health > 0:
                                                 message_logs.appendleft("you strike the")
                                                 message_logs.appendleft(f"{target_tile.name} "
@@ -832,13 +887,16 @@ def main(screen, settings):
                                         else:
                                             message_logs.appendleft("you do not have")
                                             message_logs.appendleft("the stamina")
+                                            sounds_to_play.add(Sound.FAILURE)
                                     elif displayed_empty_hands_message is False and not \
                                             current_item.has_tag(ItemTag.DAMAGE_MOBS):
                                         message_logs.appendleft("you cannot use")
                                         message_logs.appendleft(f"{current_item.name}")
+                                        sounds_to_play.add(Sound.FAILURE)
                                 else:
                                     message_logs.appendleft("the unfeeling")
                                     message_logs.appendleft("void mocks you")
+                                    sounds_to_play.add(Sound.FAILURE)
                         if current_item.has_tag(ItemTag.DAMAGE_MOBS):
                             if not just_broken_a_tile:
                                 if target_mob is not None and not target_mob.has_tag(MobTag.CRAFTING):
@@ -846,6 +904,7 @@ def main(screen, settings):
                                     if reduce_stamina(stam_cost):
                                         damage = current_item.data["mob_damage"]
                                         target_mob.health -= damage
+                                        sounds_to_play.add(Sound.HURT_ENEMY)
                                         if target_mob.health <= 0:
                                             set_array(target_pos,
                                                       current_layer.mob_array,
@@ -872,9 +931,11 @@ def main(screen, settings):
                                     else:
                                         message_logs.appendleft("you do not have")
                                         message_logs.appendleft("the stamina")
+                                        sounds_to_play.add(Sound.FAILURE)
                                 elif displayed_empty_hands_message is False:
                                     message_logs.appendleft("you strike at")
                                     message_logs.appendleft("air uselessly")
+                                    sounds_to_play.add(Sound.FAILURE)
                         if current_item.has_tag(ItemTag.FISH):
                             if target_tile is not None and target_tile.id in current_item.data["fishable"]:
                                 if reduce_stamina(current_item.data["stamina_cost"]):
@@ -883,15 +944,20 @@ def main(screen, settings):
                                         add_to_inventory(loot, inventory)
                                         message_logs.appendleft("you fish and")
                                         message_logs.appendleft(f"catch {loot.name}")
+                                        sounds_to_play.add(Sound.SUCCESS)
                                     else:
                                         message_logs.appendleft("you fish and")
                                         message_logs.appendleft("catch nothing")
+                                        sounds_to_play.add(Sound.USE_ITEM)
                                 else:
                                     message_logs.appendleft("you do not have")
                                     message_logs.appendleft("the stamina")
+                                    sounds_to_play.add(Sound.FAILURE)
                             else:
+                                tile_name = "the void" if target_tile is None else target_tile.name
                                 message_logs.appendleft("you cannot fish")
-                                message_logs.appendleft(f"in {target_tile.name}")
+                                message_logs.appendleft(f"in {tile_name}")
+                                sounds_to_play.add(Sound.FAILURE)
                         just_broken_a_tile = False
                         displayed_empty_hands_message = False
                         displayed_no_use_message = False
@@ -903,6 +969,7 @@ def main(screen, settings):
                         # back to move mode
                         cursor_index = 0
                         game_mode = GameMode.MOVE
+                        sounds_to_play.add(Sound.SUCCESS)
                     else:
                         ingredients = crafting_list[cursor_index][1:]
                         if craftable(ingredients, inventory):
@@ -915,6 +982,12 @@ def main(screen, settings):
                             # alert the player that it worked
                             message_logs.appendleft("you crafted")
                             message_logs.appendleft(f"{item}")
+                            sounds_to_play.add(Sound.SUCCESS)
+                        else:
+                            craft_item = Item(*crafting_list[cursor_index][0])
+                            message_logs.appendleft("you cant craft")
+                            message_logs.appendleft(f"{craft_item}")
+                            sounds_to_play.add(Sound.FAILURE)
                 elif event.key == pg.K_x:
                     if player_is_dead:
                         continue
@@ -924,6 +997,7 @@ def main(screen, settings):
                         crafting_list = None
                         cursor_index = 0
                         game_mode = GameMode.MOVE
+                        sounds_to_play.add(Sound.FAILURE)
                     else:
                         # We must be in move mode.
                         target_pos = Point(player_pos.x + player_dir.x,
@@ -938,6 +1012,7 @@ def main(screen, settings):
                             crafting_list = current_crafter.recipies
                             message_logs.appendleft("you craft with")
                             message_logs.appendleft(f"the {current_crafter.name}")
+                            sounds_to_play.add(Sound.SUCCESS)
                         elif target_mob and target_mob.has_tag(MobTag.BED):
                             if night_time:
                                 night_time = False
@@ -945,14 +1020,17 @@ def main(screen, settings):
                                 day_cycle_timer = world_time
                                 message_logs.appendleft("you sleep the")
                                 message_logs.appendleft("night away")
+                                sounds_to_play.add(Sound.SUCCESS)
                             else:
                                 message_logs.appendleft("you cannot rest")
                                 message_logs.appendleft("during the day")
+                                sounds_to_play.add(Sound.FAILURE)
                         elif target_tile and target_tile.id in (TileID.OPEN_WOOD_DOOR,
                                                                 TileID.CLOSED_WOOD_DOOR):
                             if target_mob:
                                 message_logs.appendleft("door is blocked")
                                 message_logs.appendleft(f"by {target_mob.name}")
+                                sounds_to_play.add(Sound.FAILURE)
                             else:
                                 if target_tile.id is TileID.CLOSED_WOOD_DOOR:
                                     set_array(target_pos,
@@ -968,6 +1046,7 @@ def main(screen, settings):
                                     message_logs.appendleft(f"{target_tile.name}")
                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                 do_calc_light_map = True
+                                sounds_to_play.add(Sound.USE_ITEM)
                         else:
                             game_mode = GameMode.INVENTORY
                 elif event.key == pg.K_z:
@@ -987,6 +1066,7 @@ def main(screen, settings):
                             number_of_mobs = count_mobs(current_layer.mob_array)
                             message_logs.appendleft("you go down the")
                             message_logs.appendleft("staircase")
+                            sounds_to_play.add(Sound.USE_ITEM)
                         elif current_tile.has_tag(TileTag.UP_STAIRS):
                             current_layer_index -= 1
                             assert current_layer_index > -1
@@ -999,6 +1079,7 @@ def main(screen, settings):
                             number_of_mobs = count_mobs(current_layer.mob_array)
                             message_logs.appendleft("you go up the")
                             message_logs.appendleft("staircase")
+                            sounds_to_play.add(Sound.USE_ITEM)
                             if never_been_to_sky and current_layer_index == 0:
                                 never_been_to_sky = False
                                 spawn_point = (0, 0)
@@ -1018,8 +1099,10 @@ def main(screen, settings):
                                     break
                         else:
                             do_a_game_tick = True
+                            sounds_to_play.add(Sound.USE_ITEM)
                     else:
                         cursor_index = 0  # reset cursor
+                        sounds_to_play.add(Sound.INDICATOR)
 
         # Update.
         clock.tick()
@@ -1209,9 +1292,12 @@ def main(screen, settings):
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
                         move_tile = get_array(try_pos, current_layer.tile_array)
-                        if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
-                                (move_tile.id == TileID.LAVA):
+                        if move_tile and not move_mob and ((not move_tile.has_tag(TileTag.BLOCK_MOVE)) or
+                                                           move_tile.id == TileID.AIR) and \
+                                not (move_tile.id == TileID.LAVA):
                             if move_tile.id == TileID.WATER and not current_mob.has_tag(MobTag.SWAPPABLE):
+                                continue
+                            if move_tile.id == TileID.AIR and not (current_mob.id == MobID.SPRITE):
                                 continue
                             set_array((x, y), current_layer.mob_array, None)
                             set_array(try_pos, current_layer.mob_array, current_mob)
@@ -1488,6 +1574,11 @@ def main(screen, settings):
             do_calc_light_map = False
             calc_lightmap()
 
+        # Play the needed sounds.
+        for sound in sounds_to_play:
+            sound_loader.play(sound)
+        sounds_to_play = set()
+
         # Draw.
         screen.fill((0, 0, 0))
         # Display world.
@@ -1600,14 +1691,15 @@ def main(screen, settings):
             write_text((35, 34 - i), message, color)
 
         # Display FPS.
-        fps_surf = font.render(str(clock.get_fps()), True, (255, 255, 255))
-        screen.blit(fps_surf, (0, screen.get_height() - fps_surf.get_height()))
+        # fps_surf = font.render(str(clock.get_fps()), True, (255, 255, 255))
+        # screen.blit(fps_surf, (0, screen.get_height() - fps_surf.get_height()))
         # Flip display.
         pg.display.flip()
 
 
 if __name__ == "__main__":
     pg.init()
+    mixer_available = pg.mixer.get_init() is not None
     main_screen = pg.display.set_mode((800, 560))  # 50x35 tiles
     pg.display.set_caption("Outlast 7DRL 2024")
     icon_image = tile_loader.get_tile(Graphic.AIR_WIZARD, Color.RED)
