@@ -11,7 +11,7 @@ from data import PointType
 Layer = namedtuple("Layer", ("tile_array", "mob_array", "mem_array"))
 
 STAIR_BORDER_PAD = 5
-STAIR_STAIR_PAD = 5
+STAIR_STAIR_PAD = 10
 
 
 def distance_within(a: PointType, b: PointType, dist: int | float) -> bool:
@@ -386,8 +386,8 @@ def generate_sky(size: tuple[int, int], world_seed: int, upstairs: list) -> tupl
                  random.randint(STAIR_BORDER_PAD, size[1] - STAIR_BORDER_PAD - 1))
         if distance_within_any(point, down_stairs, STAIR_STAIR_PAD):
             continue  # don't spawn too near any other staircases
-        for x in range(-3, 4):
-            for y in range(-3, 4):
+        for x in range(-4, 5):
+            for y in range(-4, 5):
                 if x == y == 0:
                     world_map[point[0]][point[1]] = Tile(TileID.DOWN_STAIRS)
                 elif distance_within((0, 0), (x, y), 3.5):

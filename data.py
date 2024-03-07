@@ -8,7 +8,7 @@ PointType = tuple[int, int] | Point
 
 class Color:
     GREEN = (0, 255, 0)
-    LIGHT_GREEN = (64, 255, 64)
+    LIGHT_GREEN = (64, 200, 64)
     YELLOW = (255, 255, 0)
     DARK_YELLOW = (128, 128, 0)
     BLUE = (0, 0, 255)
@@ -70,6 +70,7 @@ class Graphic:
     DOOR_OPEN = (9, 9)
     FLOOR1 = (16, 0)
     FLOOR2 = (17, 0)
+    FLOOR3 = (48, 9)
 
     PLAYER = (25, 0)
     ZOMBIE = (24, 9)
@@ -86,6 +87,8 @@ class Graphic:
     DOG = (31, 7)
     CAT = (30, 7)
     PIG = (29, 7)
+    UFO = (14, 20)
+    UFO2 = (14, 19)
 
     HEART_FULL = (42, 10)
     HEART_EMPTY = (40, 10)
@@ -239,6 +242,11 @@ class MobID(Enum):
     CLOUD_SPIDER = 36
     LOOM = 37
     SPRITE = 38
+    BOMB = 39
+    RED_BOMB = 40
+    CAULDRON = 41
+    WHITE_BOMB = 42
+    UFO = 43
 
 
 class MobTag(Enum):
@@ -255,6 +263,8 @@ class MobTag(Enum):
     BED = auto()
     SWAPPABLE = auto()
     AI_AIR_WIZARD = auto()
+    EXPLODE = auto()
+    ALWAYS_SIM = auto()
 
 
 class ItemID(Enum):
@@ -366,6 +376,12 @@ class ItemID(Enum):
     OBSIDIAN_FLOOR = 106
     OBSIDIAN_WALL = 108
     LOOM = 109
+    BOMB = 110
+    RED_BOMB = 111
+    CAULDRON = 112
+    WHITE_BOMB = 113
+    CIRCUIT = 114
+    SPACESHIP = 115
 
 
 class ItemTag(Enum):

@@ -39,13 +39,18 @@
 ## Day 5
 - fixed the lag
 - finished world gen and added a few mobs
-- added some more items
+- added more mob AI behaviors
+- added some more items and crafting recipies
+- added fishing and fishing-spears
 - levels are now traversable
 
 ## Day 6
+- updated stair world gen
 - finished air wizard
 - added buckets and obsidian
+- added buildable floors for cool houses
 - renamed some items whose names were too long
 - added sounds
 - added music
 - mob ai is now slightly smarter (slightly)
+- added secret ending after air wizard

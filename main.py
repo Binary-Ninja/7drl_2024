@@ -15,7 +15,7 @@ from world import World, set_array, get_array, make_2d_array
 from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
 from items import Item, item_to_mob, item_light
-from mobs import Mob, mob_damage
+from mobs import Mob, mob_damage, mob_explosion
 from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light, tile_drain
 from loots import tile_break_loot, resolve_loot, mob_death_loot, fishing_loot
 
@@ -42,6 +42,7 @@ class Sound(StrEnum):
     USE_ITEM = "use_item"
     INDICATOR = "indicator"
     HURT_ENEMY = "hurt_enemy"
+    EXPLOSION = "explosion"
 
 
 NO_ITEM = Item(ItemID.EMPTY_HANDS)
@@ -258,7 +259,7 @@ def main(screen, settings):
     current_layer = current_layer_key[current_layer_index]
 
     mob_spawn_per_layer = {
-        0: (MobID.FAIRY, MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON),
+        0: (MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON),
         1: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON),
         2: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON,
             MobID.RED_ZOMBIE, MobID.RED_SLIME, MobID.RED_SKELETON, MobID.BAT,
@@ -319,7 +320,7 @@ def main(screen, settings):
     never_been_to_sky = True
     air_wizard_defeated = False
     current_item: Item | NO_ITEM = NO_ITEM
-    inventory: list[Item] = [Item(ItemID.EMPTY_HANDS), Item(ItemID.WORKBENCH),
+    inventory: list[Item] = [Item(ItemID.WORKBENCH),
                              # Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
                              # Item(ItemID.GEM_AXE, 1), Item(ItemID.STONE_FLOOR, 99),
                              # Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 99),
@@ -746,6 +747,12 @@ def main(screen, settings):
                                                current_layer.mob_array)
                         target_tile = get_array(target_pos,
                                                 current_layer.tile_array)
+                        if current_item.id == ItemID.SPACESHIP:
+                            message_logs.appendleft("you fly away in")
+                            message_logs.appendleft("the vehicle and")
+                            message_logs.appendleft("leave the world")
+                            message_logs.appendleft("press escape")
+                            player_is_dead = True
                         if current_item.tags == (ItemTag.STACKABLE,):
                             message_logs.appendleft("you cannot use")
                             message_logs.appendleft(f"the {current_item.name}")
@@ -1219,8 +1226,10 @@ def main(screen, settings):
                         continue  # don't spawn if the tile is lit
                     try_tile = current_layer.tile_array[sx][sy]
                     try_mob = current_layer.mob_array[sx][sy]
-                    if try_mob or try_tile.has_tag(TileTag.BLOCK_MOVE) or try_tile.has_tag(TileTag.LIQUID):
-                        continue  # don't replace another mob or spawn in a wall
+                    if try_mob or try_tile.has_tag(TileTag.LIQUID):
+                        continue  # don't replace another mob or spawn in liquid
+                    if try_tile.has_tag(TileTag.BLOCK_MOVE) and try_tile.id != TileID.AIR:
+                        continue  # don't spawn in walls unless it is air
                     if try_tile.id == TileID.WEB:
                         if current_layer_index == 0:
                             mob_id = MobID.CLOUD_SPIDER
@@ -1228,6 +1237,11 @@ def main(screen, settings):
                             mob_id = MobID.SPIDER
                         else:
                             mob_id = MobID.HELL_SPIDER
+                    elif try_tile.id == TileID.AIR:
+                        if air_wizard_defeated:
+                            mob_id = MobID.UFO
+                        else:
+                            mob_id = MobID.FAIRY
                     else:
                         mob_id = random.choice(mob_spawn_per_layer[current_layer_index])
                     current_layer.mob_array[sx][sy] = Mob(mob_id)
@@ -1313,8 +1327,31 @@ def main(screen, settings):
                             number_of_mobs -= 1
                             continue
                     if not distance_within(player_pos, (x, y), MOB_SIM_DISTANCE) and not \
-                            current_mob.has_tag(MobTag.AI_AIR_WIZARD):
-                        continue  # mobs outside this radius won't be ticked except air wizard
+                            current_mob.has_tag(MobTag.ALWAYS_SIM):
+                        continue  # mobs outside this radius won't be ticked unless always active
+                    if current_mob.has_tag(MobTag.EXPLODE):
+                        current_mob.fuse += 1
+                        message_logs.appendleft(f"{current_mob.name} will")
+                        message_logs.appendleft(f"explode in {mob_explosion[current_mob.id][0] - current_mob.fuse}")
+                        if current_mob.fuse >= mob_explosion[current_mob.id][0]:
+                            radius = mob_explosion[current_mob.id][1]
+                            sounds_to_play.add(Sound.EXPLOSION)
+                            message_logs.popleft()
+                            message_logs.popleft()
+                            message_logs.appendleft(f"the {current_mob.name}")
+                            message_logs.appendleft("has exploded")
+                            for nx in range(-radius, radius + 1):
+                                for ny in range(-radius, radius + 1):
+                                    if distance_within((x + nx, y + ny), (x, y), radius + 0.5):
+                                        tile_id = TileID.HOLE if current_layer_index > 0 else TileID.AIR
+                                        tile = get_array((x + nx, y + ny), current_layer.tile_array)
+                                        if tile and tile.id not in (TileID.DOWN_STAIRS, TileID.UP_STAIRS):
+                                            set_array((x + nx, y + ny), current_layer.tile_array, Tile(tile_id))
+                                        mob = get_array((x + nx, y + ny), current_layer.mob_array)
+                                        if mob and mob.id not in (MobID.AIR_WIZARD, MobID.PLAYER):
+                                            set_array((x + nx, y + ny), current_layer.mob_array, None)
+                        else:
+                            already_mob_ticked.add(current_mob)
                     if current_mob.has_tag(MobTag.AI_FOLLOW):
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
@@ -1346,6 +1383,7 @@ def main(screen, settings):
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and ((not move_tile.has_tag(TileTag.BLOCK_MOVE)) or
                                                            move_tile.id == TileID.AIR) and \
@@ -1378,6 +1416,7 @@ def main(screen, settings):
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
                                 move_tile.has_tag(TileTag.LIQUID):
@@ -1403,6 +1442,7 @@ def main(screen, settings):
                                 player_health = max(0, player_health)
                                 message_logs.appendleft(f"the {current_mob.name}s")
                                 message_logs.appendleft(f"arrow hits -{mob_damage[current_mob.id]}H")
+                                sounds_to_play.add(Sound.HURT)
                                 skelly_got_em = True
                                 break
                         if skelly_got_em:
@@ -1482,6 +1522,7 @@ def main(screen, settings):
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob:
                             if not move_tile.has_tag(TileTag.BLOCK_MOVE) or move_tile.id == TileID.AIR:
@@ -1525,6 +1566,7 @@ def main(screen, settings):
                             player_health = max(0, player_health)
                             message_logs.appendleft(f"the {current_mob.name}")
                             message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
                                 move_tile.has_tag(TileTag.LIQUID):
@@ -1633,6 +1675,7 @@ def main(screen, settings):
                                 player_health = max(0, player_health)
                                 message_logs.appendleft(f"the {current_mob.name}")
                                 message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                                sounds_to_play.add(Sound.HURT)
                             move_tile = get_array(try_pos, current_layer.tile_array)
                             if move_tile and not move_mob:
                                 set_array((x, y), current_layer.mob_array, None)

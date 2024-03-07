@@ -30,7 +30,6 @@ recipies = {
         ((ItemID.WOOD_DOOR, 1), (ItemID.WOOD, 8)),
         ((ItemID.STONE_FLOOR, 1), (ItemID.STONE, 4)),
         ((ItemID.STONE_WALL, 1), (ItemID.STONE, 8)),
-        ((ItemID.COCKTAIL, 1), (ItemID.BOTTLE, 1), (ItemID.APPLE, 1), (ItemID.COCONUT, 1), (ItemID.POKE_PEAR, 1)),
     ),
     MobID.OVEN: (
         ((ItemID.BREAD, 1), (ItemID.WHEAT, 5), (ItemID.WOOD, 2)),
@@ -48,12 +47,12 @@ recipies = {
         ((ItemID.WINDOW, 1), (ItemID.GLASS, 4),),
         ((ItemID.IRON_BAR, 1), (ItemID.IRON_ORE, 4), (ItemID.COAL, 1)),
         ((ItemID.GOLD_BAR, 1), (ItemID.GOLD_ORE, 4), (ItemID.COAL, 1)),
-        ((ItemID.GOLD_APPLE, 1), (ItemID.APPLE, 1), (ItemID.GOLD_BAR, 15), (ItemID.COAL, 2)),
     ),
     MobID.ANVIL: (
         ((ItemID.IRON_LANTERN, 1), (ItemID.IRON_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
         ((ItemID.GOLD_LANTERN, 1), (ItemID.GOLD_BAR, 5), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
         ((ItemID.GEM_LANTERN, 1), (ItemID.GEM, 25), (ItemID.SLIME, 4), (ItemID.CLOTH, 2), (ItemID.GLASS, 4)),
+        ((ItemID.CAULDRON, 1), (ItemID.IRON_BAR, 10),),
         ((ItemID.BUCKET, 1), (ItemID.IRON_BAR, 5), ),
         ((ItemID.IRON_SWORD, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
         ((ItemID.IRON_PICK, 1), (ItemID.WOOD, 5), (ItemID.IRON_BAR, 5)),
@@ -81,6 +80,13 @@ recipies = {
         ((ItemID.CLOTH, 1), (ItemID.STRING, 4)),
         ((ItemID.BED, 1), (ItemID.WOOD, 10), (ItemID.CLOTH, 10)),
     ),
+    MobID.CAULDRON: (
+        ((ItemID.COCKTAIL, 1), (ItemID.BOTTLE, 1), (ItemID.APPLE, 1), (ItemID.COCONUT, 1), (ItemID.POKE_PEAR, 1)),
+        ((ItemID.GOLD_APPLE, 1), (ItemID.APPLE, 1), (ItemID.GOLD_BAR, 15), (ItemID.LAPIS, 20)),
+        ((ItemID.BOMB, 1), (ItemID.SAND, 15), (ItemID.ASH, 15), (ItemID.COAL, 15)),
+        ((ItemID.RED_BOMB, 1), (ItemID.SAND, 25), (ItemID.ASH, 25), (ItemID.COAL, 25), (ItemID.LAPIS, 10)),
+        ((ItemID.WHITE_BOMB, 1), (ItemID.SAND, 50), (ItemID.ASH, 50), (ItemID.COAL, 50), (ItemID.QUARTZ, 30)),
+    ),
 }
 
 mob_damage = {
@@ -104,6 +110,7 @@ mob_damage = {
     MobID.CLOUD_SPIDER: 4,
     MobID.FAIRY: 3,
     MobID.SPRITE: 1,
+    MobID.UFO: 4,
 }
 
 mob_ai_timer = defaultdict(lambda: 2)
@@ -128,7 +135,14 @@ mob_ai_timer.update({
     MobID.SHADE: 1,
     MobID.FAIRY: 1,
     MobID.SPRITE: 2,
+    MobID.UFO: 1,
 })
+
+mob_explosion = {  # first number is fuse + 1, second is radius of explosion
+    MobID.BOMB: (11, 5),
+    MobID.RED_BOMB: (21, 10),
+    MobID.WHITE_BOMB: (31, 20),
+}
 
 
 MobData = namedtuple("MobData", ("name", "graphic", "max_health", "tags",
@@ -146,8 +160,11 @@ mob_data = {
                                tuple(), 1),
     MobID.FAIRY: MobData("pixie", (Graphic.FAIRY, Color.PINK), 5, (MobTag.AI_WANDER, MobTag.DAMAGE, MobTag.NO_DESPAWN),
                                tuple(), 1),
-    MobID.SPRITE: MobData("sprite", (Graphic.FAIRY, Color.RED), 5, (MobTag.AI_FOLLOW, MobTag.DAMAGE, MobTag.NO_DESPAWN),
+    MobID.SPRITE: MobData("sprite", (Graphic.FAIRY, Color.RED), 5, (MobTag.AI_FOLLOW, MobTag.DAMAGE, MobTag.NO_DESPAWN,
+                                                                    MobTag.ALWAYS_SIM),
                          tuple(), 1),
+    MobID.UFO: MobData("ufo", (Graphic.UFO, Color.GREEN), 5, (MobTag.AI_WANDER, MobTag.DAMAGE, MobTag.NO_DESPAWN,),
+                          tuple(), 1),
     MobID.SPIDER: MobData("spider", (Graphic.SPIDER, Color.MED_GRAY), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE,)),
     MobID.HELL_SPIDER: MobData("hellspider", (Graphic.SPIDER, Color.RED), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE)),
     MobID.CLOUD_SPIDER: MobData("skyspider", (Graphic.SPIDER, Color.LIGHT_BLUE), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE,
@@ -171,17 +188,20 @@ mob_data = {
     MobID.BLACK_SKELETON: MobData("skeleton", (Graphic.SKELETON, Color.MOB_BLACK), 10,
                                   (MobTag.PUSHABLE, MobTag.AI_SHOOT, MobTag.DAMAGE, MobTag.NO_DESPAWN)),
     MobID.AIR_WIZARD: MobData("air wizard", (Graphic.AIR_WIZARD, Color.RED), 100, (MobTag.DAMAGE, MobTag.NO_DESPAWN,
-                                                                                   MobTag.AI_AIR_WIZARD)),
+                                                                                   MobTag.AI_AIR_WIZARD,
+                                                                                   MobTag.ALWAYS_SIM)),
     MobID.WORKBENCH: MobData("workbench", (Graphic.WORKBENCH, Color.BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.WORKBENCH]),
     MobID.LOOM: MobData("loom", (Graphic.LOOM, Color.LIGHT_BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.LOOM]),
     MobID.OVEN: MobData("oven", (Graphic.OVEN, Color.LIGHT_BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.OVEN]),
-    MobID.FURNACE: MobData("furnace", (Graphic.FURNACE, Color.LIGHT_GRAY), 10,
+    MobID.FURNACE: MobData("furnace", (Graphic.FURNACE, Color.MED_GRAY), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.FURNACE]),
     MobID.ANVIL: MobData("anvil", (Graphic.ANVIL, Color.LIGHT_GRAY), 10,
                              (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.ANVIL]),
+    MobID.CAULDRON: MobData("cauldron", (Graphic.CAULDRON, Color.MED_GRAY), 10,
+                         (MobTag.PUSHABLE, MobTag.CRAFTING, MobTag.NO_DESPAWN), recipies[MobID.CAULDRON]),
     MobID.WOOD_LANTERN: MobData("wood lantern", (Graphic.LANTERN, Color.BROWN), 10,
                              (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 6),
     MobID.TORCH: MobData("torch", (Graphic.TORCH, Color.YELLOW), 8,
@@ -194,6 +214,12 @@ mob_data = {
                                 (MobTag.PUSHABLE, MobTag.NO_DESPAWN), tuple(), 18),
     MobID.BED: MobData("bed", (Graphic.BED, Color.RED), 10,
                                (MobTag.PUSHABLE, MobTag.NO_DESPAWN, MobTag.BED), tuple(),),
+    MobID.BOMB: MobData("bomb", (Graphic.BOMB, Color.MED_GRAY), 10,
+                       (MobTag.PUSHABLE, MobTag.NO_DESPAWN, MobTag.EXPLODE), tuple(), ),
+    MobID.RED_BOMB: MobData("megabomb", (Graphic.BOMB, Color.RED), 10,
+                       (MobTag.PUSHABLE, MobTag.NO_DESPAWN, MobTag.EXPLODE), tuple(), ),
+    MobID.WHITE_BOMB: MobData("nuke", (Graphic.BOMB, Color.WHITE), 10,
+                            (MobTag.PUSHABLE, MobTag.NO_DESPAWN, MobTag.EXPLODE, MobTag.ALWAYS_SIM), tuple(), ),
 }
 
 
@@ -216,6 +242,7 @@ class Mob:
         self.ai_timer = mob_ai_timer[self.id]
         self.ai_state_timer = self.ai_tick
         self.ai_state_freq = 50
+        self.fuse = 0
 
     def has_tag(self, tag: MobTag) -> bool:
         return tag in self.tags

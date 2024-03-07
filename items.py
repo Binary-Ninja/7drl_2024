@@ -14,6 +14,9 @@ item_to_mob.update({
     MobID.GEM_LANTERN: ItemID.GEM_LANTERN,
     MobID.TORCH: ItemID.TORCH,
     MobID.BED: ItemID.BED,
+    MobID.BOMB: ItemID.BOMB,
+    MobID.RED_BOMB: ItemID.RED_BOMB,
+    MobID.WHITE_BOMB: ItemID.WHITE_BOMB,
 })
 
 item_light = defaultdict(lambda: 0)
@@ -33,6 +36,22 @@ item_data = {
                                (ItemTag.SPAWN_MOB,), {
             "mobid": MobID.WORKBENCH,
                                }),
+    ItemID.CAULDRON: ItemData("cauldron", (Graphic.CAULDRON, Color.MED_GRAY),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.CAULDRON,
+                               }),
+    ItemID.BOMB: ItemData("bomb", (Graphic.BOMB, Color.MED_GRAY),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.BOMB,
+                               }),
+    ItemID.RED_BOMB: ItemData("megabomb", (Graphic.BOMB, Color.RED),
+                               (ItemTag.SPAWN_MOB,), {
+                                   "mobid": MobID.RED_BOMB,
+                               }),
+    ItemID.WHITE_BOMB: ItemData("nuke", (Graphic.BOMB, Color.WHITE),
+                              (ItemTag.SPAWN_MOB,), {
+                                  "mobid": MobID.WHITE_BOMB,
+                              }),
     ItemID.LOOM: ItemData("loom", (Graphic.LOOM, Color.LIGHT_BROWN),
                                (ItemTag.SPAWN_MOB,), {
                                    "mobid": MobID.LOOM,
@@ -88,7 +107,7 @@ item_data = {
                                                                TileID.ASH, TileID.FLOOR_FUNGUS,
                                                                )
                           }),
-    ItemID.OBSIDIAN_FLOOR: ItemData("ob.floor", (Graphic.FLOOR2, Color.DARK_OBSIDIAN),
+    ItemID.OBSIDIAN_FLOOR: ItemData("ob.floor", (Graphic.FLOOR3, Color.DARK_OBSIDIAN),
                             (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                                 "place": TileID.OBSIDIAN_FLOOR, "base": (TileID.DIRT, TileID.SAND,
                                                                  TileID.GRASS,
@@ -135,6 +154,10 @@ item_data = {
                           }),
     ItemID.STONE: ItemData("stone", (Graphic.STONE_ITEM, Color.STONE),
                            (ItemTag.STACKABLE,), ),
+    ItemID.CIRCUIT: ItemData("circuit", (Graphic.ALIEN_TECH, Color.GREEN),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.SPACESHIP: ItemData("spaceship", (Graphic.UFO2, Color.LIGHT_GREEN),
+                             tuple(), ),
     ItemID.FAIRY_DUST: ItemData("pixiedust", (Graphic.FULL_BOTTLE, Color.PINK),
                            (ItemTag.STACKABLE,), ),
     ItemID.STRING: ItemData("string", (Graphic.STRING, Color.WHITE),
@@ -312,7 +335,7 @@ item_data = {
     ItemID.IRON_ORE: ItemData("i. ore", (Graphic.STONE_ITEM, Color.IRON),
                               (ItemTag.STACKABLE,), ),
     ItemID.LAPIS: ItemData("lapis", (Graphic.STONE_ITEM, Color.BLUE),
-                              (ItemTag.STACKABLE,), ),
+                              (ItemTag.STACKABLE, ItemTag.LIGHT), ),
     ItemID.QUARTZ: ItemData("quartz", (Graphic.CRYSTAL, Color.WHITE),
                            (ItemTag.STACKABLE,), ),
     ItemID.GOLD_ORE: ItemData("g. ore", (Graphic.STONE_ITEM, Color.GOLD),
@@ -349,7 +372,7 @@ item_data = {
                                (ItemTag.SPAWN_MOB,), {
                                    "mobid": MobID.OVEN,
                                }),
-    ItemID.FURNACE: ItemData("furnace", (Graphic.FURNACE, Color.LIGHT_GRAY),
+    ItemID.FURNACE: ItemData("furnace", (Graphic.FURNACE, Color.MED_GRAY),
                                (ItemTag.SPAWN_MOB,), {
                                    "mobid": MobID.FURNACE,
                                }),

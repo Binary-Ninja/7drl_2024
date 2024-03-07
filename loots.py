@@ -89,6 +89,10 @@ mob_death_loot.update({
     MobID.CHICKEN: (LootItem(ItemID.DUCK_MEAT, 1.0, 1, 2),),
     MobID.FAIRY: (LootItem(ItemID.FAIRY_DUST, 1.0, 1, 3), ),
     MobID.SPRITE: (LootItem(ItemID.FAIRY_DUST, 1.0, 1, 3),),
+    MobID.UFO: (LootItem(ItemID.CIRCUIT, 0.7, 2, 4), LootItem(ItemID.IRON_BAR, 0.5, 1, 2),
+                LootItem(ItemID.GLASS, 0.8, 1, 4), LootItem(ItemID.QUARTZ, 0.4, 1, 3),
+                LootItem(ItemID.ASH, 0.4, 4, 5), LootItem(ItemID.CIRCUIT, 1.0, 1, 3),
+                ),
 })
 
 fishing_loot = defaultdict(tuple)
