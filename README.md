@@ -13,6 +13,9 @@
 - Spring Spring
 - Insydnis
 
+## Sound Credits
+- celestialghost8
+
 ## Day 1
 - ported old world gen code and tile_loader from old projects
 - added player and player movement

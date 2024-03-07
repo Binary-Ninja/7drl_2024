@@ -89,6 +89,7 @@ class Graphic:
     PIG = (29, 7)
     UFO = (14, 20)
     UFO2 = (14, 19)
+    DEVIL = (27, 2)
 
     HEART_FULL = (42, 10)
     HEART_EMPTY = (40, 10)
@@ -251,6 +252,7 @@ class MobID(Enum):
     WHITE_BOMB = 42
     UFO = 43
     SCRINIUM = 44
+    DEVIL = 45
 
 
 class MobTag(Enum):
@@ -399,6 +401,7 @@ class ItemID(Enum):
     SPEED_POTION = 127
     HEALTH_POTION = 128
     SWIM_LAVA_POTION = 129
+    HOVER_POTION = 130
 
 
 class ItemTag(Enum):

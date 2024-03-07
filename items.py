@@ -12,6 +12,30 @@ class PotionEffect(Enum):
     ARMOR = auto()
     SPEED = auto()
     REGEN_HEALTH = auto()
+    HOVER = auto()
+
+
+effect_colors = {
+    PotionEffect.SWIM: Color.LIGHT_BLUE,
+    PotionEffect.LAVA_PROOF: Color.ORANGE,
+    PotionEffect.INVISIBLE: Color.LIGHT_GRAY,
+    PotionEffect.REGEN_HEALTH: Color.RED,
+    PotionEffect.REGEN_STAMINA: Color.YELLOW,
+    PotionEffect.ARMOR: Color.IRON,
+    PotionEffect.SPEED: Color.GREEN,
+    PotionEffect.HOVER: Color.WHITE,
+}
+
+effect_names = {
+    PotionEffect.SWIM: "swim",
+    PotionEffect.LAVA_PROOF: "lava",
+    PotionEffect.INVISIBLE: "invis",
+    PotionEffect.REGEN_HEALTH: "regen",
+    PotionEffect.REGEN_STAMINA: "energy",
+    PotionEffect.ARMOR: "armor",
+    PotionEffect.SPEED: "speed",
+    PotionEffect.HOVER: "hover",
+}
 
 
 item_to_mob = defaultdict(lambda: None)
@@ -48,11 +72,12 @@ item_effects.update({
     ItemID.SWIM_POTION: ((PotionEffect.SWIM, 100), ),
     ItemID.LAVA_POTION: ((PotionEffect.LAVA_PROOF, 100), ),
     ItemID.STAMINA_POTION: ((PotionEffect.REGEN_STAMINA, 100), ),
-    ItemID.HEALTH_POTION: ((PotionEffect.REGEN_HEALTH, 100), ),
+    ItemID.HEALTH_POTION: ((PotionEffect.REGEN_HEALTH, 50), ),
     ItemID.SPEED_POTION: ((PotionEffect.SPEED, 100), ),
     ItemID.IRONSKIN_POTION: ((PotionEffect.ARMOR, 100), ),
     ItemID.INVISIBLE_POTION: ((PotionEffect.INVISIBLE, 100), ),
     ItemID.SWIM_LAVA_POTION: ((PotionEffect.SWIM, 100), (PotionEffect.LAVA_PROOF, 100)),
+    ItemID.HOVER_POTION: ((PotionEffect.HOVER, 100),),
 })
 
 ItemData = namedtuple("ItemData", ("name", "graphic", "tags", "data"),
@@ -379,17 +404,19 @@ item_data = {
                            (ItemTag.STACKABLE, ItemTag.POTION), ),
     ItemID.LAVA_POTION: ItemData("fireproof", (Graphic.FULL_BOTTLE, Color.RED),
                                  (ItemTag.STACKABLE, ItemTag.POTION), ),
-    ItemID.SPEED_POTION: ItemData("haste", (Graphic.FULL_BOTTLE, Color.GREEN),
+    ItemID.SPEED_POTION: ItemData("speed", (Graphic.FULL_BOTTLE, Color.GREEN),
                                  (ItemTag.STACKABLE, ItemTag.POTION), ),
     ItemID.HEALTH_POTION: ItemData("regen", (Graphic.FULL_BOTTLE, Color.RED),
                                  (ItemTag.STACKABLE, ItemTag.POTION), ),
     ItemID.STAMINA_POTION: ItemData("energy", (Graphic.FULL_BOTTLE, Color.YELLOW),
                                  (ItemTag.STACKABLE, ItemTag.POTION), ),
-    ItemID.IRONSKIN_POTION: ItemData("defense", (Graphic.FULL_BOTTLE, Color.IRON),
+    ItemID.IRONSKIN_POTION: ItemData("armor", (Graphic.FULL_BOTTLE, Color.IRON),
                                  (ItemTag.STACKABLE, ItemTag.POTION), ),
-    ItemID.INVISIBLE_POTION: ItemData("stealth", (Graphic.FULL_BOTTLE, Color.WHITE),
+    ItemID.INVISIBLE_POTION: ItemData("stealth", (Graphic.FULL_BOTTLE, Color.LIGHT_GRAY),
                                  (ItemTag.STACKABLE, ItemTag.POTION), ),
     ItemID.SWIM_LAVA_POTION: ItemData("lava", (Graphic.FULL_BOTTLE, Color.ORANGE),
+                                      (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.HOVER_POTION: ItemData("cloudwalk", (Graphic.FULL_BOTTLE, Color.WHITE),
                                       (ItemTag.STACKABLE, ItemTag.POTION), ),
     ItemID.IRON_ORE: ItemData("i. ore", (Graphic.STONE_ITEM, Color.IRON),
                               (ItemTag.STACKABLE,), ),

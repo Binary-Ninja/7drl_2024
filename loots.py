@@ -93,6 +93,8 @@ mob_death_loot.update({
                 LootItem(ItemID.GLASS, 0.8, 1, 4), LootItem(ItemID.QUARTZ, 0.4, 1, 3),
                 LootItem(ItemID.ASH, 0.4, 4, 5), LootItem(ItemID.CIRCUIT, 1.0, 1, 3),
                 ),
+    MobID.DEVIL: (LootItem(ItemID.ASH, 1.0, 4, 6), LootItem(ItemID.BONE, 1.0, 2, 3),
+                  LootItem(ItemID.GOLD_BAR, 0.5, 1, 1)),
 })
 
 fishing_loot = defaultdict(tuple)

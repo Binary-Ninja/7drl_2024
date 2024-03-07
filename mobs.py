@@ -85,6 +85,13 @@ recipies = {
     ),
     MobID.CAULDRON: (
         ((ItemID.COCKTAIL, 1), (ItemID.BOTTLE, 1), (ItemID.APPLE, 1), (ItemID.COCONUT, 1), (ItemID.POKE_PEAR, 1)),
+        ((ItemID.SWIM_POTION, 1), (ItemID.BOTTLE, 1), (ItemID.FISH, 5), (ItemID.SLIME, 5), (ItemID.LAPIS, 1)),
+        ((ItemID.LAVA_POTION, 1), (ItemID.BOTTLE, 1), (ItemID.FIRE_FISH, 5), (ItemID.ASH, 10), (ItemID.LAPIS, 1)),
+        ((ItemID.SWIM_LAVA_POTION, 1), (ItemID.SWIM_POTION, 1), (ItemID.LAVA_POTION, 1), ),
+        ((ItemID.HEALTH_POTION, 1), (ItemID.BOTTLE, 1), (ItemID.BONE, 20), (ItemID.COOKED_TUBER, 5), (ItemID.LAPIS, 1)),
+        ((ItemID.STAMINA_POTION, 1), (ItemID.BOTTLE, 1), (ItemID.POKE_PEAR, 10), (ItemID.COCONUT, 10),
+         (ItemID.GOLD_BAR, 1), (ItemID.LAPIS, 1)),
+        ((ItemID.INVISIBLE_POTION, 1), (ItemID.BOTTLE, 1), (ItemID.GLASS, 10), (ItemID.FUNGUS, 10), (ItemID.LAPIS, 1)),
         ((ItemID.FERTILIZER, 1), (ItemID.DIRT, 2), (ItemID.BONE, 5), (ItemID.TUBER, 5)),
         ((ItemID.BOMB, 1), (ItemID.SAND, 15), (ItemID.COAL, 15), (ItemID.STRING, 10)),
         ((ItemID.RED_BOMB, 1), (ItemID.SAND, 25), (ItemID.ASH, 25), (ItemID.COAL, 25), (ItemID.STRING, 20),),
@@ -95,7 +102,7 @@ recipies = {
         ((ItemID.GOLD_APPLE, 1), (ItemID.BOOK, 1), (ItemID.APPLE, 1), (ItemID.GOLD_BAR, 15), (ItemID.LAPIS, 5)),
         ((ItemID.WEB_STAFF, 1), (ItemID.BOOK, 1), (ItemID.STRING, 15), (ItemID.SPIDER_EYE, 8), (ItemID.BONE, 10),
          (ItemID.LAPIS, 5),),
-        ((ItemID.MAGIC_EYE, 1), (ItemID.BOOK, 1), (ItemID.SPIDER_EYE, 8), (ItemID.LAPIS, 5)),
+        ((ItemID.MAGIC_EYE, 1), (ItemID.BOOK, 1), (ItemID.SPIDER_EYE, 8), (ItemID.QUARTZ, 1), ),
         ((ItemID.SPACESHIP, 1), (ItemID.CIRCUIT, 50), (ItemID.QUARTZ, 30), (ItemID.GEM, 30), (ItemID.GLASS, 20),
          (ItemID.IRON_BAR, 20), (ItemID.LAPIS, 10),),
     ),
@@ -155,6 +162,7 @@ mob_explosion = {  # first number is fuse + 1, second is radius of explosion
     MobID.BOMB: (11, 5),
     MobID.RED_BOMB: (21, 10),
     MobID.WHITE_BOMB: (31, 20),
+    MobID.DEVIL: (6, 2),
 }
 
 
@@ -235,6 +243,8 @@ mob_data = {
                        (MobTag.PUSHABLE, MobTag.NO_DESPAWN, MobTag.EXPLODE), tuple(), ),
     MobID.WHITE_BOMB: MobData("nuke", (Graphic.BOMB, Color.WHITE), 10,
                             (MobTag.PUSHABLE, MobTag.NO_DESPAWN, MobTag.EXPLODE, MobTag.ALWAYS_SIM), tuple(), ),
+    MobID.DEVIL: MobData("bomb devil", (Graphic.DEVIL, Color.RED), 20, (MobTag.AI_FOLLOW, MobTag.DAMAGE,
+                                                                        MobTag.EXPLODE)),
 }
 
 

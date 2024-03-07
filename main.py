@@ -14,7 +14,7 @@ from soundloader import SoundLoader
 from world import World, set_array, get_array, make_2d_array
 from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
-from items import Item, item_to_mob, item_light, item_effects, PotionEffect
+from items import Item, item_to_mob, item_light, item_effects, PotionEffect, effect_colors, effect_names
 from mobs import Mob, mob_damage, mob_explosion
 from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light, tile_drain
 from loots import tile_break_loot, resolve_loot, mob_death_loot, fishing_loot
@@ -43,6 +43,7 @@ class Sound(StrEnum):
     INDICATOR = "indicator"
     HURT_ENEMY = "hurt_enemy"
     EXPLOSION = "explosion"
+    VICTORY = "victory"
 
 
 NO_ITEM = Item(ItemID.EMPTY_HANDS)
@@ -54,10 +55,12 @@ JUMP_DISTANCE = 8  # when slimes sense you
 SKELETON_SHOOT_RADIUS = 5
 SKELETON_SIGHT_RADIUS = 12  # when skeletons sense you
 SPIDER_CHASE_RADIUS = 10  # when spiders sense you
-SHADE_FLEE_RADIUS = 5  # when shades see you
-DOG_FOLLOW_RADIUS = 12
+SHADE_FLEE_RADIUS = 5  # when shades flee you instead of wandering
+DOG_FOLLOW_RADIUS = 12  # when pets follow you instead of wandering
+DEVIL_EXPLODE_RADIUS = 3.5  # when devils start ticking down
 CURSOR_FLASH_FREQ = 500
 STAM_FLASH_FREQ = 200
+INVIS_SENSE_DISTANCE = 1.5  # when enemies sense the invisible you; spiders and air wizard always sense you
 
 player_vision = 17
 player_light_radius = 2.5
@@ -153,7 +156,7 @@ def main_menu(screen) -> dict:
 
         write_text((0, 21), f"{'credits':^50}", Color.WHITE)
         write_text((0, 22), f"{'sprites by kenney.nl':^50}", Color.LIGHT_GRAY)
-        write_text((0, 23), f"{'sound effects by sfxr.me':^50}", Color.LIGHT_GRAY)
+        write_text((0, 23), f"{'sound effects by sfxr.me and celestialghost8':^50}", Color.LIGHT_GRAY)
         write_text((0, 24), f"{'music by horrorpen-brandon75689-brandon morris':^50}", Color.LIGHT_GRAY)
         write_text((0, 25), f"{'axtoncrolley-spring spring-insydnis':^50}", Color.LIGHT_GRAY)
         write_text((0, 26), f"{'inspired by minicraft by markus persson':^50}", Color.LIGHT_GRAY)
@@ -272,7 +275,7 @@ def main(screen, settings):
             MobID.RED_ZOMBIE, MobID.RED_SLIME, MobID.RED_SKELETON, MobID.BAT,
             MobID.WHITE_ZOMBIE, MobID.WHITE_SLIME, MobID.WHITE_SKELETON, MobID.SHADE,
             MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON, MobID.FLAME_SKULL,
-            MobID.BAT, MobID.SHADE, MobID.FLAME_SKULL,
+            MobID.BAT, MobID.SHADE, MobID.FLAME_SKULL, MobID.DEVIL, MobID.DEVIL,
             ),
     }
 
@@ -322,10 +325,10 @@ def main(screen, settings):
     air_wizard_defeated = False
     current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.WORKBENCH),
-                             # Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
-                             # Item(ItemID.GEM_AXE, 1), Item(ItemID.STONE_FLOOR, 99),
-                             # Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 99),
-                             # Item(ItemID.WOOD, 100), Item(ItemID.WOOD_FLOOR, 99),
+                             Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
+                             Item(ItemID.GEM_AXE, 1), Item(ItemID.SPEED_POTION, 99),
+                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.MAGIC_EYE, 99),
+                             Item(ItemID.STAMINA_POTION, 100), Item(ItemID.SWIM_POTION, 99),
                              # Item(ItemID.OVEN, 1), Item(ItemID.FURNACE, 1),
                              # Item(ItemID.IRON_BAR, 100), Item(ItemID.PASTRY, 99),
                              # Item(ItemID.ANVIL, 1), Item(ItemID.LOOM, 1),
@@ -600,18 +603,21 @@ def main(screen, settings):
                 regen_stam = False
             return player_pos
         if move_tile.has_tag(TileTag.DAMAGE):
-            message_logs.appendleft(f"the {move_tile.name}")
-            message_logs.appendleft(f"hurts you -{damage}H")
-            player_health -= damage
-            player_health = max(0, player_health)
-            sounds_to_play.add(Sound.HURT)
+            if move_tile.id == TileID.LAVA and PotionEffect.LAVA_PROOF in current_effects.keys():
+                pass
+            else:
+                message_logs.appendleft(f"the {move_tile.name}")
+                message_logs.appendleft(f"hurts you -{damage}H")
+                player_health -= damage
+                player_health = max(0, player_health)
+                sounds_to_play.add(Sound.HURT)
         if move_tile.has_tag(TileTag.DRAIN):
             message_logs.appendleft(f"the {move_tile.name}")
             message_logs.appendleft(f"slows you -{drain}S")
             player_stamina -= drain
             player_stamina = max(0, player_stamina)
             regen_stam = False
-        if move_tile.has_tag(TileTag.LIQUID):
+        if move_tile.has_tag(TileTag.LIQUID) and PotionEffect.SWIM not in current_effects.keys():
             player_stamina -= 1
             if player_stamina <= 0:
                 player_health -= 1
@@ -754,6 +760,7 @@ def main(screen, settings):
                             message_logs.appendleft("the vehicle and")
                             message_logs.appendleft("leave the world")
                             message_logs.appendleft("press escape")
+                            sounds_to_play.add(Sound.VICTORY)
                             player_is_dead = True
                         if current_item.id == ItemID.FERTILIZER:
                             if target_tile.has_tag(TileTag.GROW):
@@ -1020,6 +1027,7 @@ def main(screen, settings):
                                                 message_logs.appendleft("to discover")
                                                 message_logs.appendleft("keep playing to")
                                                 message_logs.appendleft("find everything")
+                                                sounds_to_play.add(Sound.VICTORY)
                                         else:
                                             message_logs.appendleft("you strike the")
                                             message_logs.appendleft(f"{target_mob.name} "
@@ -1059,6 +1067,8 @@ def main(screen, settings):
                                 effect_id, duration = effect
                                 current_effects[effect_id] = max(duration, current_effects.get(effect_id, 0))
                             add_to_inventory(Item(ItemID.BOTTLE), inventory)
+                            player_stamina -= 1
+                            player_stamina = max(0, player_stamina)
                             current_item.count -= 1
                             if current_item.count <= 0:
                                 inventory.remove(NO_ITEM)
@@ -1255,11 +1265,34 @@ def main(screen, settings):
                 elif current_layer_index < 2:
                     message_logs.appendleft("the sun is")
                     message_logs.appendleft("starting to set")
+            print(f"tick {world_time}")
 
-            if regen_stam and not get_array(player_pos, current_layer.tile_array).has_tag(TileTag.LIQUID):
+            # Decay potion effects.
+            for effect_id in tuple(current_effects.keys()):
+                current_effects[effect_id] -= 1
+                if current_effects[effect_id] <= 0:
+                    del current_effects[effect_id]
+                    message_logs.appendleft(f"effect {effect_names[effect_id]}")
+                    message_logs.appendleft("has run out")
+
+            if PotionEffect.SPEED in current_effects.keys():
+                message_logs.appendleft("speed potion is")
+                message_logs.appendleft("not implemented")
+
+            if PotionEffect.REGEN_HEALTH in current_effects.keys():
+                player_health += 1
+                player_health = min(player_health, 10)
+                message_logs.appendleft("you regenerate")
+                message_logs.appendleft("health +1H")
+
+            not_in_liquid = not get_array(player_pos, current_layer.tile_array).has_tag(TileTag.LIQUID)
+            if regen_stam and (not_in_liquid or (PotionEffect.SWIM in current_effects.keys())):
                 player_stamina += 1
                 player_stamina = min(player_stamina, 10)
             regen_stam = True
+            if PotionEffect.REGEN_STAMINA in current_effects.keys():
+                player_stamina += 1
+                player_stamina = min(player_stamina, 10)
             # Check for darkness; it can still be daytime in caves.
             if (level_is_dark or current_layer_index == 0) and random.random() < MOB_SPAWN_CHANCE and \
                     number_of_mobs < game_world.mob_cap:
@@ -1269,7 +1302,7 @@ def main(screen, settings):
                     sx, sy = random.randrange(world_size[0]), random.randrange(world_size[1])
                     if light_map[sx][sy] or distance_within((sx, sy), player_pos, light_radius + 1):
                         continue  # don't spawn if the tile is lit
-                    if current_layer_index == 0 and line_of_sight((sx, sy), player_pos):
+                    if current_layer_index == 0 and line_of_sight(player_pos, (sx, sy)):
                         continue  # if player can see the spawn point in cloud layer
                     try_tile = current_layer.tile_array[sx][sy]
                     try_mob = current_layer.mob_array[sx][sy]
@@ -1298,6 +1331,7 @@ def main(screen, settings):
             # Tick the world.
             already_spread: set[tuple[int, int]] = set()
             already_mob_ticked: set[Mob] = set()
+            currently_invisible = PotionEffect.INVISIBLE in current_effects.keys()
             for x in range(world_size.x):
                 for y in range(world_size.y):
                     # Tick the tiles first.
@@ -1377,9 +1411,19 @@ def main(screen, settings):
                             current_mob.has_tag(MobTag.ALWAYS_SIM):
                         continue  # mobs outside this radius won't be ticked unless always active
                     if current_mob.has_tag(MobTag.EXPLODE):
+                        sense_radius = INVIS_SENSE_DISTANCE if currently_invisible else DEVIL_EXPLODE_RADIUS
                         current_mob.fuse += 1
-                        message_logs.appendleft(f"{current_mob.name} will")
-                        message_logs.appendleft(f"explode in {mob_explosion[current_mob.id][0] - current_mob.fuse}")
+                        if current_mob.id == MobID.DEVIL:
+                            if not distance_within((x, y), player_pos, sense_radius):
+                                current_mob.fuse -= 1
+                                current_mob.fuse = max(0, current_mob.fuse)
+                            elif line_of_sight(player_pos, (x, y)):
+                                message_logs.appendleft(f"{current_mob.name} will")
+                                message_logs.appendleft(
+                                    f"explode in {mob_explosion[current_mob.id][0] - current_mob.fuse}")
+                        if current_mob.id in (MobID.BOMB, MobID.RED_BOMB, MobID.WHITE_BOMB):
+                            message_logs.appendleft(f"{current_mob.name} will")
+                            message_logs.appendleft(f"explode in {mob_explosion[current_mob.id][0] - current_mob.fuse}")
                         if current_mob.fuse >= mob_explosion[current_mob.id][0]:
                             radius = mob_explosion[current_mob.id][1]
                             sounds_to_play.add(Sound.EXPLOSION)
@@ -1404,6 +1448,7 @@ def main(screen, settings):
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
                         dist = DOG_FOLLOW_RADIUS if current_mob.has_tag(MobTag.SWAPPABLE) else CHASE_DISTANCE
+                        dist = INVIS_SENSE_DISTANCE if currently_invisible else dist
                         if current_mob.id == MobID.SPRITE:
                             dist = 20
                         if distance_within((x, y), player_pos, dist):
@@ -1446,10 +1491,11 @@ def main(screen, settings):
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_JUMP):
+                        sense_radius = INVIS_SENSE_DISTANCE if currently_invisible else JUMP_DISTANCE
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
-                        if distance_within((x, y), player_pos, JUMP_DISTANCE):
+                        if distance_within((x, y), player_pos, sense_radius):
                             # chase player
                             dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
                         else:
@@ -1474,6 +1520,7 @@ def main(screen, settings):
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_SHOOT):
+                        sense_radius = INVIS_SENSE_DISTANCE if currently_invisible else SKELETON_SIGHT_RADIUS
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
@@ -1495,7 +1542,7 @@ def main(screen, settings):
                         if skelly_got_em:
                             skelly_got_em = False
                             continue
-                        if distance_within((x, y), player_pos, SKELETON_SIGHT_RADIUS):
+                        if distance_within((x, y), player_pos, sense_radius):
                             # go to nearest target space
                             target_spaces.sort(key=lambda p: distance_squared(p, (x, y)))
                             for target_space in target_spaces:
@@ -1624,10 +1671,11 @@ def main(screen, settings):
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_FLEE):
+                        sense_radius = INVIS_SENSE_DISTANCE if currently_invisible else SHADE_FLEE_RADIUS
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
-                        if distance_within((x, y), player_pos, SHADE_FLEE_RADIUS):
+                        if distance_within((x, y), player_pos, sense_radius):
                             # flee player
                             dir_vec = (pg.Vector2(x, y) - pg.Vector2(player_pos)).normalize()
                             current_mob.state = 'flee'
@@ -1787,6 +1835,16 @@ def main(screen, settings):
                     screen.blit(tile_image, (dx * tile_size.x, dy * tile_size.y))
                 dy += 1
             dx += 1
+
+        # Draw current potion effects.
+        if len(current_effects) > 0 and game_mode is GameMode.MOVE:
+            write_text((0, 0), "effects", Color.WHITE)
+            i = 0
+            for effect_id, duration in current_effects.items():
+                i += 1
+                effect_img = tile_loader.get_tile(Graphic.POTION_EFFECT, effect_colors[effect_id])
+                screen.blit(effect_img, (0, i * tile_size.y))
+                write_text((1, i), f"{effect_names[effect_id]}-{duration}", Color.WHITE)
 
         # Draw facing cursor or menu cursor.
         inventory_scroll = max(0, cursor_index - 15)
