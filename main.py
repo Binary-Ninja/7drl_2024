@@ -14,7 +14,7 @@ from soundloader import SoundLoader
 from world import World, set_array, get_array, make_2d_array
 from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
-from items import Item, item_to_mob, item_light
+from items import Item, item_to_mob, item_light, item_effects, PotionEffect
 from mobs import Mob, mob_damage, mob_explosion
 from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light, tile_drain
 from loots import tile_break_loot, resolve_loot, mob_death_loot, fishing_loot
@@ -259,7 +259,7 @@ def main(screen, settings):
     current_layer = current_layer_key[current_layer_index]
 
     mob_spawn_per_layer = {
-        0: (MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON),
+        0: (MobID.BLACK_ZOMBIE, MobID.BLACK_SLIME, MobID.BLACK_SKELETON, MobID.FAIRY),
         1: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON),
         2: (MobID.GREEN_ZOMBIE, MobID.GREEN_SLIME, MobID.GREEN_SKELETON,
             MobID.RED_ZOMBIE, MobID.RED_SLIME, MobID.RED_SKELETON, MobID.BAT,
@@ -299,6 +299,7 @@ def main(screen, settings):
     global path_to_player
     global light_map
     do_fov = True
+    magic_eye_used = False
     global player_health
     global player_stamina
     global regen_stam
@@ -356,6 +357,7 @@ def main(screen, settings):
 
     current_crafter = None  # the current crafting station in use
     crafting_list = None  # the list of recipies
+    current_effects: dict[PotionEffect, int] = {}  # the key is what effect we've got, value is remaining time
 
     just_broken_a_tile = False
     displayed_empty_hands_message = False
@@ -623,8 +625,8 @@ def main(screen, settings):
             set_array(try_pos, current_layer.tile_array, Tile(tile_replace[move_tile.id]))
             for item in resolve_loot(tile_break_loot[move_tile.id]):
                 add_to_inventory(item, inventory)
-                message_logs.appendleft("you crush the")
-                message_logs.appendleft(f"{move_tile.name}")
+            message_logs.appendleft("you crush the")
+            message_logs.appendleft(f"{move_tile.name}")
         set_array(player_pos, current_layer.mob_array, None)
         set_array(try_pos, current_layer.mob_array, Mob(MobID.PLAYER))
         return try_pos
@@ -753,9 +755,41 @@ def main(screen, settings):
                             message_logs.appendleft("leave the world")
                             message_logs.appendleft("press escape")
                             player_is_dead = True
-                        if current_item.tags == (ItemTag.STACKABLE,):
-                            message_logs.appendleft("you cannot use")
-                            message_logs.appendleft(f"the {current_item.name}")
+                        if current_item.id == ItemID.FERTILIZER:
+                            if target_tile.has_tag(TileTag.GROW):
+                                grow_tile = Tile(tile_grow[target_tile.id][0])
+                                set_array(target_pos, current_layer.tile_array, grow_tile)
+                                message_logs.appendleft("you grow the")
+                                message_logs.appendleft(f"{grow_tile.name}")
+                                if grow_tile.has_tag(TileTag.BLOCK_SIGHT) ^ target_tile.has_tag(TileTag.BLOCK_SIGHT):
+                                    do_calc_light_map = True
+                                    fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
+                                if grow_tile.has_tag(TileTag.LIGHT) or target_tile.has_tag(TileTag.LIGHT):
+                                    do_calc_light_map = True
+                                current_item.count -= 1
+                                if current_item.count <= 0:
+                                    inventory.remove(NO_ITEM)
+                                    current_item = NO_ITEM
+                                    displayed_empty_hands_message = True
+                            else:
+                                message_logs.appendleft("you cannot use")
+                                message_logs.appendleft("fertilizer here")
+                        if current_item.tags == (ItemTag.STACKABLE,) and current_item.id != ItemID.FERTILIZER:
+                            if current_item.id == ItemID.BOOK:
+                                message_logs.appendleft("the pages are")
+                                message_logs.appendleft("all blank")
+                            elif current_item.id == ItemID.MAGIC_EYE:
+                                message_logs.appendleft(f"the {current_item.name}")
+                                message_logs.appendleft("reveals all")
+                                magic_eye_used = True
+                                current_item.count -= 1
+                                if current_item.count <= 0:
+                                    inventory.remove(NO_ITEM)
+                                    current_item = NO_ITEM
+                                    displayed_empty_hands_message = True
+                            else:
+                                message_logs.appendleft("you cannot use")
+                                message_logs.appendleft(f"the {current_item.name}")
                             sounds_to_play.add(Sound.FAILURE)
                         if current_item is NO_ITEM and target_mob is None and \
                                 target_tile.id not in current_item.data["breakable"]:
@@ -862,6 +896,8 @@ def main(screen, settings):
                                 if reduce_stamina(stam_reduce):
                                     just_placed_a_tile = True
                                     tile = Tile(current_item.data["place"])
+                                    if current_item.id == ItemID.WEB_STAFF and target_tile.id == TileID.CLOUD:
+                                        tile = Tile(TileID.SKY_WEBS)
                                     set_array(target_pos,
                                               current_layer.tile_array, tile)
                                     fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
@@ -1018,6 +1054,15 @@ def main(screen, settings):
                                 message_logs.appendleft("you cannot fish")
                                 message_logs.appendleft(f"in {tile_name}")
                                 sounds_to_play.add(Sound.FAILURE)
+                        if current_item.has_tag(ItemTag.POTION):
+                            for effect in item_effects[current_item.id]:
+                                effect_id, duration = effect
+                                current_effects[effect_id] = max(duration, current_effects.get(effect_id, 0))
+                            add_to_inventory(Item(ItemID.BOTTLE), inventory)
+                            current_item.count -= 1
+                            if current_item.count <= 0:
+                                inventory.remove(NO_ITEM)
+                                current_item = NO_ITEM
                         just_broken_a_tile = False
                         displayed_empty_hands_message = False
                         displayed_no_use_message = False
@@ -1224,13 +1269,15 @@ def main(screen, settings):
                     sx, sy = random.randrange(world_size[0]), random.randrange(world_size[1])
                     if light_map[sx][sy] or distance_within((sx, sy), player_pos, light_radius + 1):
                         continue  # don't spawn if the tile is lit
+                    if current_layer_index == 0 and line_of_sight((sx, sy), player_pos):
+                        continue  # if player can see the spawn point in cloud layer
                     try_tile = current_layer.tile_array[sx][sy]
                     try_mob = current_layer.mob_array[sx][sy]
                     if try_mob or try_tile.has_tag(TileTag.LIQUID):
                         continue  # don't replace another mob or spawn in liquid
                     if try_tile.has_tag(TileTag.BLOCK_MOVE) and try_tile.id != TileID.AIR:
                         continue  # don't spawn in walls unless it is air
-                    if try_tile.id == TileID.WEB:
+                    if try_tile.id in (TileID.WEB, TileID.SKY_WEBS):
                         if current_layer_index == 0:
                             mob_id = MobID.CLOUD_SPIDER
                         elif current_layer_index < 4:
@@ -1294,7 +1341,7 @@ def main(screen, settings):
                                     current_tile.has_tag(TileTag.BLOCK_SIGHT) ^ tile.has_tag(TileTag.BLOCK_SIGHT):
                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
                                 do_calc_light_map = True
-                            if light_map[x][y] and line_of_sight(player_pos, (x, y)):
+                            if (light_map[x][y] or not level_is_dark) and line_of_sight(player_pos, (x, y)):
                                 message_logs.appendleft(f"{current_tile.name}")
                                 message_logs.appendleft(f"grow> {tile.name}")
                     # Spawn skeletons from desert bones.
@@ -1541,7 +1588,7 @@ def main(screen, settings):
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
                         player_tile = get_array(player_pos, current_layer.tile_array)
-                        if player_tile.id != TileID.WEB:
+                        if player_tile.id not in (TileID.WEB, TileID.SKY_WEBS):
                             continue  # don't do anything if player isn't on a web
                         if distance_within((x, y), player_pos, SPIDER_CHASE_RADIUS):
                             # chase player
@@ -1638,7 +1685,6 @@ def main(screen, settings):
                                 current_mob.state = "spawn"
                             else:
                                 current_mob.state = "attack"
-                            message_logs.appendleft(f'aw - {current_mob.state}')
                         if current_mob.state == "attack":
                             dir_vec = (pg.Vector2(player_pos) - pg.Vector2(x, y)).normalize()
                         elif current_mob.state == "flee":
@@ -1705,6 +1751,14 @@ def main(screen, settings):
         if settings["sound"]:
             sound_loader.play_sounds(sounds_to_play)
         sounds_to_play = set()
+
+        # Use magic eye.
+        if magic_eye_used:
+            if do_fov:
+                do_fov = False
+            else:
+                do_fov = True
+                magic_eye_used = False
 
         # Draw.
         screen.fill((0, 0, 0))
@@ -1818,8 +1872,8 @@ def main(screen, settings):
             write_text((35, 34 - i), message, color)
 
         # Display FPS.
-        # fps_surf = font.render(str(clock.get_fps()), True, (255, 255, 255))
-        # screen.blit(fps_surf, (0, screen.get_height() - fps_surf.get_height()))
+        fps_surf = font.render(str(clock.get_fps()), True, (255, 255, 255))
+        screen.blit(fps_surf, (0, screen.get_height() - fps_surf.get_height()))
         # Flip display.
         pg.display.flip()
 

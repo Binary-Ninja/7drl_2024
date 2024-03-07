@@ -54,3 +54,8 @@
 - added music
 - mob ai is now slightly smarter (slightly)
 - added secret ending after air wizard
+
+## Day 7
+- added more items and such
+- playtesting
+- testing pyinstaller

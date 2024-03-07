@@ -1,6 +1,18 @@
 from collections import namedtuple, defaultdict
+from enum import Enum, auto
 
 from data import Color, Graphic, MobID, ItemID, ItemTag, TileID
+
+
+class PotionEffect(Enum):
+    SWIM = auto()
+    LAVA_PROOF = auto()
+    INVISIBLE = auto()
+    REGEN_STAMINA = auto()
+    ARMOR = auto()
+    SPEED = auto()
+    REGEN_HEALTH = auto()
+
 
 item_to_mob = defaultdict(lambda: None)
 item_to_mob.update({
@@ -17,6 +29,7 @@ item_to_mob.update({
     MobID.BOMB: ItemID.BOMB,
     MobID.RED_BOMB: ItemID.RED_BOMB,
     MobID.WHITE_BOMB: ItemID.WHITE_BOMB,
+    MobID.SCRINIUM: ItemID.SCRINIUM,
 })
 
 item_light = defaultdict(lambda: 0)
@@ -27,6 +40,19 @@ item_light.update({
     ItemID.GOLD_LANTERN: 14,
     ItemID.GEM_LANTERN: 18,
     ItemID.LAPIS: 3,
+    ItemID.SCRINIUM: 3,
+})
+
+item_effects = defaultdict(lambda: tuple())
+item_effects.update({
+    ItemID.SWIM_POTION: ((PotionEffect.SWIM, 100), ),
+    ItemID.LAVA_POTION: ((PotionEffect.LAVA_PROOF, 100), ),
+    ItemID.STAMINA_POTION: ((PotionEffect.REGEN_STAMINA, 100), ),
+    ItemID.HEALTH_POTION: ((PotionEffect.REGEN_HEALTH, 100), ),
+    ItemID.SPEED_POTION: ((PotionEffect.SPEED, 100), ),
+    ItemID.IRONSKIN_POTION: ((PotionEffect.ARMOR, 100), ),
+    ItemID.INVISIBLE_POTION: ((PotionEffect.INVISIBLE, 100), ),
+    ItemID.SWIM_LAVA_POTION: ((PotionEffect.SWIM, 100), (PotionEffect.LAVA_PROOF, 100)),
 })
 
 ItemData = namedtuple("ItemData", ("name", "graphic", "tags", "data"),
@@ -35,6 +61,10 @@ item_data = {
     ItemID.WORKBENCH: ItemData("workbench", (Graphic.WORKBENCH, Color.BROWN),
                                (ItemTag.SPAWN_MOB,), {
             "mobid": MobID.WORKBENCH,
+                               }),
+    ItemID.SCRINIUM: ItemData("scrinium", (Graphic.SKULL_BOOKS, Color.OBSIDIAN),
+                               (ItemTag.SPAWN_MOB, ItemTag.LIGHT), {
+                                   "mobid": MobID.SCRINIUM,
                                }),
     ItemID.CAULDRON: ItemData("cauldron", (Graphic.CAULDRON, Color.MED_GRAY),
                                (ItemTag.SPAWN_MOB,), {
@@ -83,6 +113,13 @@ item_data = {
     ItemID.DIRT: ItemData("dirt", (Graphic.DIRT, Color.BROWN),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
                               "place": TileID.DIRT, "base": (TileID.HOLE, TileID.WATER, TileID.LAVA)
+                          }),
+    ItemID.WEB_STAFF: ItemData("web staff", (Graphic.STAFF, Color.MED_GRAY),
+                          (ItemTag.PLACE_TILE,), {
+                              "place": TileID.WEB, "base": (TileID.DIRT, TileID.SAND, TileID.ASH,
+                                                            TileID.GRASS, TileID.FLOOR_FUNGUS, TileID.CLOUD
+                                                            ),
+            "stamina_cost": 3,
                           }),
     ItemID.OBSIDIAN: ItemData("obsidian", (Graphic.OBSIDIAN, Color.OBSIDIAN),
                           (ItemTag.STACKABLE, ItemTag.PLACE_TILE), {
@@ -154,11 +191,17 @@ item_data = {
                           }),
     ItemID.STONE: ItemData("stone", (Graphic.STONE_ITEM, Color.STONE),
                            (ItemTag.STACKABLE,), ),
+    ItemID.BOOK: ItemData("book", (Graphic.BOOK, Color.RED),
+                           (ItemTag.STACKABLE,), ),
+    ItemID.FERTILIZER: ItemData("fertilizer", (Graphic.SLIME_ITEM, Color.BROWN),
+                           (ItemTag.STACKABLE,), ),
     ItemID.CIRCUIT: ItemData("circuit", (Graphic.ALIEN_TECH, Color.GREEN),
                            (ItemTag.STACKABLE,), ),
     ItemID.SPACESHIP: ItemData("spaceship", (Graphic.UFO2, Color.LIGHT_GREEN),
                              tuple(), ),
-    ItemID.FAIRY_DUST: ItemData("pixiedust", (Graphic.FULL_BOTTLE, Color.PINK),
+    ItemID.MAGIC_EYE: ItemData("mage eye", (Graphic.EYE, Color.YELLOW),
+                               (ItemTag.STACKABLE,), ),
+    ItemID.FAIRY_DUST: ItemData("pixiedust", (Graphic.BOTTLE, Color.PINK),
                            (ItemTag.STACKABLE,), ),
     ItemID.STRING: ItemData("string", (Graphic.STRING, Color.WHITE),
                            (ItemTag.STACKABLE,), ),
@@ -283,7 +326,7 @@ item_data = {
                                 (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
             "mob_damage": 2,
                                     "stamina_cost": 5,
-                                    "breakable": (TileID.WEB,), "tile_damage": 2,
+                                    "breakable": (TileID.WEB, TileID.SKY_WEBS), "tile_damage": 2,
                                 }),
     ItemID.EMPTY_HANDS: ItemData("empty hands", (Graphic.EMPTY_HANDS, Color.YELLOW),
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE, ItemTag.PICKUP), {
@@ -332,6 +375,22 @@ item_data = {
                                }),
     ItemID.WHEAT: ItemData("wheat", (Graphic.WHEAT, Color.YELLOW),
                            (ItemTag.STACKABLE,), ),
+    ItemID.SWIM_POTION: ItemData("swim", (Graphic.FULL_BOTTLE, Color.LIGHT_BLUE),
+                           (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.LAVA_POTION: ItemData("fireproof", (Graphic.FULL_BOTTLE, Color.RED),
+                                 (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.SPEED_POTION: ItemData("haste", (Graphic.FULL_BOTTLE, Color.GREEN),
+                                 (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.HEALTH_POTION: ItemData("regen", (Graphic.FULL_BOTTLE, Color.RED),
+                                 (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.STAMINA_POTION: ItemData("energy", (Graphic.FULL_BOTTLE, Color.YELLOW),
+                                 (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.IRONSKIN_POTION: ItemData("defense", (Graphic.FULL_BOTTLE, Color.IRON),
+                                 (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.INVISIBLE_POTION: ItemData("stealth", (Graphic.FULL_BOTTLE, Color.WHITE),
+                                 (ItemTag.STACKABLE, ItemTag.POTION), ),
+    ItemID.SWIM_LAVA_POTION: ItemData("lava", (Graphic.FULL_BOTTLE, Color.ORANGE),
+                                      (ItemTag.STACKABLE, ItemTag.POTION), ),
     ItemID.IRON_ORE: ItemData("i. ore", (Graphic.STONE_ITEM, Color.IRON),
                               (ItemTag.STACKABLE,), ),
     ItemID.LAPIS: ItemData("lapis", (Graphic.STONE_ITEM, Color.BLUE),
@@ -416,9 +475,9 @@ item_data = {
                                "stamina_cost": 0,
             "stamina": 2,
                            }),
-    ItemID.COCKTAIL: ItemData("cocktail", (Graphic.FULL_BOTTLE, Color.ORANGE),
-                               (ItemTag.STACKABLE, ItemTag.HEAL, ItemTag.STAMINA), {
-                                   "heal": 1,
+    ItemID.COCKTAIL: ItemData("cocktail", (Graphic.FULL_BOTTLE, Color.LIGHT_BROWN),
+                               (ItemTag.HEAL, ItemTag.STAMINA, ItemTag.POTION, ItemTag.STACKABLE), {
+                                   "heal": 2,
                                    "stamina_cost": 0,
                                    "stamina": 4,
                                }),
@@ -446,7 +505,7 @@ item_data = {
                                 (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                     "mob_damage": 3,
                                     "stamina_cost": 4,
-                                     "breakable": (TileID.WEB,), "tile_damage": 3,
+                                     "breakable": (TileID.WEB, TileID.SKY_WEBS), "tile_damage": 3,
                                 }),
     ItemID.STONE_PICK: ItemData("stone pick", (Graphic.PICKAXE, Color.STONE),
                                (ItemTag.BREAK_TILE,), {
@@ -488,7 +547,7 @@ item_data = {
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                      "mob_damage": 4,
                                      "stamina_cost": 3,
-                                    "breakable": (TileID.WEB,), "tile_damage": 4,
+                                    "breakable": (TileID.WEB, TileID.SKY_WEBS), "tile_damage": 4,
                                  }),
     ItemID.IRON_PICK: ItemData("iron pick", (Graphic.PICKAXE, Color.IRON),
                                 (ItemTag.BREAK_TILE,), {
@@ -530,7 +589,7 @@ item_data = {
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                      "mob_damage": 5,
                                      "stamina_cost": 2,
-                                    "breakable": (TileID.WEB,), "tile_damage": 5,
+                                    "breakable": (TileID.WEB, TileID.SKY_WEBS), "tile_damage": 5,
                                  }),
     ItemID.GOLD_PICK: ItemData("gold pick", (Graphic.PICKAXE, Color.GOLD),
                                 (ItemTag.BREAK_TILE,), {
@@ -573,7 +632,7 @@ item_data = {
                                  (ItemTag.DAMAGE_MOBS, ItemTag.BREAK_TILE), {
                                      "mob_damage": 10,
                                      "stamina_cost": 1,
-            "breakable": (TileID.WEB,), "tile_damage": 10,
+            "breakable": (TileID.WEB, TileID.SKY_WEBS), "tile_damage": 10,
                                  }),
     ItemID.GEM_PICK: ItemData("gem pick", (Graphic.PICKAXE, Color.GEM),
                                 (ItemTag.BREAK_TILE,), {

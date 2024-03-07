@@ -46,6 +46,7 @@ tile_replace: dict[TileID, TileID] = {
     TileID.LAVA: TileID.HOLE,
     TileID.OBSIDIAN: TileID.HOLE,
     TileID.OBSIDIAN_FLOOR: TileID.DIRT,
+    TileID.SKY_WEBS: TileID.CLOUD,
 }
 
 tile_damage = defaultdict(lambda: 0)
@@ -64,6 +65,7 @@ tile_damage.update({
 tile_drain = defaultdict(lambda: 0)
 tile_drain.update({
     TileID.WEB: 1,
+    TileID.SKY_WEBS: 2,
 })
 
 tile_grow = defaultdict(tuple)
@@ -172,6 +174,7 @@ tile_data = {
                                     (TileTag.BLOCK_MOVE,)),
     TileID.CLOUD: TileData("cloud", (Graphic.CLOUD, Color.WHITE), 10, ),
     TileID.WEB: TileData("web", (Graphic.WEB, Color.WHITE), 10, (TileTag.DRAIN,)),
+    TileID.SKY_WEBS: TileData("web", (Graphic.WEB, Color.WHITE), 10, (TileTag.DRAIN,)),
 }
 
 

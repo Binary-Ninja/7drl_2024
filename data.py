@@ -94,6 +94,7 @@ class Graphic:
     HEART_EMPTY = (40, 10)
     STAM_FULL = (42, 12)
     STAM_EMPTY = (40, 12)
+    POTION_EFFECT = (35, 11)
 
     CURSOR = (36, 12)
     CURSOR2 = (29, 21)
@@ -149,6 +150,8 @@ class Graphic:
     EYE = (41, 3)
     MEAT2 = (34, 19)
     ALIEN_TECH = (21, 12)
+    BOOK = (45, 5)
+    STAFF = (32, 5)
 
 
 str_2_tile = {
@@ -247,6 +250,7 @@ class MobID(Enum):
     CAULDRON = 41
     WHITE_BOMB = 42
     UFO = 43
+    SCRINIUM = 44
 
 
 class MobTag(Enum):
@@ -382,6 +386,19 @@ class ItemID(Enum):
     WHITE_BOMB = 113
     CIRCUIT = 114
     SPACESHIP = 115
+    FERTILIZER = 116
+    SCRINIUM = 117
+    BOOK = 118
+    WEB_STAFF = 119
+    MAGIC_EYE = 120
+    SWIM_POTION = 121
+    LAVA_POTION = 123
+    INVISIBLE_POTION = 124
+    STAMINA_POTION = 125
+    IRONSKIN_POTION = 126
+    SPEED_POTION = 127
+    HEALTH_POTION = 128
+    SWIM_LAVA_POTION = 129
 
 
 class ItemTag(Enum):
@@ -395,6 +412,7 @@ class ItemTag(Enum):
     STAMINA = auto()
     LIGHT = auto()
     FISH = auto()
+    POTION = auto()
 
 
 class TileID(Enum):
@@ -444,6 +462,7 @@ class TileID(Enum):
     TUBER_CROP = 44
     OBSIDIAN = 45
     OBSIDIAN_FLOOR = 46
+    SKY_WEBS = 47
 
 
 class TileTag(Enum):
