@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Sequence
 
 import pygame as pg
 
 
 class FakeSound:
     def play(self): pass
+    def set_volume(self): pass
 
 
 class SoundLoader:
@@ -15,9 +15,13 @@ class SoundLoader:
         for sound in sound_dir.iterdir():
             self.sounds[sound.stem] = pg.mixer.Sound(str(sound)) if load_sounds else FakeSound()
 
+    def set_volume(self, volume: float):
+        for sound in self.sounds.values():
+            sound.set_volume(volume)
+
     def play(self, sound: str):
         self.sounds[sound].play()
 
-    def play_sounds(self, sounds: Sequence[str]):
+    def play_sounds(self, sounds):
         for sound in sounds:
             self.play(sound)

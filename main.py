@@ -150,10 +150,11 @@ def main_menu(screen) -> dict:
         if not mixer_available:
             write_text((0, 5), f"{'sound playback is not available on this system':^50}", Color.RED)
 
-        write_text((0, 22), f"{'credits':^50}", Color.WHITE)
-        write_text((0, 23), f"{'sprites by kenney.nl':^50}", Color.LIGHT_GRAY)
-        write_text((0, 24), f"{'sound effects by sfxr.me':^50}", Color.LIGHT_GRAY)
-        write_text((0, 25), f"{'music':^50}", Color.LIGHT_GRAY)
+        write_text((0, 21), f"{'credits':^50}", Color.WHITE)
+        write_text((0, 22), f"{'sprites by kenney.nl':^50}", Color.LIGHT_GRAY)
+        write_text((0, 23), f"{'sound effects by sfxr.me':^50}", Color.LIGHT_GRAY)
+        write_text((0, 24), f"{'music by horrorpen-brandon75689-brandon morris':^50}", Color.LIGHT_GRAY)
+        write_text((0, 25), f"{'axtoncrolley-spring spring-insydnis':^50}", Color.LIGHT_GRAY)
         write_text((0, 26), f"{'inspired by minicraft by markus persson':^50}", Color.LIGHT_GRAY)
         write_text((0, 27), f"{'code by binary-ninja.itch.io':^50}", Color.LIGHT_GRAY)
 
@@ -166,7 +167,7 @@ def main_menu(screen) -> dict:
 
         # Draw wizard mode indicator.
         if options["wizard"]:
-            write_text((0, 20), f"{'wizard mode enabled':^50}", Color.RED)
+            write_text((0, 19), f"{'wizard mode enabled':^50}", Color.RED)
 
         # Draw settings.
         for index, setting in enumerate(menu_options):
@@ -192,7 +193,8 @@ def main(screen, settings):
         settings["sound"] = False
         settings["music"] = False
 
-    sound_loader = SoundLoader(Path() / "sound", settings["sound"])
+    sound_loader = SoundLoader(Path() / "sound", mixer_available)
+    sound_loader.set_volume(0.25)
     sounds_to_play: set[Sound] = set()
 
     global tile_size
@@ -317,14 +319,14 @@ def main(screen, settings):
     never_been_to_sky = True
     air_wizard_defeated = False
     current_item: Item | NO_ITEM = NO_ITEM
-    inventory: list[Item] = [Item(ItemID.WORKBENCH),
-                             Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
-                             Item(ItemID.GEM_AXE, 1), Item(ItemID.STONE_FLOOR, 99),
-                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 99),
-                             Item(ItemID.WOOD, 100), Item(ItemID.WOOD_FLOOR, 99),
-                             Item(ItemID.OVEN, 1), Item(ItemID.FURNACE, 1),
-                             Item(ItemID.IRON_BAR, 100), Item(ItemID.PASTRY, 99),
-                             Item(ItemID.ANVIL, 1), Item(ItemID.LOOM, 1),
+    inventory: list[Item] = [Item(ItemID.EMPTY_HANDS), Item(ItemID.WORKBENCH),
+                             # Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
+                             # Item(ItemID.GEM_AXE, 1), Item(ItemID.STONE_FLOOR, 99),
+                             # Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.SPAWN_EGG_GREEN_ZOMBIE, 99),
+                             # Item(ItemID.WOOD, 100), Item(ItemID.WOOD_FLOOR, 99),
+                             # Item(ItemID.OVEN, 1), Item(ItemID.FURNACE, 1),
+                             # Item(ItemID.IRON_BAR, 100), Item(ItemID.PASTRY, 99),
+                             # Item(ItemID.ANVIL, 1), Item(ItemID.LOOM, 1),
                              ]
 
     if wizard_mode:
@@ -333,16 +335,21 @@ def main(screen, settings):
             inventory.append(Item(item_id, 999))
 
     message_logs: deque[str] = deque(maxlen=10)
+    message_logs.appendleft("the controls")
     message_logs.appendleft("escape to quit")
-    message_logs.appendleft("arrow keys to")
-    message_logs.appendleft("navigate")
-    message_logs.appendleft("c key to use")
-    message_logs.appendleft("item or select")
-    message_logs.appendleft("x key to open")
-    message_logs.appendleft("inventory or")
-    message_logs.appendleft("interact")
-    message_logs.appendleft("z key to wait")
-    message_logs.appendleft("or use stairs")
+    message_logs.appendleft("arrows to move")
+    message_logs.appendleft("c to use item")
+    message_logs.appendleft("x to interact")
+    message_logs.appendleft("z to wait or")
+    message_logs.appendleft("use staircases")
+    message_logs.appendleft("m-toggle music")
+    message_logs.appendleft("n-toggle sound")
+    message_logs.appendleft("h-show controls")
+
+    if wizard_mode:
+        message_logs.appendleft("f-toggle fov")
+        message_logs.appendleft("space-toggle")
+        message_logs.appendleft("level darkness")
 
     game_mode = GameMode.MOVE
 
@@ -354,6 +361,37 @@ def main(screen, settings):
     just_placed_a_tile = False
     displayed_no_use_message = False
     skelly_got_em = False
+
+    if mixer_available and settings["music"]:
+        pg.mixer.music.load(Path() / "music" / "woods.wav")
+        pg.mixer.music.play(-1)
+
+    def change_music():
+        if not mixer_available:
+            return
+        if not settings["music"]:
+            return
+        index_2_music = {
+            0: "no_more_magic.ogg",
+            1: "woods.wav",
+            2: "caves.mp3",
+            3: "caverns.ogg",
+            4: "hell.ogg",
+        }
+        index_2_vol = {
+            0: 0.5,
+            1: 0.4,
+            2: 0.4,
+            3: 1.0,
+            4: 0.3,
+        }
+        if current_layer_index == 1 and night_time:
+            pg.mixer.music.load(Path() / "music" / "dark_forest.ogg")
+            pg.mixer.music.set_volume(1.0)
+        else:
+            pg.mixer.music.load(Path() / "music" / index_2_music[current_layer_index])
+            pg.mixer.music.set_volume(index_2_vol[current_layer_index])
+        pg.mixer.music.play(-1)
 
     def line_of_sight(start: PointType, end: PointType) -> bool:
         start, end = Point(*start), Point(*end)
@@ -600,12 +638,35 @@ def main(screen, settings):
                 if event.key == pg.K_ESCAPE:
                     game_is_going = False
                 elif event.key == pg.K_SPACE:
-                    level_is_dark = not level_is_dark
+                    if wizard_mode:
+                        level_is_dark = not level_is_dark
                 elif event.key == pg.K_f:
-                    do_fov = not do_fov
-                elif event.key == pg.K_w:
-                    player_health = 10
-                    player_stamina = 10
+                    if wizard_mode:
+                        do_fov = not do_fov
+                elif event.key == pg.K_h:
+                    message_logs.appendleft("the controls")
+                    message_logs.appendleft("escape to quit")
+                    message_logs.appendleft("arrows to move")
+                    message_logs.appendleft("c to use item")
+                    message_logs.appendleft("x to interact")
+                    message_logs.appendleft("z to wait or")
+                    message_logs.appendleft("use staircases")
+                    message_logs.appendleft("m-toggle music")
+                    message_logs.appendleft("n-toggle sound")
+                    message_logs.appendleft("h-show controls")
+
+                    if wizard_mode:
+                        message_logs.appendleft("f-toggle fov")
+                        message_logs.appendleft("space-toggle")
+                        message_logs.appendleft("level darkness")
+                elif event.key == pg.K_m:
+                    settings["music"] = not settings["music"]
+                    if not settings["music"]:
+                        pg.mixer.music.stop()
+                    else:
+                        change_music()
+                elif event.key == pg.K_n:
+                    settings["sound"] = not settings["sound"]
                 elif event.key == pg.K_UP:
                     if player_is_dead:
                         continue
@@ -620,11 +681,9 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index -= 1
                         cursor_index %= len(inventory)
-                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index -= 1
                         cursor_index %= len(crafting_list)
-                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_DOWN:
                     if player_is_dead:
                         continue
@@ -639,11 +698,9 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index += 1
                         cursor_index %= len(inventory)
-                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index += 1
                         cursor_index %= len(crafting_list)
-                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_LEFT:
                     if player_is_dead:
                         continue
@@ -658,11 +715,9 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index -= 1
                         cursor_index %= len(inventory)
-                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index -= 1
                         cursor_index %= len(crafting_list)
-                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_RIGHT:
                     if player_is_dead:
                         continue
@@ -677,11 +732,9 @@ def main(screen, settings):
                     elif game_mode is GameMode.INVENTORY:
                         cursor_index += 1
                         cursor_index %= len(inventory)
-                        sounds_to_play.add(Sound.INDICATOR)
                     else:
                         cursor_index += 1
                         cursor_index %= len(crafting_list)
-                        sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_c:
                     if player_is_dead:
                         continue
@@ -1012,7 +1065,7 @@ def main(screen, settings):
                             crafting_list = current_crafter.recipies
                             message_logs.appendleft("you craft with")
                             message_logs.appendleft(f"the {current_crafter.name}")
-                            sounds_to_play.add(Sound.SUCCESS)
+                            sounds_to_play.add(Sound.INDICATOR)
                         elif target_mob and target_mob.has_tag(MobTag.BED):
                             if night_time:
                                 night_time = False
@@ -1020,7 +1073,7 @@ def main(screen, settings):
                                 day_cycle_timer = world_time
                                 message_logs.appendleft("you sleep the")
                                 message_logs.appendleft("night away")
-                                sounds_to_play.add(Sound.SUCCESS)
+                                sounds_to_play.add(Sound.INDICATOR)
                             else:
                                 message_logs.appendleft("you cannot rest")
                                 message_logs.appendleft("during the day")
@@ -1066,7 +1119,8 @@ def main(screen, settings):
                             number_of_mobs = count_mobs(current_layer.mob_array)
                             message_logs.appendleft("you go down the")
                             message_logs.appendleft("staircase")
-                            sounds_to_play.add(Sound.USE_ITEM)
+                            sounds_to_play.add(Sound.INDICATOR)
+                            change_music()
                         elif current_tile.has_tag(TileTag.UP_STAIRS):
                             current_layer_index -= 1
                             assert current_layer_index > -1
@@ -1079,7 +1133,8 @@ def main(screen, settings):
                             number_of_mobs = count_mobs(current_layer.mob_array)
                             message_logs.appendleft("you go up the")
                             message_logs.appendleft("staircase")
-                            sounds_to_play.add(Sound.USE_ITEM)
+                            sounds_to_play.add(Sound.INDICATOR)
+                            change_music()
                             if never_been_to_sky and current_layer_index == 0:
                                 never_been_to_sky = False
                                 spawn_point = (0, 0)
@@ -1095,11 +1150,9 @@ def main(screen, settings):
                                     set_array(spawn_point, current_layer.mob_array, wizard)
                                     message_logs.appendleft("the air wizard")
                                     message_logs.appendleft("is here...")
-                                    print(spawn_point)
                                     break
                         else:
                             do_a_game_tick = True
-                            sounds_to_play.add(Sound.USE_ITEM)
                     else:
                         cursor_index = 0  # reset cursor
                         sounds_to_play.add(Sound.INDICATOR)
@@ -1127,6 +1180,8 @@ def main(screen, settings):
             if world_time - day_cycle_timer >= DAY_CYCLE_LENGTH:
                 day_cycle_timer = world_time
                 night_time = not night_time
+                if current_layer_index == 1:
+                    change_music()
                 level_is_dark = night_time if current_layer_index < 2 else True
                 if night_time and current_layer_index < 2:
                     message_logs.appendleft("darkness falls")
@@ -1148,7 +1203,6 @@ def main(screen, settings):
                 elif current_layer_index < 2:
                     message_logs.appendleft("the sun is")
                     message_logs.appendleft("starting to set")
-            print(f"tick {world_time} layer {current_layer_index} - {'night' if night_time else 'day'}")
 
             if regen_stam and not get_array(player_pos, current_layer.tile_array).has_tag(TileTag.LIQUID):
                 player_stamina += 1
@@ -1178,11 +1232,7 @@ def main(screen, settings):
                         mob_id = random.choice(mob_spawn_per_layer[current_layer_index])
                     current_layer.mob_array[sx][sy] = Mob(mob_id)
                     number_of_mobs += 1
-                    print(f"Spawned {mob_id} at ({sx},{sy}) on {i}")
                     break
-                else:
-                    print("mob spawning exhausted")
-            print(f"total mobs: {number_of_mobs}/{game_world.mob_cap}")
 
             # Tick the world.
             already_spread: set[tuple[int, int]] = set()
@@ -1261,7 +1311,6 @@ def main(screen, settings):
                                 distance_within((x, y), player_pos, light_radius + 1):
                             current_layer.mob_array[x][y] = None
                             number_of_mobs -= 1
-                            print(f"Despawned mob. Mobs: {number_of_mobs}")
                             continue
                     if not distance_within(player_pos, (x, y), MOB_SIM_DISTANCE) and not \
                             current_mob.has_tag(MobTag.AI_AIR_WIZARD):
@@ -1282,9 +1331,15 @@ def main(screen, settings):
                         if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
                             # mob wants to move horizontally
                             try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
-                        else:
-                            # mob is diagonal or wants to move vertically
+                        elif math.fabs(dir_vec.x) < math.fabs(dir_vec.y):
+                            # mob wants to move vertically
                             try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
+                        else:
+                            # mob is diagonal
+                            if random.random() < 0.5:
+                                try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                            else:
+                                try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                             player_health -= mob_damage[current_mob.id]
@@ -1373,9 +1428,15 @@ def main(screen, settings):
                         if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
                             # mob wants to move horizontally
                             try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
-                        else:
-                            # mob is diagonal or wants to move vertically
+                        elif math.fabs(dir_vec.x) < math.fabs(dir_vec.y):
+                            # mob wants to move vertically
                             try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
+                        else:
+                            # mob is diagonal
+                            if random.random() < 0.5:
+                                try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                            else:
+                                try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
@@ -1405,10 +1466,16 @@ def main(screen, settings):
                         current_mob.last_dir = dir_vec
                         if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
                             # mob wants to move horizontally
-                            try_pos = Point(x + dir_vec.x, y)
+                            try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                        elif math.fabs(dir_vec.x) < math.fabs(dir_vec.y):
+                            # mob wants to move vertically
+                            try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         else:
-                            # mob is diagonal or wants to move vertically
-                            try_pos = Point(x, y + dir_vec.y)
+                            # mob is diagonal
+                            if random.random() < 0.5:
+                                try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                            else:
+                                try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                             player_health -= mob_damage[current_mob.id]
@@ -1443,9 +1510,15 @@ def main(screen, settings):
                         if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
                             # mob wants to move horizontally
                             try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
-                        else:
-                            # mob is diagonal or wants to move vertically
+                        elif math.fabs(dir_vec.x) < math.fabs(dir_vec.y):
+                            # mob wants to move vertically
                             try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
+                        else:
+                            # mob is diagonal
+                            if random.random() < 0.5:
+                                try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                            else:
+                                try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                             player_health -= mob_damage[current_mob.id]
@@ -1487,10 +1560,16 @@ def main(screen, settings):
                         current_mob.last_dir = dir_vec
                         if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
                             # mob wants to move horizontally
-                            try_pos = Point(x + dir_vec.x, y)
+                            try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                        elif math.fabs(dir_vec.x) < math.fabs(dir_vec.y):
+                            # mob wants to move vertically
+                            try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         else:
-                            # mob is diagonal or wants to move vertically
-                            try_pos = Point(x, y + dir_vec.y)
+                            # mob is diagonal
+                            if random.random() < 0.5:
+                                try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                            else:
+                                try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob:
@@ -1539,9 +1618,15 @@ def main(screen, settings):
                             if math.fabs(dir_vec.x) > math.fabs(dir_vec.y):
                                 # mob wants to move horizontally
                                 try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
-                            else:
-                                # mob is diagonal or wants to move vertically
+                            elif math.fabs(dir_vec.x) < math.fabs(dir_vec.y):
+                                # mob wants to move vertically
                                 try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
+                            else:
+                                # mob is diagonal
+                                if random.random() < 0.5:
+                                    try_pos = Point(x + int(math.copysign(1, dir_vec.x)), y)
+                                else:
+                                    try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                             move_mob = get_array(try_pos, current_layer.mob_array)
                             if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
                                 player_health -= mob_damage[current_mob.id]
@@ -1561,7 +1646,6 @@ def main(screen, settings):
         if wizard_mode:
             player_stamina = 10
             player_health = 10
-            do_fov = False
 
         # Check for player death.
         if not player_is_dead and player_health <= 0:
@@ -1575,8 +1659,8 @@ def main(screen, settings):
             calc_lightmap()
 
         # Play the needed sounds.
-        for sound in sounds_to_play:
-            sound_loader.play(sound)
+        if settings["sound"]:
+            sound_loader.play_sounds(sounds_to_play)
         sounds_to_play = set()
 
         # Draw.
@@ -1700,6 +1784,7 @@ def main(screen, settings):
 if __name__ == "__main__":
     pg.init()
     mixer_available = pg.mixer.get_init() is not None
+    pg.key.set_repeat(500, 100)
     main_screen = pg.display.set_mode((800, 560))  # 50x35 tiles
     pg.display.set_caption("Outlast 7DRL 2024")
     icon_image = tile_loader.get_tile(Graphic.AIR_WIZARD, Color.RED)
@@ -1707,4 +1792,6 @@ if __name__ == "__main__":
     things = main_menu(main_screen)
     while True:
         main(main_screen, things)
+        if mixer_available:
+            pg.mixer.music.stop()
         things = main_menu(main_screen)

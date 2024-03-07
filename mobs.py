@@ -116,10 +116,10 @@ mob_ai_timer.update({
     MobID.RED_SKELETON: 2,
     MobID.WHITE_ZOMBIE: 3,
     MobID.WHITE_SLIME: 3,
-    MobID.WHITE_SKELETON: 3,
+    MobID.WHITE_SKELETON: 2,
     MobID.BLACK_ZOMBIE: 3,
     MobID.BLACK_SLIME: 2,
-    MobID.BLACK_SKELETON: 4,
+    MobID.BLACK_SKELETON: 2,
     MobID.AIR_WIZARD: 2,
     MobID.BAT: 1,
     MobID.FLAME_SKULL: 1,
@@ -209,6 +209,7 @@ class Mob:
         self.recipies = self.mob_data.recipies
         self.light = self.mob_data.light
         self.target_space = None
+        self.last_pos = (0, 0)
         self.last_dir = Point(0, -1)  # assume the last direction was up
         self.state = 'wander'
         self.ai_tick = 0
