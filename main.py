@@ -199,7 +199,7 @@ def main(screen, settings):
         settings["sound"] = False
         settings["music"] = False
 
-    sound_loader = SoundLoader(Path() / "sound", mixer_available)
+    sound_loader = SoundLoader("sound", mixer_available)
     sound_loader.set_volume(0.25)
     sounds_to_play: set[Sound] = set()
 
@@ -700,8 +700,22 @@ def main(screen, settings):
                         pg.mixer.music.stop()
                     else:
                         change_music()
+                    if mixer_available:
+                        message_logs.appendleft("music toggled")
+                        message_logs.appendleft(f"to {'on' if settings['music'] else 'off'}")
+                    else:
+                        message_logs.appendleft("system does not")
+                        message_logs.appendleft("support music")
+                    sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_n:
                     settings["sound"] = not settings["sound"]
+                    if mixer_available:
+                        message_logs.appendleft("sound toggled")
+                        message_logs.appendleft(f"to {'on' if settings['sound'] else 'off'}")
+                    else:
+                        message_logs.appendleft("system does not")
+                        message_logs.appendleft("support sound")
+                    sounds_to_play.add(Sound.INDICATOR)
                 elif event.key == pg.K_UP:
                     if player_is_dead:
                         continue
@@ -1046,6 +1060,7 @@ def main(screen, settings):
                                                 add_to_inventory(item, inventory)
                                             message_logs.appendleft("you kill the")
                                             message_logs.appendleft(f"{target_mob.name}")
+                                            number_of_mobs -= 1
                                             if target_mob.id == MobID.AIR_WIZARD:
                                                 air_wizard_defeated = True
                                                 message_logs.appendleft("you have won")
@@ -1902,7 +1917,7 @@ def main(screen, settings):
             calc_lightmap()
 
         # Play the needed sounds.
-        if settings["sound"]:
+        if mixer_available and settings["sound"]:
             sound_loader.play_sounds(sounds_to_play)
         sounds_to_play = set()
 
@@ -2047,6 +2062,8 @@ if __name__ == "__main__":
     try:
         pg.init()
         mixer_available = pg.mixer.get_init() is not None
+        # if sys.platform == "darwin":
+        #     mixer_available = False
         pg.key.set_repeat(500, 100)
         main_screen = pg.display.set_mode((800, 560))  # 50x35 tiles
         pg.display.set_caption("Outlast 7DRL 2024")

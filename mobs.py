@@ -204,7 +204,7 @@ mob_data = {
     MobID.SPRITE: MobData("sprite", (Graphic.FAIRY, Color.RED), 5, (MobTag.AI_FOLLOW, MobTag.DAMAGE, MobTag.NO_DESPAWN,
                                                                     MobTag.ALWAYS_SIM),
                          tuple(), 1),
-    MobID.UFO: MobData("ufo", (Graphic.UFO, Color.GREEN), 5, (MobTag.AI_WANDER, MobTag.DAMAGE, MobTag.NO_DESPAWN,),
+    MobID.UFO: MobData("ufo", (Graphic.UFO, Color.GREEN), 20, (MobTag.AI_WANDER, MobTag.DAMAGE, MobTag.NO_DESPAWN,),
                           tuple(), 1),
     MobID.SPIDER: MobData("spider", (Graphic.SPIDER, Color.MED_GRAY), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE,)),
     MobID.HELL_SPIDER: MobData("hellspider", (Graphic.SPIDER, Color.RED), 10, (MobTag.AI_SPIDER, MobTag.DAMAGE)),
