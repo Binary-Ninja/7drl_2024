@@ -337,7 +337,10 @@ def generate_hell(size: tuple[int, int], world_seed: int, upstairs: list) -> tup
                 if ore < -0.5:
                     world_map[x][y] = Tile(TileID.GEM_ORE)
                 else:
-                    world_map[x][y] = Tile(TileID.STONE)
+                    if rng.random() < 0.95:
+                        world_map[x][y] = Tile(TileID.STONE)
+                    else:
+                        world_map[x][y] = Tile(TileID.COAL_ORE)
             else:
                 world_map[x][y] = Tile(TileID.LAPIS_ORE)
             if water < -0.2:

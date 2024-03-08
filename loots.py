@@ -13,6 +13,7 @@ tile_break_loot.update({
     TileID.GRASS: (LootItem(ItemID.WHEAT_SEEDS, 0.4), ),
     TileID.SAND: (LootItem(ItemID.SAND), ),
     TileID.STONE: (LootItem(ItemID.STONE, 1.0, 2, 5), LootItem(ItemID.COAL, 0.5, 1, 3)),
+    TileID.COAL_ORE: ((LootItem(ItemID.COAL, 1.0, 2, 5)), ),
     TileID.TREE: (LootItem(ItemID.WOOD, 1.0, 2, 5), LootItem(ItemID.APPLE, 0.5, 1, 3),
                   LootItem(ItemID.TREE_SAPLING, 0.8, 1, 2)),
     TileID.CACTUS: (LootItem(ItemID.WOOD), LootItem(ItemID.POKE_PEAR, 0.5, 1, 2),

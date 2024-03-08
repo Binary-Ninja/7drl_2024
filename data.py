@@ -62,6 +62,7 @@ class Graphic:
     TREE2 = (4, 1)
     THORNS = (6, 2)
     OBSIDIAN = (4, 0)
+    BOOKCASE = (3, 7)
 
     WINDOW = (1, 4)
     PLANKS = (13, 16)
@@ -71,6 +72,7 @@ class Graphic:
     FLOOR1 = (16, 0)
     FLOOR2 = (17, 0)
     FLOOR3 = (48, 9)
+    FLOOR4 = (48, 12)
 
     PLAYER = (25, 0)
     ZOMBIE = (24, 9)
@@ -107,6 +109,8 @@ class Graphic:
     ANVIL = (14, 15)
     LANTERN = (44, 4)
     TORCH = (3, 15)
+    TORCH2 = (4, 15)
+    TORCH3 = (5, 15)
     BED = (5, 8)
     CAULDRON = (5, 14)
     SKULL_BOOKS = (4, 7)
@@ -117,6 +121,7 @@ class Graphic:
     DIRT = (6, 0)
     STONE_ITEM = (5, 2)
     TORCH_ITEM = (43, 3)
+    TORCH_ITEM2 = (42, 3)
     WOOD = (18, 6)
     PICKUP = (41, 0)
     EMPTY_HANDS = (41, 1)
@@ -253,6 +258,9 @@ class MobID(Enum):
     UFO = 43
     SCRINIUM = 44
     DEVIL = 45
+    BOOKCASE = 46
+    SKY_TORCH = 47
+    GOLD_TORCH = 48
 
 
 class MobTag(Enum):
@@ -271,6 +279,7 @@ class MobTag(Enum):
     AI_AIR_WIZARD = auto()
     EXPLODE = auto()
     ALWAYS_SIM = auto()
+    FURNITURE = auto()
 
 
 class ItemID(Enum):
@@ -402,6 +411,17 @@ class ItemID(Enum):
     HEALTH_POTION = 128
     SWIM_LAVA_POTION = 129
     HOVER_POTION = 130
+    GOLDSKIN_POTION = 131
+    GEMSKIN_POTION = 132
+    BOOKCASE = 133
+    SKY_TORCH = 134
+    GOLD_TORCH = 135
+    CLOUD_FLOOR = 136
+    CLOUD_BRICKS = 137
+    CLOUD_DOOR = 138
+    SKY_WINDOW = 139
+    OBSIDIAN_DOOR = 140
+    LAVA_WALK_POTION = 141
 
 
 class ItemTag(Enum):
@@ -466,6 +486,14 @@ class TileID(Enum):
     OBSIDIAN = 45
     OBSIDIAN_FLOOR = 46
     SKY_WEBS = 47
+    CLOUD_FLOOR = 48
+    CLOUD_BRICKS = 49
+    CLOUD_DOOR_OPEN = 50
+    CLOUD_DOOR_CLOSED = 51
+    SKY_WINDOW = 52
+    OBSIDIAN_DOOR_OPEN = 53
+    OBSIDIAN_DOOR_CLOSED = 54
+    COAL_ORE = 55
 
 
 class TileTag(Enum):

@@ -57,8 +57,15 @@
 - added music
 - mob ai is now slightly smarter (slightly)
 - added secret ending after air wizard
+- added bombs
 
 ## Day 7
-- added more items and such
-- playtesting
-- testing pyinstaller
+- bombs actually deal damage now
+- added potions
+- added new crafting station
+- added some magic items
+- added cloud buildables
+- added new enemy that explodes (and deals damage, yay!)
+- obsidian is now blast resistant
+- rebalanced some stuff
+- fixed some bugs

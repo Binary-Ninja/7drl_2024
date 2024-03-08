@@ -15,7 +15,7 @@ from world import World, set_array, get_array, make_2d_array
 from data import (Point, str_2_tile, PointType, Graphic, Color, ItemID, ItemTag,
                   TileTag, MobID, MobTag)
 from items import Item, item_to_mob, item_light, item_effects, PotionEffect, effect_colors, effect_names
-from mobs import Mob, mob_damage, mob_explosion
+from mobs import Mob, mob_damage, mob_explosion, mob_explode_dmg
 from tiles import Tile, tile_replace, tile_damage, TileID, tile_grow, tile_spread, tile_light, tile_drain
 from loots import tile_break_loot, resolve_loot, mob_death_loot, fishing_loot
 
@@ -88,7 +88,9 @@ def main_menu(screen) -> dict:
     menu_options = (
         (("world size - 75*75", (75, 75)), ("world size - 100*100", (100, 100)),
          ("world size - 150*150", (150, 150)), ("world size - 200*200", (200, 200))),
-        (("day length - 200", 200), ("day length - 350", 350), ("day length - 500", 500), ("day length - 650", 650)),
+        (("day length - 500", 500), ("day length - 1000", 1000), ("day length - 1500", 1500),
+         ("day length - 2000", 2000), ("day length - 2500", 2500), ("day length - 3000", 3000),
+         ),
         (("mob spawn rate - low", 0.05), ("mob spawn rate - medium", 0.1),
          ("mob spawn rate - high", 0.2), ("mob spawn rate - annoying", 0.4)),
         (("sounds - on", True), ("sounds - off", False)),
@@ -325,13 +327,13 @@ def main(screen, settings):
     air_wizard_defeated = False
     current_item: Item | NO_ITEM = NO_ITEM
     inventory: list[Item] = [Item(ItemID.WORKBENCH),
-                             Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
-                             Item(ItemID.GEM_AXE, 1), Item(ItemID.SPEED_POTION, 99),
-                             Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.MAGIC_EYE, 99),
-                             Item(ItemID.STAMINA_POTION, 100), Item(ItemID.SWIM_POTION, 99),
-                             # Item(ItemID.OVEN, 1), Item(ItemID.FURNACE, 1),
-                             # Item(ItemID.IRON_BAR, 100), Item(ItemID.PASTRY, 99),
-                             # Item(ItemID.ANVIL, 1), Item(ItemID.LOOM, 1),
+                             # Item(ItemID.GEM_PICK), Item(ItemID.GEM_SWORD),
+                             # Item(ItemID.GEM_AXE, 1), Item(ItemID.IRONSKIN_POTION, 99),
+                             # Item(ItemID.GEM_SHOVEL, 1), Item(ItemID.MAGIC_EYE, 99),
+                             # Item(ItemID.OBSIDIAN_DOOR, 100), Item(ItemID.OBSIDIAN_FLOOR, 99),
+                             # Item(ItemID.CAULDRON, 1), Item(ItemID.SCRINIUM, 1),
+                             # Item(ItemID.SKY_WINDOW, 100), Item(ItemID.CLOUD_DOOR, 99),
+                             # Item(ItemID.CLOUD_FLOOR, 99), Item(ItemID.CLOUD_BRICKS, 99),
                              ]
 
     if wizard_mode:
@@ -461,6 +463,21 @@ def main(screen, settings):
             regen_stam = False
             return True
 
+    def reduce_health(amount: int) -> int:
+        global player_health
+        if PotionEffect.ARMOR3 in current_effects.keys():
+            amount -= 3
+            amount = max(0, amount)
+        elif PotionEffect.ARMOR2 in current_effects.keys():
+            amount -= 2
+            amount = max(0, amount)
+        elif PotionEffect.ARMOR in current_effects.keys():
+            amount -= 1
+            amount = max(0, amount)
+        player_health -= amount
+        player_health = max(0, player_health)
+        return amount
+
     def add_to_inventory(item: Item, invent: list[Item]) -> None:
         if item.has_tag(ItemTag.STACKABLE):
             for invent_item in invent:
@@ -580,10 +597,21 @@ def main(screen, settings):
             sounds_to_play.add(Sound.FAILURE)
             return player_pos
         if move_tile.id == TileID.AIR:
-            message_logs.appendleft("you teeter on")
-            message_logs.appendleft("the clouds edge")
-            sounds_to_play.add(Sound.FAILURE)
-            return player_pos
+            if PotionEffect.HOVER in current_effects.keys():
+                set_array(try_pos, current_layer.tile_array, Tile(TileID.CLOUD))
+                set_array(player_pos, current_layer.mob_array, None)
+                set_array(try_pos, current_layer.mob_array, Mob(MobID.PLAYER))
+                return try_pos
+            else:
+                message_logs.appendleft("you teeter on")
+                message_logs.appendleft("the clouds edge")
+                sounds_to_play.add(Sound.FAILURE)
+                return player_pos
+        if move_tile.id == TileID.LAVA and PotionEffect.LAVA_WALK in current_effects.keys():
+            set_array(try_pos, current_layer.tile_array, Tile(TileID.OBSIDIAN))
+            set_array(player_pos, current_layer.mob_array, None)
+            set_array(try_pos, current_layer.mob_array, Mob(MobID.PLAYER))
+            return try_pos
         damage = tile_damage[move_tile.id]
         drain = tile_drain[move_tile.id]
         if move_tile.has_tag(TileTag.BLOCK_MOVE):
@@ -591,9 +619,8 @@ def main(screen, settings):
             message_logs.appendleft(f"the {move_tile.name}")
             if move_tile.has_tag(TileTag.DAMAGE):
                 message_logs.appendleft("it hurts you")
+                damage = reduce_health(damage)
                 message_logs.appendleft(f"for -{damage}H")
-                player_health -= damage
-                player_health = max(0, player_health)
                 sounds_to_play.add(Sound.HURT)
             if move_tile.has_tag(TileTag.DRAIN):
                 message_logs.appendleft("it drains your")
@@ -607,9 +634,8 @@ def main(screen, settings):
                 pass
             else:
                 message_logs.appendleft(f"the {move_tile.name}")
+                damage = reduce_health(damage)
                 message_logs.appendleft(f"hurts you -{damage}H")
-                player_health -= damage
-                player_health = max(0, player_health)
                 sounds_to_play.add(Sound.HURT)
         if move_tile.has_tag(TileTag.DRAIN):
             message_logs.appendleft(f"the {move_tile.name}")
@@ -888,6 +914,7 @@ def main(screen, settings):
                                 message_logs.appendleft(f"{current_item.name} "
                                                         f"+{player_stamina - prev_ps}S")
                                 sounds_to_play.add(Sound.HEAL)
+                                regen_stam = False
                                 if current_item.count <= 0:
                                     current_item = NO_ITEM
                                     inventory.remove(NO_ITEM)
@@ -1002,7 +1029,7 @@ def main(screen, settings):
                                     sounds_to_play.add(Sound.FAILURE)
                         if current_item.has_tag(ItemTag.DAMAGE_MOBS):
                             if not just_broken_a_tile:
-                                if target_mob is not None and not target_mob.has_tag(MobTag.CRAFTING):
+                                if target_mob is not None and not target_mob.has_tag(MobTag.FURNITURE):
                                     stam_cost = current_item.data["stamina_cost"]
                                     if reduce_stamina(stam_cost):
                                         damage = current_item.data["mob_damage"]
@@ -1066,6 +1093,17 @@ def main(screen, settings):
                             for effect in item_effects[current_item.id]:
                                 effect_id, duration = effect
                                 current_effects[effect_id] = max(duration, current_effects.get(effect_id, 0))
+                            # Remove redundant skin potions.
+                            detect_skin_replacement = len(current_effects)
+                            for effect_id in tuple(current_effects.keys()):
+                                if effect_id == PotionEffect.ARMOR3:
+                                    current_effects.pop(PotionEffect.ARMOR2, None)
+                                    current_effects.pop(PotionEffect.ARMOR, None)
+                                elif effect_id == PotionEffect.ARMOR2:
+                                    current_effects.pop(PotionEffect.ARMOR, None)
+                            if len(current_effects) < detect_skin_replacement:
+                                message_logs.appendleft("better skin")
+                                message_logs.appendleft("potion applied")
                             add_to_inventory(Item(ItemID.BOTTLE), inventory)
                             player_stamina -= 1
                             player_stamina = max(0, player_stamina)
@@ -1073,6 +1111,7 @@ def main(screen, settings):
                             if current_item.count <= 0:
                                 inventory.remove(NO_ITEM)
                                 current_item = NO_ITEM
+                            sounds_to_play.add(Sound.SUCCESS)
                         just_broken_a_tile = False
                         displayed_empty_hands_message = False
                         displayed_no_use_message = False
@@ -1136,10 +1175,15 @@ def main(screen, settings):
                                 message_logs.appendleft("you sleep the")
                                 message_logs.appendleft("night away")
                                 sounds_to_play.add(Sound.INDICATOR)
+                                change_music()
                             else:
                                 message_logs.appendleft("you cannot rest")
                                 message_logs.appendleft("during the day")
                                 sounds_to_play.add(Sound.FAILURE)
+                        elif target_mob and target_mob.id == MobID.BOOKCASE:
+                            message_logs.appendleft("lovely bookcase")
+                            message_logs.appendleft("for decoration")
+                            sounds_to_play.add(Sound.INDICATOR)
                         elif target_tile and target_tile.id in (TileID.OPEN_WOOD_DOOR,
                                                                 TileID.CLOSED_WOOD_DOOR):
                             if target_mob:
@@ -1157,6 +1201,50 @@ def main(screen, settings):
                                     set_array(target_pos,
                                               current_layer.tile_array,
                                               Tile(TileID.CLOSED_WOOD_DOOR))
+                                    message_logs.appendleft("you close the")
+                                    message_logs.appendleft(f"{target_tile.name}")
+                                fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
+                                do_calc_light_map = True
+                                sounds_to_play.add(Sound.USE_ITEM)
+                        elif target_tile and target_tile.id in (TileID.CLOUD_DOOR_CLOSED,
+                                                                TileID.CLOUD_DOOR_OPEN):
+                            if target_mob:
+                                message_logs.appendleft("door is blocked")
+                                message_logs.appendleft(f"by {target_mob.name}")
+                                sounds_to_play.add(Sound.FAILURE)
+                            else:
+                                if target_tile.id is TileID.CLOUD_DOOR_CLOSED:
+                                    set_array(target_pos,
+                                              current_layer.tile_array,
+                                              Tile(TileID.CLOUD_DOOR_OPEN))
+                                    message_logs.appendleft("you open the")
+                                    message_logs.appendleft(f"{target_tile.name}")
+                                else:
+                                    set_array(target_pos,
+                                              current_layer.tile_array,
+                                              Tile(TileID.CLOUD_DOOR_CLOSED))
+                                    message_logs.appendleft("you close the")
+                                    message_logs.appendleft(f"{target_tile.name}")
+                                fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
+                                do_calc_light_map = True
+                                sounds_to_play.add(Sound.USE_ITEM)
+                        elif target_tile and target_tile.id in (TileID.OBSIDIAN_DOOR_CLOSED,
+                                                                TileID.OBSIDIAN_DOOR_OPEN):
+                            if target_mob:
+                                message_logs.appendleft("door is blocked")
+                                message_logs.appendleft(f"by {target_mob.name}")
+                                sounds_to_play.add(Sound.FAILURE)
+                            else:
+                                if target_tile.id is TileID.OBSIDIAN_DOOR_CLOSED:
+                                    set_array(target_pos,
+                                              current_layer.tile_array,
+                                              Tile(TileID.OBSIDIAN_DOOR_OPEN))
+                                    message_logs.appendleft("you open the")
+                                    message_logs.appendleft(f"{target_tile.name}")
+                                else:
+                                    set_array(target_pos,
+                                              current_layer.tile_array,
+                                              Tile(TileID.OBSIDIAN_DOOR_CLOSED))
                                     message_logs.appendleft("you close the")
                                     message_logs.appendleft(f"{target_tile.name}")
                                 fov_field = calc_fov(player_pos, MAX_VIEW_DIST)
@@ -1232,7 +1320,7 @@ def main(screen, settings):
             stam_flash = not stam_flash
 
         # Get the current player light radius
-        light_radius = item_light[current_item.id] if current_item.has_tag(ItemTag.LIGHT) else player_light_radius
+        light_radius = item_light[current_item.id] + 0.5 if current_item.has_tag(ItemTag.LIGHT) else player_light_radius
 
         # Do the game updates.
         if do_a_game_tick:
@@ -1265,7 +1353,8 @@ def main(screen, settings):
                 elif current_layer_index < 2:
                     message_logs.appendleft("the sun is")
                     message_logs.appendleft("starting to set")
-            print(f"tick {world_time}")
+            if wizard_mode:
+                print(f"Layer: {current_layer_index} Tick: {world_time} Mobs: {number_of_mobs}/{game_world.mob_cap}")
 
             # Decay potion effects.
             for effect_id in tuple(current_effects.keys()):
@@ -1383,7 +1472,7 @@ def main(screen, settings):
                         if distance_within(player_pos, (x, y), 5.5):
                             if get_array((x, y), current_layer.mob_array) is None:
                                 set_array((x, y), current_layer.tile_array, Tile(TileID.SAND))
-                                set_array((x, y), current_layer.mob_array, Mob(MobID.GREEN_SKELETON))
+                                set_array((x, y), current_layer.mob_array, Mob(MobID.WHITE_SKELETON))
                                 if light_map[x][y] and line_of_sight(player_pos, (x, y)):
                                     message_logs.appendleft("the bones rise")
                                     message_logs.appendleft("from the sand")
@@ -1436,11 +1525,17 @@ def main(screen, settings):
                                     if distance_within((x + nx, y + ny), (x, y), radius + 0.5):
                                         tile_id = TileID.HOLE if current_layer_index > 0 else TileID.AIR
                                         tile = get_array((x + nx, y + ny), current_layer.tile_array)
-                                        if tile and tile.id not in (TileID.DOWN_STAIRS, TileID.UP_STAIRS):
+                                        if tile and tile.id not in (TileID.DOWN_STAIRS, TileID.UP_STAIRS,
+                                            TileID.OBSIDIAN, TileID.OBSIDIAN_FLOOR, TileID.OBSIDIAN_BRICKS,
+                                            TileID.OBSIDIAN_DOOR_OPEN, TileID.OBSIDIAN_DOOR_CLOSED,
+                                                                    ):
                                             set_array((x + nx, y + ny), current_layer.tile_array, Tile(tile_id))
                                         mob = get_array((x + nx, y + ny), current_layer.mob_array)
                                         if mob and mob.id not in (MobID.AIR_WIZARD, MobID.PLAYER):
                                             set_array((x + nx, y + ny), current_layer.mob_array, None)
+                                        if mob and mob.id == MobID.PLAYER:
+                                            reduce_health(mob_explode_dmg[current_mob.id])
+                                            sounds_to_play.add(Sound.HURT)
                         else:
                             already_mob_ticked.add(current_mob)
                     if current_mob.has_tag(MobTag.AI_FOLLOW):
@@ -1471,10 +1566,9 @@ def main(screen, settings):
                                 try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
-                            player_health -= mob_damage[current_mob.id]
-                            player_health = max(0, player_health)
+                            dmg = reduce_health(mob_damage[current_mob.id])
                             message_logs.appendleft(f"the {current_mob.name}")
-                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            message_logs.appendleft(f"hits you -{dmg}H")
                             sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and ((not move_tile.has_tag(TileTag.BLOCK_MOVE)) or
@@ -1505,10 +1599,9 @@ def main(screen, settings):
                                         y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
-                            player_health -= mob_damage[current_mob.id]
-                            player_health = max(0, player_health)
+                            dmg = reduce_health(mob_damage[current_mob.id])
                             message_logs.appendleft(f"the {current_mob.name}")
-                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            message_logs.appendleft(f"hits you -{dmg}H")
                             sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
@@ -1531,11 +1624,10 @@ def main(screen, settings):
                             (player_pos.x - SKELETON_SHOOT_RADIUS, player_pos.y),
                         ]
                         for target_space in target_spaces:
-                            if (x, y) == target_space and line_of_sight((x, y), target_space):
-                                player_health -= mob_damage[current_mob.id]
-                                player_health = max(0, player_health)
+                            if (x, y) == target_space and line_of_sight((x, y), player_pos):
+                                dmg = reduce_health(mob_damage[current_mob.id])
                                 message_logs.appendleft(f"the {current_mob.name}s")
-                                message_logs.appendleft(f"arrow hits -{mob_damage[current_mob.id]}H")
+                                message_logs.appendleft(f"arrow hits -{dmg}H")
                                 sounds_to_play.add(Sound.HURT)
                                 skelly_got_em = True
                                 break
@@ -1612,10 +1704,9 @@ def main(screen, settings):
                                 try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
-                            player_health -= mob_damage[current_mob.id]
-                            player_health = max(0, player_health)
+                            dmg = reduce_health(mob_damage[current_mob.id])
                             message_logs.appendleft(f"the {current_mob.name}")
-                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            message_logs.appendleft(f"hits you -{dmg}H")
                             sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob:
@@ -1656,10 +1747,9 @@ def main(screen, settings):
                                 try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                         move_mob = get_array(try_pos, current_layer.mob_array)
                         if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
-                            player_health -= mob_damage[current_mob.id]
-                            player_health = max(0, player_health)
+                            dmg = reduce_health(mob_damage[current_mob.id])
                             message_logs.appendleft(f"the {current_mob.name}")
-                            message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                            message_logs.appendleft(f"hits you -{dmg}H")
                             sounds_to_play.add(Sound.HURT)
                         move_tile = get_array(try_pos, current_layer.tile_array)
                         if move_tile and not move_mob and not move_tile.has_tag(TileTag.BLOCK_MOVE) and not\
@@ -1765,10 +1855,9 @@ def main(screen, settings):
                                     try_pos = Point(x, y + int(math.copysign(1, dir_vec.y)))
                             move_mob = get_array(try_pos, current_layer.mob_array)
                             if move_mob and move_mob.id == MobID.PLAYER and current_mob.has_tag(MobTag.DAMAGE):
-                                player_health -= mob_damage[current_mob.id]
-                                player_health = max(0, player_health)
+                                dmg = reduce_health(mob_damage[current_mob.id])
                                 message_logs.appendleft(f"the {current_mob.name}")
-                                message_logs.appendleft(f"hits you -{mob_damage[current_mob.id]}H")
+                                message_logs.appendleft(f"hits you -{dmg}H")
                                 sounds_to_play.add(Sound.HURT)
                             move_tile = get_array(try_pos, current_layer.tile_array)
                             if move_tile and not move_mob:
@@ -1874,7 +1963,7 @@ def main(screen, settings):
             if stam_flash and player_stamina < 1:
                 tile = stam_full_img
             screen.blit(tile, ((40 + i) * tile_size.x, tile_size.y))
-        write_text((35, 2), f"time {world_time}-{'night' if night_time else 'day'}", Color.MED_GRAY)
+        write_text((35, 2), f"t{world_time}-{'night' if night_time else 'day'}", Color.MED_GRAY)
 
         # Draw current item and inventory.
         if game_mode is not GameMode.CRAFT:
@@ -1930,8 +2019,9 @@ def main(screen, settings):
             write_text((35, 34 - i), message, color)
 
         # Display FPS.
-        fps_surf = font.render(str(clock.get_fps()), True, (255, 255, 255))
-        screen.blit(fps_surf, (0, screen.get_height() - fps_surf.get_height()))
+        if wizard_mode:
+            fps_surf = font.render(str(clock.get_fps()), True, (255, 255, 255))
+            screen.blit(fps_surf, (0, screen.get_height() - fps_surf.get_height()))
         # Flip display.
         pg.display.flip()
 
