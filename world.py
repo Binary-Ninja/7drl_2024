@@ -123,7 +123,10 @@ def generate_overworld(size: tuple[int, int], world_seed: int, upstairs: list) -
                     if rng.random() + humidity > 1:
                         world_map[x][y] = Tile(TileID.TREE)
             elif value < 1:
-                world_map[x][y] = Tile(TileID.STONE)
+                if rng.random() < 0.95:
+                    world_map[x][y] = Tile(TileID.STONE)
+                else:
+                    world_map[x][y] = Tile(TileID.COAL_ORE)
     for point in upstairs:
         for x in (-1, 0, 1):
             for y in (-1, 0, 1):
@@ -188,7 +191,10 @@ def generate_caves(size: tuple[int, int], world_seed: int, upstairs: list) -> tu
                 if ore < -0.5:
                     world_map[x][y] = Tile(TileID.IRON_ORE)
                 else:
-                    world_map[x][y] = Tile(TileID.STONE)
+                    if rng.random() < 0.95:
+                        world_map[x][y] = Tile(TileID.STONE)
+                    else:
+                        world_map[x][y] = Tile(TileID.COAL_ORE)
             else:
                 world_map[x][y] = Tile(TileID.LAPIS_ORE)
     for point in upstairs:
@@ -262,7 +268,10 @@ def generate_caverns(size: tuple[int, int], world_seed: int, upstairs: list) -> 
                 if ore < -0.5:
                     world_map[x][y] = Tile(TileID.GOLD_ORE)
                 else:
-                    world_map[x][y] = Tile(TileID.STONE)
+                    if rng.random() < 0.95:
+                        world_map[x][y] = Tile(TileID.STONE)
+                    else:
+                        world_map[x][y] = Tile(TileID.COAL_ORE)
             else:
                 world_map[x][y] = Tile(TileID.LAPIS_ORE)
             if water < -0.2:

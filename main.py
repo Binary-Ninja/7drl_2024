@@ -1428,6 +1428,7 @@ def main(screen, settings):
                     # Spread the tiles.
                     if current_tile.has_tag(TileTag.SPREAD) and (x, y) not in already_spread:
                         spread_onto, spread_chance = tile_spread[current_tile.id]
+                        will_it_spread = random.random() < spread_chance
                         for nx in (-1, 0, 1):
                             for ny in (-1, 0, 1):
                                 if nx == ny == 0:
@@ -1438,7 +1439,7 @@ def main(screen, settings):
                                                      current_layer.tile_array)
                                 if neighbor is None:
                                     continue
-                                elif neighbor.id == spread_onto and random.random() < spread_chance:
+                                elif neighbor.id == spread_onto and will_it_spread:
                                     already_spread.add((x + nx, y + ny))
                                     set_array((x + nx, y + ny),
                                               current_layer.tile_array, Tile(current_tile.id))
@@ -1539,6 +1540,10 @@ def main(screen, settings):
                         else:
                             already_mob_ticked.add(current_mob)
                     if current_mob.has_tag(MobTag.AI_FOLLOW):
+                        cur_tile = get_array((x, y), current_layer.tile_array)
+                        if cur_tile and cur_tile.has_tag(TileTag.LIQUID) and not current_mob.has_tag(MobTag.SWAPPABLE):
+                            set_array((x, y), current_layer.mob_array, None)
+                            continue
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
@@ -1585,6 +1590,10 @@ def main(screen, settings):
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_JUMP):
+                        cur_tile = get_array((x, y), current_layer.tile_array)
+                        if cur_tile and cur_tile.has_tag(TileTag.LIQUID):
+                            set_array((x, y), current_layer.mob_array, None)
+                            continue
                         sense_radius = INVIS_SENSE_DISTANCE if currently_invisible else JUMP_DISTANCE
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
@@ -1613,6 +1622,10 @@ def main(screen, settings):
                                           Tile(tile_replace[move_tile.id]))
                             already_mob_ticked.add(current_mob)
                     elif current_mob.has_tag(MobTag.AI_SHOOT):
+                        cur_tile = get_array((x, y), current_layer.tile_array)
+                        if cur_tile and cur_tile.has_tag(TileTag.LIQUID):
+                            set_array((x, y), current_layer.mob_array, None)
+                            continue
                         sense_radius = INVIS_SENSE_DISTANCE if currently_invisible else SKELETON_SIGHT_RADIUS
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
@@ -1722,6 +1735,10 @@ def main(screen, settings):
                             else:
                                 current_mob.last_dir = Point(-dir_vec.x, -dir_vec.y)
                     elif current_mob.has_tag(MobTag.AI_SPIDER):
+                        cur_tile = get_array((x, y), current_layer.tile_array)
+                        if cur_tile and cur_tile.has_tag(TileTag.LIQUID):
+                            set_array((x, y), current_layer.mob_array, None)
+                            continue
                         current_mob.ai_tick += 1
                         if current_mob.ai_tick % current_mob.ai_timer != 0:
                             continue  # only tick every ai_timer ticks
@@ -2027,16 +2044,20 @@ def main(screen, settings):
 
 
 if __name__ == "__main__":
-    pg.init()
-    mixer_available = pg.mixer.get_init() is not None
-    pg.key.set_repeat(500, 100)
-    main_screen = pg.display.set_mode((800, 560))  # 50x35 tiles
-    pg.display.set_caption("Outlast 7DRL 2024")
-    icon_image = tile_loader.get_tile(Graphic.AIR_WIZARD, Color.RED)
-    pg.display.set_icon(icon_image)
-    things = main_menu(main_screen)
-    while True:
-        main(main_screen, things)
-        if mixer_available:
-            pg.mixer.music.stop()
+    try:
+        pg.init()
+        mixer_available = pg.mixer.get_init() is not None
+        pg.key.set_repeat(500, 100)
+        main_screen = pg.display.set_mode((800, 560))  # 50x35 tiles
+        pg.display.set_caption("Outlast 7DRL 2024")
+        icon_image = tile_loader.get_tile(Graphic.AIR_WIZARD, Color.RED)
+        pg.display.set_icon(icon_image)
         things = main_menu(main_screen)
+        while True:
+            main(main_screen, things)
+            if mixer_available:
+                pg.mixer.music.stop()
+            things = main_menu(main_screen)
+    except Exception as ex:
+        print(ex)
+        input("Press [Enter] to quit...")

@@ -5,6 +5,9 @@
 - ```pygame 2.5.2```
 - ```opensimplex 0.4.5```
 
+## Pyinstaller Version
+- ```pyinstaller 6.4.0```
+
 ## Music Credits
 - HorrorPen
 - Brandon75689
@@ -69,3 +72,4 @@
 - obsidian is now blast resistant
 - rebalanced some stuff
 - fixed some bugs
+- if you blow up a bomb in hell, the lag from lava spreading and causing lighting updates can cause the game to lag so hard it double ticks and teleports you ~10 blocks in whatever direction you try to move in. not a good look considering the only enemy that blows up lives in hell, but it's too late to fix it now
